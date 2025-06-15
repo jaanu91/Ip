@@ -54,7 +54,7 @@ Section:NewToggle("Aimlock (FOV)", "Locks aim inside FOV Circle", function(state
 AimbotModule.toggleAimlock(state)
 end)
 
-Section:NewToggle("Nearest Aimbot", "Locks aim on closest enemies", function(state)
+Section:NewToggle("Aimlock (Nearest)", "Locks aim on closest enemies", function(state)
 AimbotModule.toggleNearest(state)
 end)
 
