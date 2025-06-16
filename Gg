@@ -8,10 +8,12 @@ local keyFile = "SapiHubKey.txt"
 
 -- Helper: Convert millis to countdown string
 local function countdownString(expMillis)
-	local seconds = math.max(0, math.floor((expMillis - DateTime.now().UnixTimestampMillis) / 1000))
-	local mins = math.floor(seconds / 60)
-	local secs = seconds % 60
-	return string.format("⏳ %02d:%02d", mins, secs)
+	local totalSeconds = math.max(0, math.floor((expMillis - DateTime.now().UnixTimestampMillis) / 1000))
+	local hours = math.floor(totalSeconds / 3600)
+	local minutes = math.floor((totalSeconds % 3600) / 60)
+	local seconds = totalSeconds % 60
+
+	return string.format("⏳ %02dh %02dm %02ds", hours, minutes, seconds)
 end
 
 -- Helper: Run script
