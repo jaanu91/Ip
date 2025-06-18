@@ -98,7 +98,7 @@ Section:NewToggle("Fast Mode | FPS Boost ", "Boost performance by lowering graph
     FastModeModule.toggle(state)
 end)
 
-Section:NewToggle("Aura Kill | You Are Lazy Fr Play Legit", "Toggle the aura kill feature", function(state)
+Section:NewToggle("Aura Kill (Beta Version) | You Are Lazy Fr Play Legit", "Toggle the aura kill feature", function(state)
     AureKillModule.toggleAura(state)
 end)
 
