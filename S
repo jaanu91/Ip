@@ -43,6 +43,8 @@ local function updateTheme(newColor)
     Library:updateTheme(currentTheme)
 end
 
+AimbotModule.setAimTargetMode("Auto")
+
 local Tab = Window:NewTab("Aimbot")
 local Section = Tab:NewSection("Aimbot Settings")
 
@@ -64,6 +66,10 @@ end)
 
 Section:NewToggle("Visibility Check", "Only aim at visible targets", function(state)
 AimbotModule.setVisibilityCheck(state)
+end)
+
+Section:NewDropdown("Aim Target (Default Auto)", "Choose aim point (Head, Body, Auto)", {"Auto", "Head", "Body"}, function(selected)
+	AimbotModule.setAimTargetMode(selected)
 end)
 
 local Tab = Window:NewTab("ESP")
