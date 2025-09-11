@@ -531,6 +531,26 @@ end)
 table.insert(connections, renderConnTilt)
 
 -- =========================
+-- Ability V2
+-- =========================
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
+
+local cooldownTime = 31
+
+local function clickActivateAbility()
+	CommE:FireServer("ActivateAbility")
+
+	task.wait(cooldownTime)
+end
+
+task.spawn(function()
+	while true do
+		clickActivateAbility()
+	end
+end)
+
+-- =========================
 -- Global Player ESP with Colors
 -- =========================
 local espFolder = Instance.new("Folder")
