@@ -136,13 +136,15 @@ local function disconnectTiltConn()
 	end
 end
 
-local function applyCharacterTilt(camCF)
-	local hrp = char:FindFirstChild("HumanoidRootPart")
+local function applyTiltedCamera(hrp, tiltAngle)
 	if not hrp then return end
 
-	local x, y, z = camCF:ToOrientation()
+	local camOffset = Vector3.new(0, 6, -10) -- (up, back)
+	local baseCF = hrp.CFrame * CFrame.new(camOffset)
 
-	hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(x, y, z)
+	local tiltCF = CFrame.Angles(math.rad(tiltAngle), 0, 0)
+
+	camera.CFrame = baseCF * tiltCF
 end
 
 local function stopTiltSmooth()
@@ -196,7 +198,7 @@ local function startTilt()
 		if alpha < 1 then
 			alpha = math.min(alpha + dt * 2, 1)
 			camera.CFrame = startCF:Lerp(targetCF, alpha)
-			applyCharacterTilt(camera.CFrame)
+			applyTiltedCamera(char:FindFirstChild("HumanoidRootPart"), -20) -- tilt down 20 degrees
 		else
 			camera.CFrame = targetCF
 		end
@@ -497,7 +499,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function()
 				local lookVector = (predictedPos - camera.CFrame.Position).Unit
 				local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
 				camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + tiltedlook)
-				applyCharacterTilt(camera.CFrame)
+				applyTiltedCamera(char:FindFirstChild("HumanoidRootPart"), -20) -- tilt down 20 degrees
             end
         elseif AimlockNpcEnabled then
             if not currentBossTarget or not currentBossTarget.Parent 
@@ -521,7 +523,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function()
 				local lookVector = (predictedPos - camera.CFrame.Position).Unit
 				local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
 				camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + tiltedlook)
-				applyCharacterTilt(camera.CFrame)
+				applyTiltedCamera(char:FindFirstChild("HumanoidRootPart"), -20) -- tilt down 20 degrees
             end
         end
     end
