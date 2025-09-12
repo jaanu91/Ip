@@ -29,8 +29,10 @@ function AimlockModule.Init(player, char, camera)
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
-	local x, y = 680, 110 -- Button screen position
+	local x, y = 680, 120 -- Button screen position
 	local kenLoopRunning = false
+	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
+	local originalSizes = {}
 	
 -- =========================
 -- Team Check
@@ -90,29 +92,20 @@ end
 -- Ken Skill Auto Functions
 -- =========================
 local function pressKen()
-    -- press down
     vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-
-    -- release quickly (50ms later)
-    task.delay(0.05, function()
-        vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
-    end)
+    vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
 end
 
 local function startKenLoop()
     if kenLoopRunning then return end
     kenLoopRunning = true
 
-    -- use RenderStepped for instant checks
-    local conn
-    conn = RunService.RenderStepped:Connect(function()
-        if not kenLoopRunning then
-            conn:Disconnect()
-            return
-        end
-
-        if kenButton:GetAttribute("Selected") == false then
-            pressKen()
+    task.spawn(function()
+        while kenLoopRunning do
+            if kenButton:GetAttribute("Selected") == false then
+                pressKen()
+            end
+            task.wait(0.5) -- check every half-second
         end
     end)
 end
@@ -233,6 +226,74 @@ local function startTilt()
 end
 
 -- =========================
+-- Hitbox Expander
+-- =========================
+local fightingStyles = {
+    ["Godhuman"] = true,
+    ["Sanguine Art"] = true,
+    ["Dragon Talon"] = true,
+    ["Electric Claw"] = true,
+    ["Sharkman Karate"] = true,
+    ["Death Step"] = true,
+}
+
+local function expandWeapon(weapon)
+	for _, part in ipairs(weapon:GetDescendants()) do
+		if part:IsA("BasePart") then
+			if not originalSizes[part] then
+				originalSizes[part] = part.Size
+			end
+			part.Size = EXPANDED_SIZE
+			part.CanCollide = false
+		end
+	end
+end
+
+local function resetWeapon(weapon)
+	for _, part in ipairs(weapon:GetDescendants()) do
+		if part:IsA("BasePart") and originalSizes[part] then
+			part.Size = originalSizes[part]
+			originalSizes[part] = nil
+		end
+	end
+end
+
+local function watchEquippedWeapon(char, tool)
+	if not fightingStyles[tool.Name] then return end
+
+	local eqConn, remConn
+	eqConn = char.ChildAdded:Connect(function(child)
+		if child.Name == "EquippedWeapon" and child:IsA("Model") then
+			expandWeapon(child)
+
+			child.DescendantAdded:Connect(function(desc)
+				if desc:IsA("BasePart") then
+					if not originalSizes[desc] then
+						originalSizes[desc] = desc.Size
+					end
+					desc.Size = EXPANDED_SIZE
+					desc.CanCollide = false
+				end
+			end)
+		end
+	end)
+
+	remConn = char.ChildRemoved:Connect(function(child)
+		if child.Name == "EquippedWeapon" and child:IsA("Model") then
+			resetWeapon(child)
+		end
+	end)
+
+	local weapon = char:FindFirstChild("EquippedWeapon")
+	if weapon and weapon:IsA("Model") then
+		expandWeapon(weapon)
+	end
+
+	table.insert(connections, eqConn)
+	table.insert(connections, remConn)
+end
+
+-- =========================
 -- Tool equip / unequip 
 -- =========================
 local function hookTool(tool)
@@ -250,8 +311,9 @@ local function hookTool(tool)
 end
 
 char.ChildAdded:Connect(function(child)
-	if child:IsA("Tool") then
+	if child:IsA("Tool") and fightingStyles[child.Name] then
 		hookTool(child)
+		watchEquippedWeapon(char, child)
 	end
 end)
 
@@ -263,6 +325,12 @@ char.ChildRemoved:Connect(function(child)
 		cursedZActive = false
 		tiltEnabled = false
 		stopTiltSmooth()
+	end
+	if child:IsA("Tool") and fightingStyles[child.Name] then
+		local weapon = char:FindFirstChild("EquippedWeapon")
+		if weapon then
+			resetWeapon(weapon)
+		end
 	end
 end)
 
@@ -697,15 +765,15 @@ local function cleanup()
     end
     
     if healthConn then
-    healthConn:Disconnect()
-    healthConn = nil
+        healthConn:Disconnect()
+        healthConn = nil
     end
     
     for player, billboard in pairs(ESPs) do
         if billboard then
             billboard:Destroy()
         end
-    end
+    end 
     ESPs = {}
 
     if espFolder and espFolder.Parent then
@@ -716,11 +784,19 @@ local function cleanup()
         currentHighlight:Destroy()
         currentHighlight = nil
     end
+    
+    for part, size in pairs(originalSizes) do
+        if part and part.Parent then
+            part.Size = size
+        end
+    end
+    originalSizes = {}
 
     disconnectTiltConn()
+    stopKenLoop()
+
     currentTool = nil
     rightTouches = {}
-    ESPs = {}
     vActive = false
     sharkZActive = false
     cursedZActive = false
