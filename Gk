@@ -29,8 +29,6 @@ function AimlockModule.Init(player, char, camera)
 	local ESPs = {}
 	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
 	local originalSizes = {}
-	local createdHitboxes = {}
-	local targetDeathConn
 	
 -- =========================
 -- Team Check
@@ -198,7 +196,7 @@ local function startTilt()
 end
 
 -- =========================
--- Hitbox Expander
+-- Hitbox On Fighting style 
 -- =========================
 local fightingStyles = {
     ["Godhuman"] = true,
@@ -302,19 +300,10 @@ local function watchEquippedWeapon(char, tool)
     end
 end
 
--- =========================
--- Tool equip / unequip 
--- =========================
-local function hookTool(tool)
+local function hookToolHit(tool)
 	currentTool = tool
 	tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
-			currentTool = nil
-			vActive = false
-			sharkZActive = false
-			cursedZActive = false
-			tiltEnabled = false
-			stopTiltSmooth()
             local w = toolWatchers[tool]
             if w then
                 if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
@@ -329,10 +318,53 @@ local function hookTool(tool)
 	end)
 end
 
+char.ChildAdded:Connect(function(tool)
+	if tool:IsA("Tool") and fightingStyles[child.Name] then
+		hookToolHit(tool)
+		watchEquippedWeapon(char, tool)
+	end
+end)
+
+char.ChildRemoved:Connect(function(tool)
+	if tool:IsA("Tool") and fightingStyles[child.Name] then
+		local weapon = char:FindFirstChild("EquippedWeapon")
+		if weapon then
+			resetWeapon(weapon)
+		end
+
+        local w = toolWatchers[tool]
+        if w then
+            if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
+            if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
+            for _, dc in ipairs(w.descConns) do
+                if dc and dc.Connected then dc:Disconnect() end
+            end
+            if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
+            toolWatchers[tool] = nil
+        end
+	end
+end)
+
+-- =========================
+-- Tool equip / unequip 
+-- =========================
+local function hookTool(tool)
+	currentTool = tool
+	tool.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			currentTool = nil
+			vActive = false
+			sharkZActive = false
+			cursedZActive = false
+			tiltEnabled = false
+			stopTiltSmooth()
+		end
+	end)
+end
+
 char.ChildAdded:Connect(function(child)
-	if child:IsA("Tool") and fightingStyles[child.Name] then
+	if child:IsA("Tool") then
 		hookTool(child)
-		watchEquippedWeapon(char, child)
 	end
 end)
 
@@ -345,23 +377,6 @@ char.ChildRemoved:Connect(function(child)
 		tiltEnabled = false
 		stopTiltSmooth()
 	end
-	if child:IsA("Tool") and fightingStyles[child.Name] then
-		local weapon = char:FindFirstChild("EquippedWeapon")
-		if weapon then
-			resetWeapon(weapon)
-		end
-
-        local w = toolWatchers[child]
-        if w then
-            if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
-            if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
-            for _, dc in ipairs(w.descConns) do
-                if dc and dc.Connected then dc:Disconnect() end
-            end
-            if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
-            toolWatchers[child] = nil
-        end
-	end
 end)
 
 -- =========================
@@ -369,62 +384,74 @@ end)
 -- =========================
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
+	local method = getnamecallmethod()
+	local args = {...}
 
-    if (method == "InvokeServer" or method == "FireServer") then
-        local a1 = args[1]
+	if (method == "InvokeServer" or method == "FireServer") then
+		local a1 = args[1]
 
-        if typeof(a1) == "string" and a1:upper() == "V" and currentTool and currentTool.Name == "Dough-Dough" then
-            vActive = true
-            local stamp = os.clock()
-            task.delay(2, function()
-                if os.clock() - stamp >= 2 then
-                    vActive = false
-                    if tiltEnabled and next(rightTouches) then
-                        tiltEnabled = false
-                        stopTiltSmooth()
-                        rightTouches = {}
-                    end
-                end
-            end)
-        end
+		if typeof(a1) == "string" and a1:upper() == "V" then
+			if currentTool and currentTool.Name == "Dough-Dough" then
+				vActive = true
+				local stamp = os.clock()
+				task.delay(2, function()
+					if os.clock() - stamp >= 2 then
+						vActive = false
+						if tiltEnabled and next(rightTouches) then
+							tiltEnabled = false
+							stopTiltSmooth()
+							rightTouches = {}
+						end
+					end
+				end)
+			end
+		end
 
-        if typeof(a1) == "string" and a1:upper() == "Z" and currentTool then
-            if currentTool.Name == "Shark Anchor" then
-                sharkZActive = true
-            elseif currentTool.Name == "Cursed Dual Katana" then
-                cursedZActive = true
-            end
-            if sharkZActive or cursedZActive then
-                local stamp = os.clock()
-                task.delay(2, function()
-                    if os.clock() - stamp >= 2 then
-                        sharkZActive = false
-                        cursedZActive = false
-                        if tiltEnabled and next(rightTouches) then
-                            tiltEnabled = false
-                            stopTiltSmooth()
-                            rightTouches = {}
-                        end
-                    end
-                end)
-            end
-        end
+		if typeof(a1) == "string" and a1:upper() == "Z" then
+			if currentTool and currentTool.Name == "Shark Anchor" then
+				sharkZActive = true
+				local stamp = os.clock()
+				task.delay(2, function()
+					if os.clock() - stamp >= 2 then
+						sharkZActive = false
+						if tiltEnabled and next(rightTouches) then
+							tiltEnabled = false
+							stopTiltSmooth()
+							rightTouches = {}
+						end
+					end
+				end)
+			end
+		end
+		
+		if typeof(a1) == "string" and a1:upper() == "Z" then
+			if currentTool and currentTool.Name == "Cursed Dual Katana" then
+				cursedZActive = true
+				local stamp = os.clock()
+				task.delay(2, function()
+					if os.clock() - stamp >= 2 then
+						cursedZActive = false
+						if tiltEnabled and next(rightTouches) then
+							tiltEnabled = false
+							stopTiltSmooth()
+							rightTouches = {}
+						end
+					end
+				end)
+			end
+		end
 
-        if self.Name == "EquipEvent" then
-            local arg1 = args[1]
-            if arg1 == false then
-                currentTool = nil
-                sharkZActive = false
-                cursedZActive = false
-                tiltEnabled = false
-                stopTiltSmooth()
-                rightTouches = {}
-            end
-        end
-    end
-    return old(self, ...)
+		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
+			local arg1 = args[1]
+			if arg1 == false then
+				currentTool = nil
+				sharkZActive = false
+				tiltEnabled = false
+				stopTiltSmooth()
+			end
+		end
+	end
+	return old(self, ...)
 end)
 
 -- =========================
@@ -548,38 +575,38 @@ local function setAimlockTarget(targetModel)
         currentHighlight:Destroy()
         currentHighlight = nil
     end
-    if targetDeathConn then
-        targetDeathConn:Disconnect()
-        targetDeathConn = nil
+
+    if not targetModel then
+        currentTarget = nil
+        return
+    end
+    
+    local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        currentTarget = nil
+        return
     end
 
-    currentTarget = targetModel
-
-    if targetModel then
+    if targetModel:IsA("Model") then
         local highlight = Instance.new("Highlight")
-        highlight.FillColor = Color3.new(1, 1, 0) -- yellow
-        highlight.OutlineColor = Color3.new(1, 1, 0)
+        highlight.FillColor = Color3.fromRGB(255, 255, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
         highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
         highlight.Adornee = targetModel
         highlight.Parent = targetModel
         currentHighlight = highlight
-
-        local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            targetDeathConn = humanoid.Died:Connect(function()
-                if currentHighlight then
-                    currentHighlight:Destroy()
-                    currentHighlight = nil
-                end
-                if targetDeathConn then
-                    targetDeathConn:Disconnect()
-                    targetDeathConn = nil
-                end
-                currentTarget = nil
-            end)
-            if currentTarget ~= targetModel then
-	            watchDamageCounter()
+        
+        humanoid.Died:Connect(function()
+	        if currentHighlight then
+	            currentHighlight:Destroy()
+	            currentHighlight = nil
 	        end
+	        currentTarget = nil
+	    end)
+
+        if currentTarget ~= targetModel then
+            watchDamageCounter()
         end
         currentTarget = targetModel
     end
@@ -776,11 +803,6 @@ local function cleanup()
         end
     end
     connections = {}
-    
-    if targetDeathConn then
-	    targetDeathConn:Disconnect()
-	    targetDeathConn = nil
-	end
 
     if dmgConn then
         dmgConn:Disconnect()
@@ -788,15 +810,15 @@ local function cleanup()
     end
     
     if healthConn then
-        healthConn:Disconnect()
-        healthConn = nil
+    healthConn:Disconnect()
+    healthConn = nil
     end
     
     for player, billboard in pairs(ESPs) do
         if billboard then
             billboard:Destroy()
         end
-    end 
+    end
     ESPs = {}
 
     if espFolder and espFolder.Parent then
@@ -816,9 +838,9 @@ local function cleanup()
     originalSizes = {}
 
     disconnectTiltConn()
-
     currentTool = nil
     rightTouches = {}
+    ESPs = {}
     vActive = false
     sharkZActive = false
     cursedZActive = false
@@ -826,8 +848,6 @@ local function cleanup()
     preTiltCFrame = nil
     lastHealth = nil
 end
-
-AimlockModule._cleanup = cleanup
 
 -- =========================
 -- lifecycle
@@ -858,10 +878,12 @@ end)
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
 	-- =========================
+	AimlockModule._cleanup = cleanup
+	
 	return {
 		toggleAimlock = function(state)
 			AimlockPlayerEnabled = state
-			if not state then
+			if not state then  
 			    currentEnemyTarget = nil  
 			end 
 		end,
