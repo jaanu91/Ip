@@ -690,6 +690,8 @@ local function cleanup()
     lastHealth = nil
 end
 
+AimlockModule._cleanup = cleanup
+
 -- =========================
 -- lifecycle
 -- =========================
@@ -719,7 +721,6 @@ end)
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
 	-- =========================
-	AimlockModule._cleanup = cleanup
 	
 	return {
 		toggleAimlock = function(state)
