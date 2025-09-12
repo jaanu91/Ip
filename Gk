@@ -28,7 +28,7 @@ function AimlockModule.Init(player, char, camera)
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
 	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
-	local EXPANDED_HITBOX_SIZE = Vector3.new(25, 10, 25)
+	local EXPANDED_HITBOX_SIZE = Vector3.new(40, 40, 40)
 	local originalSizes = {}
 	local createdHitboxes = {}
 	local xSkillActive = false 
@@ -489,7 +489,7 @@ local function expandHRP(targetModel)
 
     hrp.Size = EXPANDED_HITBOX_SIZE
     hrp.CanCollide = false
-    hrp.Transparency = 0.20
+    hrp.Transparency = 0
 
     local diedConn
     diedConn = humanoid.Died:Connect(function()
@@ -545,7 +545,7 @@ local function triggerXSkillHitbox()
     expandHRP(targetModel)
 
     task.spawn(function()
-        task.wait(1)
+        task.wait(4)
         resetHRP(targetModel)
         xHitboxActive = false
         xSkillActive = false
