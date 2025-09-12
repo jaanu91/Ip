@@ -27,7 +27,7 @@ function AimlockModule.Init(player, char, camera)
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
-	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
+	local EXPANDED_SIZE = Vector3.new(25, 25, 25)
 	local originalSizes = {}
 	
 -- =========================
@@ -319,14 +319,14 @@ local function hookToolHit(tool)
 end
 
 char.ChildAdded:Connect(function(tool)
-	if tool:IsA("Tool") and fightingStyles[child.Name] then
+	if tool:IsA("Tool") and fightingStyles[tool.Name] then
 		hookToolHit(tool)
 		watchEquippedWeapon(char, tool)
 	end
 end)
 
 char.ChildRemoved:Connect(function(tool)
-	if tool:IsA("Tool") and fightingStyles[child.Name] then
+	if tool:IsA("Tool") and fightingStyles[tool.Name] then
 		local weapon = char:FindFirstChild("EquippedWeapon")
 		if weapon then
 			resetWeapon(weapon)
