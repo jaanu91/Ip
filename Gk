@@ -28,11 +28,9 @@ function AimlockModule.Init(player, char, camera)
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
 	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
-	local EXPANDED_HITBOX_SIZE = Vector3.new(40, 40, 40)
 	local originalSizes = {}
 	local createdHitboxes = {}
-	local xSkillActive = false 
-	local xHitboxActive = false
+	local targetDeathConn
 	
 -- =========================
 -- Team Check
@@ -414,19 +412,12 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
             end
         end
 
-        if typeof(a1) == "string" and a1:upper() == "X" and currentTool then
-            if currentTool.Name == "Shark Anchor" or currentTool.Name == "Cursed Dual Katana" or currentTool.Name == "TripleTrueKatana" then
-                xSkillActive = true
-            end
-        end
-
         if self.Name == "EquipEvent" then
             local arg1 = args[1]
             if arg1 == false then
                 currentTool = nil
                 sharkZActive = false
                 cursedZActive = false
-                xSkillActive = false
                 tiltEnabled = false
                 stopTiltSmooth()
                 rightTouches = {}
@@ -469,118 +460,6 @@ end
 --end
 
 -- =========================
--- Skill-X Hitbox Expander
--- =========================
-local function expandHRP(targetModel)
-    if not targetModel or not targetModel.Parent then return end
-    if createdHitboxes[targetModel] then return end
-
-    local hrp = targetModel:FindFirstChild("HumanoidRootPart")
-    local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
-    if not hrp or not humanoid then return end
-
-    local original = hrp.Size
-    createdHitboxes[targetModel] = {
-        hrp = hrp,
-        originalSize = original,
-        diedConn = nil,
-        resetTimer = nil,
-    }
-
-    hrp.Size = EXPANDED_HITBOX_SIZE
-    hrp.CanCollide = false
-    hrp.Transparency = 0.20
-
-    local diedConn
-    diedConn = humanoid.Died:Connect(function()
-        resetHRP(targetModel)
-        if diedConn then
-            diedConn:Disconnect()
-            diedConn = nil
-        end
-    end)
-
-    if createdHitboxes[targetModel] then
-        createdHitboxes[targetModel].diedConn = diedConn
-    else
-        if diedConn then diedConn:Disconnect() end
-    end
-end
-
-local function resetHRP(targetModel)
-    if not targetModel then return end
-    local entry = createdHitboxes[targetModel]
-    if not entry then return end
-
-    local hrp = entry.hrp
-    if hrp and hrp.Parent and entry.originalSize then
-        pcall(function()
-            hrp.Size = entry.originalSize
-        end)
-    end
-
-    if entry.diedConn and entry.diedConn.Connected then
-        pcall(function() entry.diedConn:Disconnect() end)
-    end
-
-    if entry.resetTimer and type(entry.resetTimer) == "table" and entry.resetTimer.Disconnect then
-        pcall(function() entry.resetTimer:Disconnect() end)
-    end
-
-    createdHitboxes[targetModel] = nil
-end
-
--- ======= patched triggerXSkillHitbox =======
-local function triggerXSkillHitbox()
-    if not xSkillActive then
-        -- debug
-        print("[XHitbox] xSkillActive is false; aborting.")
-        return
-    end
-
-    -- try to resolve the model to expand
-    local targetModel = nil
-
-    -- priority: currentTarget (model), then currentHighlight.Adornee.Parent, then if Adornee is HRP use that parent
-    if currentTarget and currentTarget:IsA("Model") then
-        targetModel = currentTarget
-    elseif currentTarget and currentTarget:IsA("BasePart") and currentTarget.Parent and currentTarget.Parent:FindFirstChildOfClass("Humanoid") then
-        targetModel = currentTarget.Parent
-    elseif currentHighlight and currentHighlight.Adornee then
-        local a = currentHighlight.Adornee
-        if a:IsA("Model") then
-            targetModel = a
-        elseif a:IsA("BasePart") and a.Parent and a.Parent:FindFirstChildOfClass("Humanoid") then
-            targetModel = a.Parent
-        end
-    end
-
-    if not targetModel or not targetModel.Parent then
-        print("[XHitbox] No valid targetModel resolved. currentTarget:", tostring(currentTarget), " highlightAdornee:", tostring(currentHighlight and currentHighlight.Adornee))
-        return
-    end
-
-    if xHitboxActive then
-        print("[XHitbox] xHitboxActive already true; skipping.")
-        return
-    end
-
-    xHitboxActive = true
-    print("[XHitbox] expanding HRP for target:", targetModel:GetFullName())
-
-    expandHRP(targetModel)
-
-    -- ensure reset runs even if something else clears states
-    task.spawn(function()
-        task.wait(4) -- keep expanded for 4 seconds (your original value)
-        pcall(function() resetHRP(targetModel) end)
-        xHitboxActive = false
-        xSkillActive = false
-        print("[XHitbox] reset HRP for target:", targetModel:GetFullName())
-    end)
-end
-
--- =========================
 -- Touch tracking
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
@@ -597,9 +476,6 @@ UserInputService.TouchEnded:Connect(function(touch)
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
 			stopTiltSmooth()
-		    if xSkillActive then
-		        triggerXSkillHitbox()
-		    end
 			
 			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
 				--swapToGodhuman()
@@ -666,8 +542,6 @@ local function watchHealth(humanoid)
     end)
     table.insert(connections, healthConn)
 end
-
-local targetDeathConn -- store death connection globally so we can clean it
 
 local function setAimlockTarget(targetModel)
     if currentHighlight then
@@ -932,13 +806,6 @@ local function cleanup()
     if currentHighlight then
         currentHighlight:Destroy()
         currentHighlight = nil
-    end
-    
-    for targetModel, entry in pairs(createdHitboxes) do
-        pcall(function()
-            resetHRP(targetModel)
-        end)
-        createdHitboxes[targetModel] = nil
     end
     
     for part, size in pairs(originalSizes) do
