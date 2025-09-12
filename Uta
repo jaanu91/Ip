@@ -83,67 +83,6 @@ local function isEnemy(targetPlayer)
 end
 
 -- =========================
--- Ken Skill Auto Functions
--- =========================
-local vim = game:GetService("VirtualInputManager")
-local kenButton = player.PlayerGui.MobileContextButtons.ContextButtonFrame:WaitForChild("BoundActionKen")
-local x, y = 680, 100
-
-local kenLoopRunning = false
-
-local function pressKen()
-    vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-    vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
-end
-
-local function startKenLoop()
-    if kenLoopRunning then return end
-    kenLoopRunning = true
-
-    task.spawn(function()
-        while kenLoopRunning do
-            if kenButton:GetAttribute("Selected") == false then
-                pressKen()
-            end
-            task.wait(0.2) -- check every half-second
-        end
-    end)
-end
-
-local function stopKenLoop()
-    kenLoopRunning = false
-end
-
--- =========================
--- Hook into Aimlock Toggles
--- =========================
-return {
-    toggleAimlock = function(state)
-        AimlockPlayerEnabled = state
-        if state then
-            -- Start loop when Aimlock ON
-            startKenLoop()
-        else
-            -- Stop loop when Aimlock OFF
-            stopKenLoop()
-            currentEnemyTarget = nil
-        end
-    end,
-
-    toggleNpcAimlock = function(state)
-        AimlockNpcEnabled = state
-        if state then
-            -- Start loop when NPC Aimlock ON
-            startKenLoop()
-        else
-            -- Stop loop when NPC Aimlock OFF
-            stopKenLoop()
-            currentBossTarget = nil
-        end
-    end
-}
-
--- =========================
 -- Enemies Finder
 -- =========================
 local function getNearestEnemy(maxDistance)
@@ -197,17 +136,6 @@ local function disconnectTiltConn()
 	end
 end
 
-local function applyTiltedCamera(hrp, tiltAngle)
-	if not hrp then return end
-
-	local camOffset = Vector3.new(0, 6, -10) -- (up, back)
-	local baseCF = hrp.CFrame * CFrame.new(camOffset)
-
-	local tiltCF = CFrame.Angles(math.rad(tiltAngle), 0, 0)
-
-	camera.CFrame = baseCF * tiltCF
-end
-
 local function stopTiltSmooth()
 	disconnectTiltConn()
 	if not preTiltCFrame then return end
@@ -259,7 +187,6 @@ local function startTilt()
 		if alpha < 1 then
 			alpha = math.min(alpha + dt * 2, 1)
 			camera.CFrame = startCF:Lerp(targetCF, alpha)
-			applyTiltedCamera(char:FindFirstChild("HumanoidRootPart"), -20) -- tilt down 20 degrees
 		else
 			camera.CFrame = targetCF
 		end
@@ -560,7 +487,6 @@ local renderConnTilt = RunService.RenderStepped:Connect(function()
 				local lookVector = (predictedPos - camera.CFrame.Position).Unit
 				local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
 				camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + tiltedlook)
-				applyTiltedCamera(char:FindFirstChild("HumanoidRootPart"), -20) -- tilt down 20 degrees
             end
         elseif AimlockNpcEnabled then
             if not currentBossTarget or not currentBossTarget.Parent 
@@ -584,7 +510,6 @@ local renderConnTilt = RunService.RenderStepped:Connect(function()
 				local lookVector = (predictedPos - camera.CFrame.Position).Unit
 				local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
 				camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + tiltedlook)
-				applyTiltedCamera(char:FindFirstChild("HumanoidRootPart"), -20) -- tilt down 20 degrees
             end
         end
     end
@@ -799,19 +724,13 @@ end)
 	return {
 		toggleAimlock = function(state)
 			AimlockPlayerEnabled = state
-			if state then
-	            startKenLoop()
-	        else
-	            stopKenLoop()
-			    currentEnemyTarget = nil
-			end
+			if not state then  
+			    currentEnemyTarget = nil  
+			end 
 		end,
 		toggleBossAimlock = function(state)
 			AimlockNpcEnabled = state
-			if state then
-	            startKenLoop()
-	        else
-	            stopKenLoop()
+			if not state then
 			    currentBossTarget = nil
 			end
 		end,
