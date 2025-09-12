@@ -1,5 +1,56 @@
 local AimlockModule = {}
 
+-- =========================
+-- Cleanup 
+-- =========================
+local function cleanup()
+    for _, conn in pairs(connections) do
+        if conn.Connected then
+            conn:Disconnect()
+        end
+    end
+    connections = {}
+
+    if dmgConn then
+        dmgConn:Disconnect()
+        dmgConn = nil
+    end
+    
+    if healthConn then
+    healthConn:Disconnect()
+    healthConn = nil
+    end
+    
+    for player, billboard in pairs(ESPs) do
+        if billboard then
+            billboard:Destroy()
+        end
+    end
+    ESPs = {}
+
+    if espFolder and espFolder.Parent then
+        espFolder:Destroy()
+    end
+    
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+    end
+
+    disconnectTiltConn()
+    currentTool = nil
+    rightTouches = {}
+    ESPs = {}
+    vActive = false
+    sharkZActive = false
+    cursedZActive = false
+    tiltEnabled = false
+    preTiltCFrame = nil
+    lastHealth = nil
+end
+
+AimlockModule._cleanup = cleanup
+
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
@@ -640,57 +691,6 @@ game.Players.PlayerAdded:Connect(function(p)
 end)
 
 game.Players.PlayerRemoving:Connect(removeESP)
-
--- =========================
--- Cleanup 
--- =========================
-local function cleanup()
-    for _, conn in pairs(connections) do
-        if conn.Connected then
-            conn:Disconnect()
-        end
-    end
-    connections = {}
-
-    if dmgConn then
-        dmgConn:Disconnect()
-        dmgConn = nil
-    end
-    
-    if healthConn then
-    healthConn:Disconnect()
-    healthConn = nil
-    end
-    
-    for player, billboard in pairs(ESPs) do
-        if billboard then
-            billboard:Destroy()
-        end
-    end
-    ESPs = {}
-
-    if espFolder and espFolder.Parent then
-        espFolder:Destroy()
-    end
-    
-    if currentHighlight then
-        currentHighlight:Destroy()
-        currentHighlight = nil
-    end
-
-    disconnectTiltConn()
-    currentTool = nil
-    rightTouches = {}
-    ESPs = {}
-    vActive = false
-    sharkZActive = false
-    cursedZActive = false
-    tiltEnabled = false
-    preTiltCFrame = nil
-    lastHealth = nil
-end
-
-AimlockModule._cleanup = cleanup
 
 -- =========================
 -- lifecycle
