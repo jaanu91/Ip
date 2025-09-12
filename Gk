@@ -1,56 +1,5 @@
 local AimlockModule = {}
 
--- =========================
--- Cleanup 
--- =========================
-local function cleanup()
-    for _, conn in pairs(connections) do
-        if conn.Connected then
-            conn:Disconnect()
-        end
-    end
-    connections = {}
-
-    if dmgConn then
-        dmgConn:Disconnect()
-        dmgConn = nil
-    end
-    
-    if healthConn then
-    healthConn:Disconnect()
-    healthConn = nil
-    end
-    
-    for player, billboard in pairs(ESPs) do
-        if billboard then
-            billboard:Destroy()
-        end
-    end
-    ESPs = {}
-
-    if espFolder and espFolder.Parent then
-        espFolder:Destroy()
-    end
-    
-    if currentHighlight then
-        currentHighlight:Destroy()
-        currentHighlight = nil
-    end
-
-    disconnectTiltConn()
-    currentTool = nil
-    rightTouches = {}
-    ESPs = {}
-    vActive = false
-    sharkZActive = false
-    cursedZActive = false
-    tiltEnabled = false
-    preTiltCFrame = nil
-    lastHealth = nil
-end
-
-AimlockModule._cleanup = cleanup
-
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
@@ -222,7 +171,7 @@ local function startTilt()
 	if humanoid.FloorMaterial ~= Enum.Material.Air then
 		tiltOffset = Vector3.new(0, 6, 0)
 	else
-		tiltOffset = Vector3.new(0, 25, 0)
+		tiltOffset = Vector3.new(0, 40, 0)
 	end
 
 	local downLook = hrp.Position - tiltOffset
@@ -529,7 +478,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function()
 				local predictionTime = math.clamp(dist / 150, 0.1, 0.3) 
 				local enemyVelocity = enemyHRP.Velocity
 				local predictedPos
-				if PredictionEnabled and enemyVelocity.Magnitude > 6 then
+				if PredictionEnabled and enemyVelocity.Magnitude > 3 then
 				    predictedPos = enemyHRP.Position + enemyVelocity * predictionTime
 				else
 				    predictedPos = enemyHRP.Position
@@ -552,7 +501,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function()
 				local predictionTime = math.clamp(dist / 150, 0.1, 0.3) 
 				local enemyVelocity = enemyHRP.Velocity
 				local predictedPos
-				if PredictionEnabled and enemyVelocity.Magnitude > 6 then
+				if PredictionEnabled and enemyVelocity.Magnitude > 3 then
 				    predictedPos = enemyHRP.Position + enemyVelocity * predictionTime
 				else
 				    predictedPos = enemyHRP.Position
@@ -598,9 +547,9 @@ end
 task.spawn(function()
 	while true do
 		clickActivateAbility()
-		task.wait(cooldownTime)
 	end
 end)
+
 -- =========================
 -- Global Player ESP with Colors
 -- =========================
@@ -693,6 +642,55 @@ end)
 game.Players.PlayerRemoving:Connect(removeESP)
 
 -- =========================
+-- Cleanup 
+-- =========================
+local function cleanup()
+    for _, conn in pairs(connections) do
+        if conn.Connected then
+            conn:Disconnect()
+        end
+    end
+    connections = {}
+
+    if dmgConn then
+        dmgConn:Disconnect()
+        dmgConn = nil
+    end
+    
+    if healthConn then
+    healthConn:Disconnect()
+    healthConn = nil
+    end
+    
+    for player, billboard in pairs(ESPs) do
+        if billboard then
+            billboard:Destroy()
+        end
+    end
+    ESPs = {}
+
+    if espFolder and espFolder.Parent then
+        espFolder:Destroy()
+    end
+    
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+    end
+
+    disconnectTiltConn()
+    currentTool = nil
+    rightTouches = {}
+    ESPs = {}
+    vActive = false
+    sharkZActive = false
+    cursedZActive = false
+    tiltEnabled = false
+    preTiltCFrame = nil
+    lastHealth = nil
+end
+
+-- =========================
 -- lifecycle
 -- =========================
 player.CharacterAdded:Connect(function(c)
@@ -721,13 +719,14 @@ end)
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
 	-- =========================
+	AimlockModule._cleanup = cleanup
 	
 	return {
 		toggleAimlock = function(state)
 			AimlockPlayerEnabled = state
-			if not state then
-			    currentEnemyTarget = nil
-			end
+			if not state then  
+			    currentEnemyTarget = nil  
+			end 
 		end,
 		toggleBossAimlock = function(state)
 			AimlockNpcEnabled = state
