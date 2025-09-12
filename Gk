@@ -489,7 +489,7 @@ local function expandHRP(targetModel)
 
     hrp.Size = EXPANDED_HITBOX_SIZE
     hrp.CanCollide = false
-    hrp.Transparency = 0
+    hrp.Transparency = 0.20
 
     local diedConn
     diedConn = humanoid.Died:Connect(function()
@@ -530,25 +530,53 @@ local function resetHRP(targetModel)
     createdHitboxes[targetModel] = nil
 end
 
+-- ======= patched triggerXSkillHitbox =======
 local function triggerXSkillHitbox()
-    if not xSkillActive then return end
-    if not currentTarget or not currentHighlight then
+    if not xSkillActive then
+        -- debug
+        print("[XHitbox] xSkillActive is false; aborting.")
         return
     end
-    if xHitboxActive then return end
 
-    local targetModel = currentTarget
-    if not targetModel or not targetModel.Parent then return end
+    -- try to resolve the model to expand
+    local targetModel = nil
+
+    -- priority: currentTarget (model), then currentHighlight.Adornee.Parent, then if Adornee is HRP use that parent
+    if currentTarget and currentTarget:IsA("Model") then
+        targetModel = currentTarget
+    elseif currentTarget and currentTarget:IsA("BasePart") and currentTarget.Parent and currentTarget.Parent:FindFirstChildOfClass("Humanoid") then
+        targetModel = currentTarget.Parent
+    elseif currentHighlight and currentHighlight.Adornee then
+        local a = currentHighlight.Adornee
+        if a:IsA("Model") then
+            targetModel = a
+        elseif a:IsA("BasePart") and a.Parent and a.Parent:FindFirstChildOfClass("Humanoid") then
+            targetModel = a.Parent
+        end
+    end
+
+    if not targetModel or not targetModel.Parent then
+        print("[XHitbox] No valid targetModel resolved. currentTarget:", tostring(currentTarget), " highlightAdornee:", tostring(currentHighlight and currentHighlight.Adornee))
+        return
+    end
+
+    if xHitboxActive then
+        print("[XHitbox] xHitboxActive already true; skipping.")
+        return
+    end
 
     xHitboxActive = true
+    print("[XHitbox] expanding HRP for target:", targetModel:GetFullName())
 
     expandHRP(targetModel)
 
+    -- ensure reset runs even if something else clears states
     task.spawn(function()
-        task.wait(4)
-        resetHRP(targetModel)
+        task.wait(4) -- keep expanded for 4 seconds (your original value)
+        pcall(function() resetHRP(targetModel) end)
         xHitboxActive = false
         xSkillActive = false
+        print("[XHitbox] reset HRP for target:", targetModel:GetFullName())
     end)
 end
 
