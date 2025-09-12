@@ -242,6 +242,7 @@ local fightingStyles = {
 }
 
 local function expandWeapon(weapon)
+    if not currentTool or not fightingStyles[currentTool.Name] then return end
 	for _, part in ipairs(weapon:GetDescendants()) do
 		if part:IsA("BasePart") then
 			if not originalSizes[part] then
@@ -262,39 +263,75 @@ local function resetWeapon(weapon)
 	end
 end
 
+local toolWatchers = setmetatable({}, {__mode = "k"}) -- weak keys
+
 local function watchEquippedWeapon(char, tool)
-	if not fightingStyles[tool.Name] then return end
+	if not tool or not fightingStyles[tool.Name] then return end
 
-	local eqConn, remConn
-	eqConn = char.ChildAdded:Connect(function(child)
+    if toolWatchers[tool] then return end
+
+    local watcher = {eqConn = nil, remConn = nil, descConns = {}, ancestryConn = nil}
+    toolWatchers[tool] = watcher
+
+    watcher.eqConn = char.ChildAdded:Connect(function(child)
 		if child.Name == "EquippedWeapon" and child:IsA("Model") then
-			expandWeapon(child)
+            if tool.Parent == char and fightingStyles[tool.Name] then
+                expandWeapon(child)
 
-			child.DescendantAdded:Connect(function(desc)
-				if desc:IsA("BasePart") then
-					if not originalSizes[desc] then
-						originalSizes[desc] = desc.Size
-					end
-					desc.Size = EXPANDED_SIZE
-					desc.CanCollide = false
-				end
-			end)
+                local descConn
+                descConn = child.DescendantAdded:Connect(function(desc)
+                    if desc:IsA("BasePart") then
+                        if tool.Parent == char and fightingStyles[tool.Name] then
+                            if not originalSizes[desc] then
+                                originalSizes[desc] = desc.Size
+                            end
+                            desc.Size = EXPANDED_SIZE
+                            desc.CanCollide = false
+                        end
+                    end
+                end)
+                table.insert(watcher.descConns, descConn)
+            end
 		end
 	end)
 
-	remConn = char.ChildRemoved:Connect(function(child)
-		if child.Name == "EquippedWeapon" and child:IsA("Model") then
-			resetWeapon(child)
-		end
-	end)
+    watcher.remConn = char.ChildRemoved:Connect(function(child)
+        if child.Name == "EquippedWeapon" and child:IsA("Model") then
+            resetWeapon(child)
+        end
+    end)
 
-	local weapon = char:FindFirstChild("EquippedWeapon")
-	if weapon and weapon:IsA("Model") then
-		expandWeapon(weapon)
-	end
+    local existing = char:FindFirstChild("EquippedWeapon")
+    if existing and existing:IsA("Model") and tool.Parent == char and fightingStyles[tool.Name] then
+        expandWeapon(existing)
+    end
 
-	table.insert(connections, eqConn)
-	table.insert(connections, remConn)
+    watcher.ancestryConn = tool.AncestryChanged:Connect(function(_, parent)
+        if not parent or parent ~= char then
+            if watcher.eqConn and watcher.eqConn.Connected then watcher.eqConn:Disconnect() end
+            if watcher.remConn and watcher.remConn.Connected then watcher.remConn:Disconnect() end
+            for _, dc in ipairs(watcher.descConns) do
+                if dc and dc.Connected then dc:Disconnect() end
+            end
+            watcher.descConns = {}
+
+            if watcher.ancestryConn and watcher.ancestryConn.Connected then
+                watcher.ancestryConn:Disconnect()
+            end
+            toolWatchers[tool] = nil
+
+            local weapon = char:FindFirstChild("EquippedWeapon")
+            if weapon then
+                resetWeapon(weapon)
+            end
+        end
+    end)
+    table.insert(connections, watcher.eqConn)
+    table.insert(connections, watcher.remConn)
+    table.insert(connections, watcher.ancestryConn)
+    for _, dc in ipairs(watcher.descConns) do
+        table.insert(connections, dc)
+    end
 end
 
 -- =========================
@@ -310,6 +347,16 @@ local function hookTool(tool)
 			cursedZActive = false
 			tiltEnabled = false
 			stopTiltSmooth()
+            local w = toolWatchers[tool]
+            if w then
+                if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
+                if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
+                for _, dc in ipairs(w.descConns) do
+                    if dc and dc.Connected then dc:Disconnect() end
+                end
+                if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
+                toolWatchers[tool] = nil
+            end
 		end
 	end)
 end
@@ -335,6 +382,17 @@ char.ChildRemoved:Connect(function(child)
 		if weapon then
 			resetWeapon(weapon)
 		end
+
+        local w = toolWatchers[child]
+        if w then
+            if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
+            if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
+            for _, dc in ipairs(w.descConns) do
+                if dc and dc.Connected then dc:Disconnect() end
+            end
+            if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
+            toolWatchers[child] = nil
+        end
 	end
 end)
 
@@ -904,6 +962,8 @@ local function cleanup()
     lastHealth = nil
 end
 
+AimlockModule._cleanup = cleanup
+
 -- =========================
 -- lifecycle
 -- =========================
@@ -933,8 +993,6 @@ end)
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
 	-- =========================
-	AimlockModule._cleanup = cleanup
-	
 	return {
 		toggleAimlock = function(state)
 			AimlockPlayerEnabled = state
