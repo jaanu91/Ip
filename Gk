@@ -29,10 +29,14 @@ function AimlockModule.Init(player, char, camera)
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
-	local x, y = 680, 120 -- Button screen position
+	local x, y = 680, 120
 	local kenLoopRunning = false
 	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
+	local EXPANDED_HITBOX_SIZE = Vector3.new(25, 10, 25)
 	local originalSizes = {}
+	local createdHitboxes = {}
+	local xSkillActive = false 
+	local xHitboxActive = false
 	
 -- =========================
 -- Team Check
@@ -339,74 +343,69 @@ end)
 -- =========================
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
-	local method = getnamecallmethod()
-	local args = {...}
+    local method = getnamecallmethod()
+    local args = {...}
 
-	if (method == "InvokeServer" or method == "FireServer") then
-		local a1 = args[1]
+    if (method == "InvokeServer" or method == "FireServer") then
+        local a1 = args[1]
 
-		if typeof(a1) == "string" and a1:upper() == "V" then
-			if currentTool and currentTool.Name == "Dough-Dough" then
-				vActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						vActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
+        if typeof(a1) == "string" and a1:upper() == "V" and currentTool and currentTool.Name == "Dough-Dough" then
+            vActive = true
+            local stamp = os.clock()
+            task.delay(2, function()
+                if os.clock() - stamp >= 2 then
+                    vActive = false
+                    if tiltEnabled and next(rightTouches) then
+                        tiltEnabled = false
+                        stopTiltSmooth()
+                        rightTouches = {}
+                    end
+                end
+            end)
+        end
 
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Shark Anchor" then
-				sharkZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						sharkZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Cursed Dual Katana" then
-				cursedZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						cursedZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
+        if typeof(a1) == "string" and a1:upper() == "Z" and currentTool then
+            if currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+            elseif currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+            end
+            if sharkZActive or cursedZActive then
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        sharkZActive = false
+                        cursedZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
 
-		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
-			local arg1 = args[1]
-			if arg1 == false then
-				currentTool = nil
-				sharkZActive = false
-				tiltEnabled = false
-				stopTiltSmooth()
-			end
-		end
-	end
-	return old(self, ...)
+        if typeof(a1) == "string" and a1:upper() == "X" and currentTool then
+            if currentTool.Name == "Shark Anchor" or currentTool.Name == "Cursed Dual Katana" or currentTool.Name == "TripleTrueKatana" then
+                xSkillActive = true
+            end
+        end
+
+        if self.Name == "EquipEvent" then
+            local arg1 = args[1]
+            if arg1 == false then
+                currentTool = nil
+                sharkZActive = false
+                cursedZActive = false
+                xSkillActive = false
+                tiltEnabled = false
+                stopTiltSmooth()
+                rightTouches = {}
+            end
+        end
+    end
+    return old(self, ...)
 end)
 
 -- =========================
@@ -442,6 +441,89 @@ end
 --end
 
 -- =========================
+-- Skill-X Hitbox Expander
+-- =========================
+local function expandHRP(targetModel)
+    if not targetModel or not targetModel.Parent then return end
+    if createdHitboxes[targetModel] then return end
+
+    local hrp = targetModel:FindFirstChild("HumanoidRootPart")
+    local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid then return end
+
+    local original = hrp.Size
+    createdHitboxes[targetModel] = {
+        hrp = hrp,
+        originalSize = original,
+        diedConn = nil,
+        resetTimer = nil,
+    }
+
+    hrp.Size = EXPANDED_HITBOX_SIZE
+    hrp.CanCollide = false
+
+    local diedConn
+    diedConn = humanoid.Died:Connect(function()
+        resetHRP(targetModel)
+        if diedConn then
+            diedConn:Disconnect()
+            diedConn = nil
+        end
+    end)
+
+    if createdHitboxes[targetModel] then
+        createdHitboxes[targetModel].diedConn = diedConn
+    else
+        if diedConn then diedConn:Disconnect() end
+    end
+end
+
+local function resetHRP(targetModel)
+    if not targetModel then return end
+    local entry = createdHitboxes[targetModel]
+    if not entry then return end
+
+    local hrp = entry.hrp
+    if hrp and hrp.Parent and entry.originalSize then
+        pcall(function()
+            hrp.Size = entry.originalSize
+        end)
+    end
+
+    if entry.diedConn and entry.diedConn.Connected then
+        pcall(function() entry.diedConn:Disconnect() end)
+    end
+
+    if entry.resetTimer and type(entry.resetTimer) == "table" and entry.resetTimer.Disconnect then
+        pcall(function() entry.resetTimer:Disconnect() end)
+    end
+
+    createdHitboxes[targetModel] = nil
+end
+
+local function triggerXSkillHitbox()
+    if not xSkillActive then return end
+    if not currentTarget or not currentHighlight then
+        return
+    end
+    if xHitboxActive then return end
+
+    local targetModel = currentTarget
+    if not targetModel or not targetModel.Parent then return end
+
+    xHitboxActive = true
+
+    expandHRP(targetModel)
+
+    task.spawn(function()
+        task.wait(1)
+        resetHRP(targetModel)
+        xHitboxActive = false
+        xSkillActive = false
+    end)
+end
+
+-- =========================
 -- Touch tracking
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
@@ -458,6 +540,9 @@ UserInputService.TouchEnded:Connect(function(touch)
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
 			stopTiltSmooth()
+		    if xSkillActive then
+		        triggerXSkillHitbox()
+		    end
 			
 			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
 				--swapToGodhuman()
@@ -525,43 +610,45 @@ local function watchHealth(humanoid)
     table.insert(connections, healthConn)
 end
 
+local targetDeathConn -- store death connection globally so we can clean it
+
 local function setAimlockTarget(targetModel)
     if currentHighlight then
         currentHighlight:Destroy()
         currentHighlight = nil
     end
-
-    if not targetModel then
-        currentTarget = nil
-        return
-    end
-    
-    local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then
-        currentTarget = nil
-        return
+    if targetDeathConn then
+        targetDeathConn:Disconnect()
+        targetDeathConn = nil
     end
 
-    if targetModel:IsA("Model") then
+    currentTarget = targetModel
+
+    if targetModel then
         local highlight = Instance.new("Highlight")
-        highlight.FillColor = Color3.fromRGB(255, 255, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+        highlight.FillColor = Color3.new(1, 1, 0) -- yellow
+        highlight.OutlineColor = Color3.new(1, 1, 0)
         highlight.FillTransparency = 0.5
-        highlight.OutlineTransparency = 0
         highlight.Adornee = targetModel
         highlight.Parent = targetModel
         currentHighlight = highlight
-        
-        humanoid.Died:Connect(function()
-	        if currentHighlight then
-	            currentHighlight:Destroy()
-	            currentHighlight = nil
-	        end
-	        currentTarget = nil
-	    end)
 
-        if currentTarget ~= targetModel then
-            watchDamageCounter()
+        local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            targetDeathConn = humanoid.Died:Connect(function()
+                if currentHighlight then
+                    currentHighlight:Destroy()
+                    currentHighlight = nil
+                end
+                if targetDeathConn then
+                    targetDeathConn:Disconnect()
+                    targetDeathConn = nil
+                end
+                currentTarget = nil
+            end)
+            if currentTarget ~= targetModel then
+	            watchDamageCounter()
+	        end
         end
         currentTarget = targetModel
     end
@@ -758,6 +845,11 @@ local function cleanup()
         end
     end
     connections = {}
+    
+    if targetDeathConn then
+	    targetDeathConn:Disconnect()
+	    targetDeathConn = nil
+	end
 
     if dmgConn then
         dmgConn:Disconnect()
@@ -783,6 +875,13 @@ local function cleanup()
     if currentHighlight then
         currentHighlight:Destroy()
         currentHighlight = nil
+    end
+    
+    for targetModel, entry in pairs(createdHitboxes) do
+        pcall(function()
+            resetHRP(targetModel)
+        end)
+        createdHitboxes[targetModel] = nil
     end
     
     for part, size in pairs(originalSizes) do
