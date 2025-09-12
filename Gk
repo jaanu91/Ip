@@ -598,9 +598,9 @@ end
 task.spawn(function()
 	while true do
 		clickActivateAbility()
+		task.wait(cooldownTime)
 	end
 end)
-
 -- =========================
 -- Global Player ESP with Colors
 -- =========================
