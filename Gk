@@ -29,7 +29,7 @@ function AimlockModule.Init(player, char, camera)
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
-	local x, y = 680, 120 -- Button screen position
+	local x, y = 680, 110 -- Button screen position
 	local kenLoopRunning = false
 	
 -- =========================
@@ -90,19 +90,29 @@ end
 -- Ken Skill Auto Functions
 -- =========================
 local function pressKen()
+    -- press down
     vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
+
+    -- release quickly (50ms later)
+    task.delay(0.05, function()
+        vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
+    end)
 end
 
 local function startKenLoop()
     if kenLoopRunning then return end
     kenLoopRunning = true
 
-    task.spawn(function()
-        while kenLoopRunning do
-            if kenButton:GetAttribute("Selected") == false then
-                pressKen()
-            end
-            task.wait(0.5) -- check every half-second
+    -- use RenderStepped for instant checks
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if not kenLoopRunning then
+            conn:Disconnect()
+            return
+        end
+
+        if kenButton:GetAttribute("Selected") == false then
+            pressKen()
         end
     end)
 end
