@@ -29,7 +29,7 @@ function AimlockModule.Init(player, char, camera)
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
-	local x, y = 680, 100 -- Button screen position
+	local x, y = 680, 90 -- Button screen position
 	local kenLoopRunning = false
 	
 -- =========================
