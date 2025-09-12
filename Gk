@@ -5,8 +5,6 @@ function AimlockModule.Init(player, char, camera)
 	local RunService = game:GetService("RunService")
 	local UserInputService = game:GetService("UserInputService")
 	local Workspace = game:GetService("Workspace")
-	local vim = game:GetService("VirtualInputManager")
-	local kenButton = player.PlayerGui.MobileContextButtons.ContextButtonFrame:WaitForChild("BoundActionKen")
 	
 	if AimlockModule._cleanup then
         AimlockModule._cleanup()
@@ -29,8 +27,6 @@ function AimlockModule.Init(player, char, camera)
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 	local healthConn, lastHealth = nil, nil
 	local ESPs = {}
-	local x, y = 680, 120
-	local kenLoopRunning = false
 	local EXPANDED_SIZE = Vector3.new(15, 20, 15)
 	local EXPANDED_HITBOX_SIZE = Vector3.new(25, 10, 25)
 	local originalSizes = {}
@@ -90,32 +86,6 @@ local function isEnemy(targetPlayer)
 	end
 
 	return true
-end
-
--- =========================
--- Ken Skill Auto Functions
--- =========================
-local function pressKen()
-    vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-    vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
-end
-
-local function startKenLoop()
-    if kenLoopRunning then return end
-    kenLoopRunning = true
-
-    task.spawn(function()
-        while kenLoopRunning do
-            if kenButton:GetAttribute("Selected") == false then
-                pressKen()
-            end
-            task.wait(0.5) -- check every half-second
-        end
-    end)
-end
-
-local function stopKenLoop()
-    kenLoopRunning = false
 end
 
 -- =========================
@@ -519,6 +489,7 @@ local function expandHRP(targetModel)
 
     hrp.Size = EXPANDED_HITBOX_SIZE
     hrp.CanCollide = false
+    hrp.Transparency = 0.20
 
     local diedConn
     diedConn = humanoid.Died:Connect(function()
@@ -950,7 +921,6 @@ local function cleanup()
     originalSizes = {}
 
     disconnectTiltConn()
-    stopKenLoop()
 
     currentTool = nil
     rightTouches = {}
@@ -996,19 +966,13 @@ end)
 	return {
 		toggleAimlock = function(state)
 			AimlockPlayerEnabled = state
-			if state then
-	            startKenLoop()
-	        else
-	            stopKenLoop()
+			if not state then
 			    currentEnemyTarget = nil  
 			end 
 		end,
 		toggleBossAimlock = function(state)
 			AimlockNpcEnabled = state
-			if state then
-	            startKenLoop()
-	        else
-	            stopKenLoop()
+			if not state then
 			    currentBossTarget = nil
 			end
 		end,
