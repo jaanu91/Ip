@@ -91,7 +91,6 @@ end
 -- =========================
 local function pressKen()
     vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-    vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
 end
 
 local function startKenLoop()
