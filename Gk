@@ -238,7 +238,10 @@ local function expandEquippedWeaponOnce(durationSecs)
     for _, part in ipairs(weapon:GetDescendants()) do
         if part:IsA("BasePart") then
             if not originalSizes[part] then
-                originalSizes[part] = part.Size
+                originalSizes[part] = {
+                    Size = part.Size,
+                    Transparency = part.Transparency
+                }
             end
             part.Size = EXPANDED_SIZE
             part.CanCollide = false
@@ -250,7 +253,8 @@ local function expandEquippedWeaponOnce(durationSecs)
     task.delay(durationSecs, function()
         for _, part in ipairs(expandedParts) do
             if part and part.Parent and originalSizes[part] then
-                part.Size = originalSizes[part]
+                part.Size = originalSizes[part].Size
+                part.Transparency = originalSizes[part].Transparency
             end
         end
     end)
