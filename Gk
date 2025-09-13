@@ -196,6 +196,44 @@ local function startTilt()
 end
 
 -- =========================
+-- X Skill Hitbox Expansion
+-- =========================
+local xSkillTools = {
+    ["Shark Anchor"] = true,
+    ["Cursed Dual Katana"] = true,
+    ["TripleTrueKatana"] = true,
+}
+
+local xSkillActive = false
+
+local function expandEquippedWeaponOnce()
+    local weapon = char:FindFirstChild("EquippedWeapon")
+    if not weapon then return end
+
+    -- Create highlight (whole weapon glows yellow)
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(0, 0, 0) -- yellow
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 1
+    highlight.Parent = weapon
+
+    for _, part in ipairs(weapon:GetDescendants()) do
+        if part:IsA("MeshPart") and not originalSizes[part] then
+            originalSizes[part] = part.Size
+            part.Size = EXPANDED_SIZE
+            part.CanCollide = false
+        end
+    end
+
+    task.delay(1, function()
+        resetWeapon(weapon)
+        if highlight then
+            highlight:Destroy()
+        end
+    end)
+end
+
+-- =========================
 -- Hitbox On Fighting style 
 -- =========================
 local fightingStyles = {
@@ -440,6 +478,12 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
 				end)
 			end
 		end
+		
+		if typeof(a1) == "string" and a1:upper() == "X" and currentTool then
+		    if xSkillTools[currentTool.Name] then
+		        xSkillActive = true
+		    end
+		end
 
 		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
 			local arg1 = args[1]
@@ -503,6 +547,11 @@ UserInputService.TouchEnded:Connect(function(touch)
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
 			stopTiltSmooth()
+			
+			if xSkillActive and currentTool and xSkillTools[currentTool.Name] then
+				expandEquippedWeaponOnce()
+				xSkillActive = false
+			end
 			
 			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
 				--swapToGodhuman()
@@ -840,7 +889,6 @@ local function cleanup()
     disconnectTiltConn()
     currentTool = nil
     rightTouches = {}
-    ESPs = {}
     vActive = false
     sharkZActive = false
     cursedZActive = false
