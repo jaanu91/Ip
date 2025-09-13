@@ -444,26 +444,6 @@ char.ChildRemoved:Connect(function(child)
 	end
 end)
 
-local players = game:GetService("Players")
-local player = players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
-
-local old
-old = hookmetamethod(game, "__namecall", function(self, ...)
-	local method = getnamecallmethod()
-	local args = {...}
-	
-	if (method == "InvokeServer" or method == "FireServer") then
-		local a1 = args[1]
-		
-		if typeof(a1) == "string" and a1:upper() == "Dodge" then
-			humanoid.Jump = true
-		end
-	end
-	return old(self, ...)
-end
-
 -- =========================
 -- V Skill Detection
 -- =========================
@@ -557,7 +537,6 @@ end
 -- =========================
 -- Swap function (integrated)
 -- =========================
-
 -- local function swapToGodhuman()
 --	local char = player.Character
 --	if not char then return end
