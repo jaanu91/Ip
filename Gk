@@ -29,7 +29,6 @@ function AimlockModule.Init(player, char, camera)
 	local ESPs = {}
 	local EXPANDED_SIZE = Vector3.new(35, 35, 35)
 	local originalSizes = {}
-	local xSkillActive = false
 	
 -- =========================
 -- Team Check
@@ -199,19 +198,8 @@ end
 -- =========================
 -- X Skill Hitbox Expansion
 -- =========================
-local function cacheWeaponParts(weapon)
-    for _, part in ipairs(weapon:GetDescendants()) do
-        if (part:IsA("BasePart")) then
-            originalSizes[part] = part.Size
-        end
-    end
-end
-
-char.ChildAdded:Connect(function(child)
-    if child.Name == "EquippedWeapon" then
-        cacheWeaponParts(child)
-    end
-end)
+local originalSizes = originalSizes or {}     -- preserve existing reference if any
+local xSkillActive = xSkillActive or false
 
 local xSkillTools = {
     ["Shark Anchor"] = true,
@@ -219,32 +207,86 @@ local xSkillTools = {
     ["TripleTrueKatana"] = true,
 }
 
-local function expandEquippedWeaponOnce()
-    local weapon = char:FindFirstChild("EquippedWeapon")
-    if not weapon then return end
-
-    print("Expanding EquippedWeapon hitbox for X skill!")
-
-    local highlight = Instance.new("Highlight")
-    highlight.FillColor = Color3.fromRGB(0, 0, 0)
-    highlight.FillTransparency = 0.5
-    highlight.OutlineTransparency = 1
-    highlight.Parent = weapon
-
+-- cache sizes for existing weapon model (safe)
+local function cacheWeaponParts(weapon)
+    if not weapon or not weapon.Parent then return end
     for _, part in ipairs(weapon:GetDescendants()) do
-        if part:IsA("BasePart") and originalSizes[part] then
+        if part:IsA("BasePart") then
+            if not originalSizes[part] then
+                originalSizes[part] = part.Size
+                warn("[cacheWeaponParts] cached:", part:GetFullName(), "size:", originalSizes[part])
+            end
+        end
+    end
+end
+
+-- if EquippedWeapon already exists right now, cache it
+local existing = char:FindFirstChild("EquippedWeapon")
+if existing and existing:IsA("Model") then
+    cacheWeaponParts(existing)
+end
+
+-- watch for EquippedWeapon spawn to cache parts
+char.ChildAdded:Connect(function(child)
+    if child and child.Name == "EquippedWeapon" and child:IsA("Model") then
+        cacheWeaponParts(child)
+    end
+end)
+
+-- expand once, then reset after durationSecs
+local function expandEquippedWeaponOnce(durationSecs)
+    durationSecs = durationSecs or 10
+    local weapon = char:FindFirstChild("EquippedWeapon")
+    if not weapon then
+        warn("[expandEquippedWeaponOnce] no EquippedWeapon found")
+        return
+    end
+
+    -- debug print to confirm function ran
+    print("Expanding EquippedWeapon hitbox for X skill! Weapon:", weapon:GetFullName())
+
+    -- create a visible yellow highlight and adorne it to the weapon model
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(255, 255, 225) -- bright yellow
+    highlight.FillTransparency = 0.4
+    highlight.OutlineTransparency = 0.2
+    highlight.Adornee = weapon
+    highlight.Parent = workspace -- parent in workspace is reliable
+    -- NOTE: setting Adornee is important so highlight shows on the model
+
+    -- expand Parts & MeshParts and print what we changed
+    local expandedParts = {}
+    for _, part in ipairs(weapon:GetDescendants()) do
+        if part:IsA("BasePart") then
+            -- ensure we have a cached original size, otherwise cache now
+            if not originalSizes[part] then
+                originalSizes[part] = part.Size
+                warn("[expandEquippedWeaponOnce] late-cached:", part:GetFullName(), "size:", originalSizes[part])
+            end
+
+            -- set to expanded size
             part.Size = EXPANDED_SIZE
             part.CanCollide = false
+            table.insert(expandedParts, part)
+            print("[expand] changed", part:GetFullName(), "->", tostring(part.Size))
         end
     end
 
-    task.delay(20, function()
-        for _, part in ipairs(weapon:GetDescendants()) do
-            if part:IsA("BasePart") and originalSizes[part] then
+    -- schedule reset (uses the same weapon reference; safe even if unequipped)
+    task.delay(durationSecs, function()
+        -- check parts still exist, then reset to cached sizes
+        for _, part in ipairs(expandedParts) do
+            if part and part.Parent and originalSizes[part] then
                 part.Size = originalSizes[part]
+                print("[reset] restored", part:GetFullName(), "->", tostring(part.Size))
+                -- keep originalSizes entry (we may want to reuse); if you prefer, nil it:
+                -- originalSizes[part] = nil
+            else
+                print("[reset] part missing or no cache:", part and part:GetFullName() or "(nil)")
             end
         end
-        if highlight then
+
+        if highlight and highlight.Parent then
             highlight:Destroy()
         end
     end)
