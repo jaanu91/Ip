@@ -763,10 +763,11 @@ table.insert(connections, renderConnTilt)
 -- =========================
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
+local CommE_ = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE_")
 
 local cooldownTime = 31
 
-CommE:FireServer("Buso")
+CommE_:InvokeServer("Buso")
 
 local function clickActivateAbility()
 	CommE:FireServer("ActivateAbility")
@@ -777,6 +778,7 @@ end
 task.spawn(function()
 	while true do
 		clickActivateAbility()
+    CommE:FireServer("Dodge")
 	end
 end)
 
