@@ -29,6 +29,7 @@ function AimlockModule.Init(player, char, camera)
 	local ESPs = {}
 	local EXPANDED_SIZE = Vector3.new(35, 35, 35)
 	local originalSizes = {}
+	local xSkillActive = false
 	
 -- =========================
 -- Team Check
@@ -198,35 +199,49 @@ end
 -- =========================
 -- X Skill Hitbox Expansion
 -- =========================
+local function cacheWeaponParts(weapon)
+    for _, part in ipairs(weapon:GetDescendants()) do
+        if (part:IsA("BasePart")) then
+            originalSizes[part] = part.Size
+        end
+    end
+end
+
+char.ChildAdded:Connect(function(child)
+    if child.Name == "EquippedWeapon" then
+        cacheWeaponParts(child)
+    end
+end)
+
 local xSkillTools = {
     ["Shark Anchor"] = true,
     ["Cursed Dual Katana"] = true,
     ["TripleTrueKatana"] = true,
 }
 
-local xSkillActive = false
-
 local function expandEquippedWeaponOnce()
     local weapon = char:FindFirstChild("EquippedWeapon")
     if not weapon then return end
 
-    -- Create highlight (whole weapon glows yellow)
     local highlight = Instance.new("Highlight")
-    highlight.FillColor = Color3.fromRGB(0, 0, 0) -- yellow
+    highlight.FillColor = Color3.fromRGB(255, 255, 0)
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 1
     highlight.Parent = weapon
 
     for _, part in ipairs(weapon:GetDescendants()) do
-        if part:IsA("MeshPart") and not originalSizes[part] then
-            originalSizes[part] = part.Size
+        if part:IsA("BasePart") and originalSizes[part] then
             part.Size = EXPANDED_SIZE
             part.CanCollide = false
         end
     end
 
     task.delay(1, function()
-        resetWeapon(weapon)
+        for _, part in ipairs(weapon:GetDescendants()) do
+            if part:IsA("BasePart") and originalSizes[part] then
+                part.Size = originalSizes[part]
+            end
+        end
         if highlight then
             highlight:Destroy()
         end
