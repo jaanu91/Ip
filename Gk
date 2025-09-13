@@ -213,7 +213,6 @@ local function cacheWeaponParts(weapon)
         if part:IsA("BasePart") then
             if not originalSizes[part] then
                 originalSizes[part] = part.Size
-                warn("[cacheWeaponParts] cached:", part:GetFullName(), "size:", originalSizes[part])
             end
         end
     end
@@ -233,16 +232,7 @@ end)
 local function expandEquippedWeaponOnce(durationSecs)
     durationSecs = durationSecs or 1
     local weapon = char:FindFirstChild("EquippedWeapon")
-    if not weapon then
-        return
-    end
-
-    local highlight = Instance.new("Highlight")
-    highlight.FillColor = Color3.fromRGB(255, 255, 0) -- bright yellow
-    highlight.FillTransparency = 0.4
-    highlight.OutlineTransparency = 0.2
-    highlight.Adornee = weapon
-    highlight.Parent = workspace
+    if not weapon then return end
 
     local expandedParts = {}
     for _, part in ipairs(weapon:GetDescendants()) do
@@ -250,7 +240,6 @@ local function expandEquippedWeaponOnce(durationSecs)
             if not originalSizes[part] then
                 originalSizes[part] = part.Size
             end
-
             part.Size = EXPANDED_SIZE
             part.CanCollide = false
             table.insert(expandedParts, part)
@@ -262,10 +251,6 @@ local function expandEquippedWeaponOnce(durationSecs)
             if part and part.Parent and originalSizes[part] then
                 part.Size = originalSizes[part]
             end
-        end
-
-        if highlight and highlight.Parent then
-            highlight:Destroy()
         end
     end)
 end
