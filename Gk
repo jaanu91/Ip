@@ -29,9 +29,6 @@ function AimlockModule.Init(player, char, camera)
 	local ESPs = {}
 	local EXPANDED_SIZE = Vector3.new(35, 35, 35)
 	local originalSizes = {}
-	local equippedWeaponConn = nil
-	local equippedWeaponDescConn = nil
-	local toolAncestryConns = {} 
 	
 -- =========================
 -- Team Check
@@ -199,139 +196,154 @@ local function startTilt()
 end
 
 -- =========================
--- Hitbox Expander 
+-- Hitbox On Fighting style 
 -- =========================
-local function isAnyToolEquipped()
-    return char:FindFirstChildOfClass("Tool") ~= nil
-end
+local fightingStyles = {
+    ["Godhuman"] = true,
+    ["Sanguine Art"] = true,
+    ["Dragon Talon"] = true,
+    ["Electric Claw"] = true,
+    ["Sharkman Karate"] = true,
+    ["Death Step"] = true,
+}
 
-local function expandWeaponModel(weaponModel)
-    if not weaponModel or not weaponModel.Parent then return end
-    if not isAnyToolEquipped() then return end
-
-    for _, part in ipairs(weaponModel:GetDescendants()) do
-        if part:IsA("BasePart") and not part:IsA("MeshPart") then
-            if not originalSizes[part] then
-                originalSizes[part] = part.Size
-            end
-            part.Size = EXPANDED_SIZE
-            part.CanCollide = false
-        end
-    end
-end
-
-local function resetWeaponModel(weaponModel)
-    if not weaponModel then return end
-    for _, part in ipairs(weaponModel:GetDescendants()) do
-        if part:IsA("BasePart") and originalSizes[part] then
-		    pcall(function() part.Size = originalSizes[part] end)
-		    originalSizes[part] = nil
+local function expandWeapon(weapon)
+    if not currentTool or not fightingStyles[currentTool.Name] then return end
+	for _, part in ipairs(weapon:GetDescendants()) do
+		if part:IsA("BasePart") then
+			if not originalSizes[part] then
+				originalSizes[part] = part.Size
+			end
+			part.Size = EXPANDED_SIZE
+			part.CanCollide = false
 		end
-    end
+	end
 end
 
-local function watchEquippedWeaponModel()
-    if equippedWeaponConn and equippedWeaponConn.Connected then
-        equippedWeaponConn:Disconnect()
-        equippedWeaponConn = nil
-    end
-    if equippedWeaponDescConn and equippedWeaponDescConn.Connected then
-        equippedWeaponDescConn:Disconnect()
-        equippedWeaponDescConn = nil
-    end
+local function resetWeapon(weapon)
+	for _, part in ipairs(weapon:GetDescendants()) do
+		if part:IsA("BasePart") and originalSizes[part] then
+			part.Size = originalSizes[part]
+			originalSizes[part] = nil
+		end
+	end
+end
 
-    equippedWeaponConn = char.ChildAdded:Connect(function(child)
-        if child and child:IsA("Model") and child.Name == "EquippedWeapon" then
-            if isAnyToolEquipped() then
-                expandWeaponModel(child)
+local toolWatchers = setmetatable({}, {__mode = "k"}) -- weak keys
+
+local function watchEquippedWeapon(char, tool)
+	if not tool or not fightingStyles[tool.Name] then return end
+
+    if toolWatchers[tool] then return end
+
+    local watcher = {eqConn = nil, remConn = nil, descConns = {}, ancestryConn = nil}
+    toolWatchers[tool] = watcher
+
+    watcher.eqConn = char.ChildAdded:Connect(function(child)
+		if child.Name == "EquippedWeapon" and child:IsA("Model") then
+            if tool.Parent == char and fightingStyles[tool.Name] then
+                expandWeapon(child)
+
+                local descConn
+                descConn = child.DescendantAdded:Connect(function(desc)
+                    if desc:IsA("BasePart") then
+                        if tool.Parent == char and fightingStyles[tool.Name] then
+                            if not originalSizes[desc] then
+                                originalSizes[desc] = desc.Size
+                            end
+                            desc.Size = EXPANDED_SIZE
+                            desc.CanCollide = false
+                        end
+                    end
+                end)
+                table.insert(watcher.descConns, descConn)
             end
-            equippedWeaponDescConn = child.DescendantAdded:Connect(function(desc)
-                if desc:IsA("BasePart") and not desc:IsA("MeshPart") and isAnyToolEquipped() then
-                    if not originalSizes[desc] then originalSizes[desc] = desc.Size end
-                    desc.Size = EXPANDED_SIZE
-                    desc.CanCollide = false
-                end
-            end)
+		end
+	end)
+
+    watcher.remConn = char.ChildRemoved:Connect(function(child)
+        if child.Name == "EquippedWeapon" and child:IsA("Model") then
+            resetWeapon(child)
         end
     end)
-
-    local remConn = char.ChildRemoved:Connect(function(child)
-        if child and child:IsA("Model") and child.Name == "EquippedWeapon" then
-            resetWeaponModel(child)
-            if equippedWeaponDescConn and equippedWeaponDescConn.Connected then
-                equippedWeaponDescConn:Disconnect()
-                equippedWeaponDescConn = nil
-            end
-        end
-    end)
-
-    table.insert(connections, equippedWeaponConn)
-    table.insert(connections, remConn)
 
     local existing = char:FindFirstChild("EquippedWeapon")
-    if existing and existing:IsA("Model") and isAnyToolEquipped() then
-        expandWeaponModel(existing)
-        equippedWeaponDescConn = existing.DescendantAdded:Connect(function(desc)
-            if desc:IsA("BasePart") and not desc:IsA("MeshPart") and isAnyToolEquipped() then
-                if not originalSizes[desc] then originalSizes[desc] = desc.Size end
-                desc.Size = EXPANDED_SIZE
-                desc.CanCollide = false
+    if existing and existing:IsA("Model") and tool.Parent == char and fightingStyles[tool.Name] then
+        expandWeapon(existing)
+    end
+
+    watcher.ancestryConn = tool.AncestryChanged:Connect(function(_, parent)
+        if not parent or parent ~= char then
+            if watcher.eqConn and watcher.eqConn.Connected then watcher.eqConn:Disconnect() end
+            if watcher.remConn and watcher.remConn.Connected then watcher.remConn:Disconnect() end
+            for _, dc in ipairs(watcher.descConns) do
+                if dc and dc.Connected then dc:Disconnect() end
             end
-        end)
-        table.insert(connections, equippedWeaponDescConn)
-    end
-end
+            watcher.descConns = {}
 
-local function watchToolsInCharacter()
-    for _, c in ipairs(toolAncestryConns) do
-        if c and c.Connected then c:Disconnect() end
-    end
-    toolAncestryConns = {}
+            if watcher.ancestryConn and watcher.ancestryConn.Connected then
+                watcher.ancestryConn:Disconnect()
+            end
+            toolWatchers[tool] = nil
 
-    local addToolConn = char.ChildAdded:Connect(function(child)
-        if child and child:IsA("Tool") then
             local weapon = char:FindFirstChild("EquippedWeapon")
-            if weapon and weapon:IsA("Model") then
-                expandWeaponModel(weapon)
+            if weapon then
+                resetWeapon(weapon)
             end
-
-            local ancestryConn = child.AncestryChanged:Connect(function(_, parent)
-                if not parent or parent ~= char then
-                    task.delay(0.02, function()
-                        if not isAnyToolEquipped() then
-                            local w = char:FindFirstChild("EquippedWeapon")
-                            if w and w:IsA("Model") then
-                                resetWeaponModel(w)
-                            end
-                        end
-                    end)
-                    if ancestryConn and ancestryConn.Connected then ancestryConn:Disconnect() end
-                end
-            end)
-            table.insert(toolAncestryConns, ancestryConn)
-            table.insert(connections, ancestryConn)
         end
     end)
-
-    local remToolConn = char.ChildRemoved:Connect(function(child)
-        if child and child:IsA("Tool") then
-            task.delay(0.05, function()
-                if not isAnyToolEquipped() then
-                    local w = char:FindFirstChild("EquippedWeapon")
-                    if w and w:IsA("Model") then
-                        resetWeaponModel(w)
-                    end
-                end
-            end)
-        end
-    end)
-
-    table.insert(connections, addToolConn)
-    table.insert(connections, remToolConn)
+    table.insert(connections, watcher.eqConn)
+    table.insert(connections, watcher.remConn)
+    table.insert(connections, watcher.ancestryConn)
+    for _, dc in ipairs(watcher.descConns) do
+        table.insert(connections, dc)
+    end
 end
 
-watchEquippedWeaponModel()
-watchToolsInCharacter()
+local function hookToolHit(tool)
+	currentTool = tool
+	tool.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+            local w = toolWatchers[tool]
+            if w then
+                if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
+                if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
+                for _, dc in ipairs(w.descConns) do
+                    if dc and dc.Connected then dc:Disconnect() end
+                end
+                if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
+                toolWatchers[tool] = nil
+            end
+		end
+	end)
+end
+
+char.ChildAdded:Connect(function(tool)
+	if tool:IsA("Tool") and fightingStyles[tool.Name] then
+		hookToolHit(tool)
+		watchEquippedWeapon(char, tool)
+	end
+end)
+
+char.ChildRemoved:Connect(function(tool)
+	if tool:IsA("Tool") and fightingStyles[tool.Name] then
+		local weapon = char:FindFirstChild("EquippedWeapon")
+		if weapon then
+			resetWeapon(weapon)
+		end
+
+        local w = toolWatchers[tool]
+        if w then
+            if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
+            if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
+            for _, dc in ipairs(w.descConns) do
+                if dc and dc.Connected then dc:Disconnect() end
+            end
+            if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
+            toolWatchers[tool] = nil
+        end
+	end
+end)
 
 -- =========================
 -- Tool equip / unequip 
@@ -818,13 +830,6 @@ local function cleanup()
         currentHighlight = nil
     end
     
-    for _, c in ipairs(toolAncestryConns) do
-	    if c and c.Connected then
-			 c:Disconnect()
-		 end
-	end
-	toolAncestryConns = {}
-    
     for part, size in pairs(originalSizes) do
         if part and part.Parent then
             part.Size = size
@@ -835,6 +840,7 @@ local function cleanup()
     disconnectTiltConn()
     currentTool = nil
     rightTouches = {}
+    ESPs = {}
     vActive = false
     sharkZActive = false
     cursedZActive = false
