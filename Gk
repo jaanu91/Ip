@@ -242,6 +242,7 @@ local function expandEquippedWeaponOnce(durationSecs)
             end
             part.Size = EXPANDED_SIZE
             part.CanCollide = false
+            part.Transparency = 1
             table.insert(expandedParts, part)
         end
     end
