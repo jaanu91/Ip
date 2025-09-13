@@ -766,6 +766,8 @@ local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
 
 local cooldownTime = 31
 
+CommE:FireServer("Buso")
+
 local function clickActivateAbility()
 	CommE:FireServer("ActivateAbility")
 
