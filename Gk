@@ -771,7 +771,7 @@ CommF:InvokeServer("Buso")
 
 local function clickActivateAbility()
 	CommE:FireServer("ActivateAbility")
-	CommE:FireServer("Dodge")
+	CommE:FireServer("Ken", true)
 
 	task.wait(cooldownTime)
 end
