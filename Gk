@@ -444,6 +444,26 @@ char.ChildRemoved:Connect(function(child)
 	end
 end)
 
+local players = game:GetService("Players")
+local player = players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+	local method = getnamecallmethod()
+	local args = {...}
+	
+	if (method == "InvokeServer" or method == "FireServer") then
+		local a1 = args[1]
+		
+		if typeof(a1) == "string" and a1:upper() == "Dodge" then
+			humanoid.Jump = true
+		end
+	end
+	return old(self, ...)
+end
+
 -- =========================
 -- V Skill Detection
 -- =========================
@@ -771,6 +791,7 @@ CommF:InvokeServer("Buso")
 
 local function clickActivateAbility()
 	CommE:FireServer("ActivateAbility")
+
 	task.wait(cooldownTime)
 end
 
@@ -778,6 +799,23 @@ task.spawn(function()
 	while true do
 		clickActivateAbility()
 	end
+end)
+
+local bunnyhop
+bunnyhop = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if method == "FireServer" and self.Name == "CommE" then
+        if typeof(args[1]) == "string" and args[1] == "Dodge" then
+
+            task.defer(function()
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end)
+        end
+    end
+
+    return bunnyhop(self, ...)
 end)
 
 -- =========================
