@@ -226,7 +226,7 @@ local function expandEquippedWeaponOnce()
     print("Expanding EquippedWeapon hitbox for X skill!")
 
     local highlight = Instance.new("Highlight")
-    highlight.FillColor = Color3.fromRGB(255, 255, 0)
+    highlight.FillColor = Color3.fromRGB(0, 0, 0)
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 1
     highlight.Parent = weapon
@@ -238,7 +238,7 @@ local function expandEquippedWeaponOnce()
         end
     end
 
-    task.delay(4, function()
+    task.delay(20, function()
         for _, part in ipairs(weapon:GetDescendants()) do
             if part:IsA("BasePart") and originalSizes[part] then
                 part.Size = originalSizes[part]
