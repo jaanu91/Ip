@@ -223,6 +223,8 @@ local function expandEquippedWeaponOnce()
     local weapon = char:FindFirstChild("EquippedWeapon")
     if not weapon then return end
 
+    print("Expanding EquippedWeapon hitbox for X skill!")
+
     local highlight = Instance.new("Highlight")
     highlight.FillColor = Color3.fromRGB(255, 255, 0)
     highlight.FillTransparency = 0.5
