@@ -81,7 +81,6 @@ function AimlockModule.Init(player, char, camera)
 	    end
 	end
 	
-	
 -- =========================
 -- Team Check
 -- =========================
@@ -354,7 +353,7 @@ end
 
 local function hookToolHit(tool)
 	currentTool = tool
-	track(tool.AncestryChanged:Connect(function(_, parent)
+	tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
             local w = toolWatchers[tool]
             if w then
@@ -367,7 +366,7 @@ local function hookToolHit(tool)
                 toolWatchers[tool] = nil
             end
 		end
-	end))
+	end)
 end
 
 track(char.ChildAdded:Connect(function(tool)
@@ -402,7 +401,7 @@ end))
 -- =========================
 local function hookTool(tool)
 	currentTool = tool
-	track(tool.AncestryChanged:Connect(function(_, parent)
+	tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
 			currentTool = nil
 			vActive = false
@@ -411,7 +410,7 @@ local function hookTool(tool)
 			tiltEnabled = false
 			stopTiltSmooth()
 		end
-	end))
+	end)
 end
 
 track(char.ChildAdded:Connect(function(child)
@@ -603,7 +602,7 @@ local function watchHealth(humanoid)
 
     lastHealth = humanoid.Health
 
-    healthConn = track(humanoid.HealthChanged:Connect(function(newHealth)
+    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -612,7 +611,7 @@ local function watchHealth(humanoid)
             end
         end
         lastHealth = newHealth
-    end))
+    end)
 end
 
 local function setAimlockTarget(targetModel)
@@ -642,13 +641,13 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
-        track(humanoid.Died:Connect(function()
+        humanoid.Died:Connect(function()
 	        if currentHighlight then
 	            currentHighlight:Destroy()
 	            currentHighlight = nil
 	        end
 	        currentTarget = nil
-	    end))
+	    end)
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -723,7 +722,6 @@ CommF:InvokeServer("Buso")
 local function clickActivateAbility()
 	CommE:FireServer("ActivateAbility")
 end
-
 
 if V3Enabled then
 	task.spawn(function()
