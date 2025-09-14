@@ -37,6 +37,10 @@ function AimlockModule.Init(player, char, camera)
 	local cachedEnemy = nil
 	local cachedBoss = nil
 	local playerStates = {}
+	local cooldownTime = 31
+	local v3Loop = nil
+	local v3LoopRunning = false
+	
 	
 	local function track(conn)
 	    if conn then
@@ -713,23 +717,38 @@ local renderConnTilt = track(RunService.RenderStepped:Connect(function(dt)
 end))
 
 -- =========================
--- Ability V2
+-- Ability V3
 -- =========================
-local cooldownTime = 31
-
-CommF:InvokeServer("Buso")
+pcall(function() CommF:InvokeServer("Buso") end)
 
 local function clickActivateAbility()
-	CommE:FireServer("ActivateAbility")
+    if CommE then
+        print("[Aimlock] clickActivateAbility -> firing CommE ActivateAbility")
+        CommE:FireServer("ActivateAbility")
+    else
+        warn("[Aimlock] clickActivateAbility -> CommE missing")
+    end
 end
 
-if V3Enabled then
-	task.spawn(function()
-	    while true do
-	        clickActivateAbility()
-	        task.wait(cooldownTime)
-	    end
-	end)
+local function startV3Loop()
+    if v3LoopRunning then return end
+    v3LoopRunning = true
+    v3Loop = task.spawn(function()
+        while v3LoopRunning do
+            if not player or not player.Parent then break end
+            pcall(clickActivateAbility)
+            task.wait(cooldownTime)
+        end
+        v3Loop = nil
+    end)
+    print("[Aimlock] V3 loop started")
+end
+
+local function stopV3Loop()
+    if not v3LoopRunning then return end
+    v3LoopRunning = false
+    v3Loop = nil
+    print("[Aimlock] V3 loop stopped")
 end
 
 -- =========================
@@ -939,8 +958,13 @@ AimlockModule._cleanup = cleanup
 	        PredictionEnabled = state
 	    end,
 		toggleV3 = function(state)
-	        V3Enabled = state
-	    end,
+		    V3Enabled = state
+		    if state then
+		        startV3Loop()
+		    else
+		        stopV3Loop()
+		    end
+		end,
 		cleanup = cleanup
 	}
 end
