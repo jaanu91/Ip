@@ -790,7 +790,7 @@ local function removeESP(player)
 	end
 end
 
-track(RenderStepped:Connect(function()
+track(RunService.RenderStepped:Connect(function()
 	for player, billboard in pairs(ESPs) do
 		if billboard and billboard:FindFirstChildOfClass("TextLabel") then
 			billboard.TextLabel.TextColor3 = getESPColor(player)
