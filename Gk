@@ -290,13 +290,13 @@ local function watchEquippedWeapon(char, tool)
     local watcher = {eqConn = nil, remConn = nil, descConns = {}, ancestryConn = nil}
     toolWatchers[tool] = watcher
 
-    watcher.eqConn = char.ChildAdded:Connect(function(child)
+    watcher.eqConn = track(char.ChildAdded:Connect(function(child)
 		if child.Name == "EquippedWeapon" and child:IsA("Model") then
             if tool.Parent == char and fightingStyles[tool.Name] then
                 expandWeapon(child)
 
                 local descConn
-                descConn = child.DescendantAdded:Connect(function(desc)
+                descConn = track(child.DescendantAdded:Connect(function(desc)
                     if desc:IsA("BasePart") then
                         if tool.Parent == char and fightingStyles[tool.Name] then
                             if not originalSizes[desc] then
@@ -306,24 +306,24 @@ local function watchEquippedWeapon(char, tool)
                             desc.CanCollide = false
                         end
                     end
-                end)
+                end))
                 table.insert(watcher.descConns, descConn)
             end
 		end
-	end)
+	end))
 
-    watcher.remConn = char.ChildRemoved:Connect(function(child)
+    watcher.remConn = track(char.ChildRemoved:Connect(function(child)
         if child.Name == "EquippedWeapon" and child:IsA("Model") then
             resetWeapon(child)
         end
-    end)
+    end))
 
     local existing = char:FindFirstChild("EquippedWeapon")
     if existing and existing:IsA("Model") and tool.Parent == char and fightingStyles[tool.Name] then
         expandWeapon(existing)
     end
 
-    watcher.ancestryConn = tool.AncestryChanged:Connect(function(_, parent)
+    watcher.ancestryConn = track(tool.AncestryChanged:Connect(function(_, parent)
         if not parent or parent ~= char then
             if watcher.eqConn and watcher.eqConn.Connected then watcher.eqConn:Disconnect() end
             if watcher.remConn and watcher.remConn.Connected then watcher.remConn:Disconnect() end
@@ -342,7 +342,7 @@ local function watchEquippedWeapon(char, tool)
                 resetWeapon(weapon)
             end
         end
-    end)
+    end))
     table.insert(connections, watcher.eqConn)
     table.insert(connections, watcher.remConn)
     table.insert(connections, watcher.ancestryConn)
@@ -353,7 +353,7 @@ end
 
 local function hookToolHit(tool)
 	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
+	track(tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
             local w = toolWatchers[tool]
             if w then
@@ -366,7 +366,7 @@ local function hookToolHit(tool)
                 toolWatchers[tool] = nil
             end
 		end
-	end)
+	end))
 end
 
 track(char.ChildAdded:Connect(function(tool)
@@ -401,7 +401,7 @@ end))
 -- =========================
 local function hookTool(tool)
 	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
+	track(tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
 			currentTool = nil
 			vActive = false
@@ -410,7 +410,7 @@ local function hookTool(tool)
 			tiltEnabled = false
 			stopTiltSmooth()
 		end
-	end)
+	end))
 end
 
 track(char.ChildAdded:Connect(function(child)
@@ -602,7 +602,7 @@ local function watchHealth(humanoid)
 
     lastHealth = humanoid.Health
 
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
+    healthConn = track(humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -611,7 +611,7 @@ local function watchHealth(humanoid)
             end
         end
         lastHealth = newHealth
-    end)
+    end))
 end
 
 local function setAimlockTarget(targetModel)
@@ -641,13 +641,13 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
-        humanoid.Died:Connect(function()
+        track(humanoid.Died:Connect(function()
 	        if currentHighlight then
 	            currentHighlight:Destroy()
 	            currentHighlight = nil
 	        end
 	        currentTarget = nil
-	    end)
+	    end))
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
