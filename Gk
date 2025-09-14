@@ -723,10 +723,7 @@ pcall(function() CommF:InvokeServer("Buso") end)
 
 local function clickActivateAbility()
     if CommE then
-        print("[Aimlock] clickActivateAbility -> firing CommE ActivateAbility")
         CommE:FireServer("ActivateAbility")
-    else
-        warn("[Aimlock] clickActivateAbility -> CommE missing")
     end
 end
 
@@ -741,14 +738,12 @@ local function startV3Loop()
         end
         v3Loop = nil
     end)
-    print("[Aimlock] V3 loop started")
 end
 
 local function stopV3Loop()
     if not v3LoopRunning then return end
     v3LoopRunning = false
     v3Loop = nil
-    print("[Aimlock] V3 loop stopped")
 end
 
 -- =========================
