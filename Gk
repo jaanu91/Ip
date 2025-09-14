@@ -5,6 +5,9 @@ function AimlockModule.Init(player, char, camera)
 	local RunService = game:GetService("RunService")
 	local UserInputService = game:GetService("UserInputService")
 	local Workspace = game:GetService("Workspace")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
+	local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 	
 	if AimlockModule._cleanup then
         AimlockModule._cleanup()
@@ -16,7 +19,7 @@ function AimlockModule.Init(player, char, camera)
     end
     
 	local humanoid = char:WaitForChild("Humanoid")
-	local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
+	local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled, V3Enabled = false, false, false, false
 	local currentTarget = nil
 	local currentTool = nil
 	local vActive, sharkZActive, cursedZActive = false, false, false
@@ -197,13 +200,13 @@ local function stopTiltSmooth()
 
 	local a = 0
 	local restoreConn
-	restoreConn = RunService.RenderStepped:Connect(function(dt)
+	restoreConn = track(RunService.RenderStepped:Connect(function(dt)
 		a = math.min(a + dt * 5, 1)
 		camera.CFrame = startCF:Lerp(endCF, a)
 		if a >= 1 then
 			restoreConn:Disconnect()
 		end
-	end)
+	end))
 end
 
 local function startTilt()
@@ -229,7 +232,7 @@ local function startTilt()
 	local targetCF = CFrame.new(camPos, downLook)
 
 	local alpha = 0
-	tiltConn = RunService.RenderStepped:Connect(function(dt)
+	tiltConn = track(RunService.RenderStepped:Connect(function(dt)
 		if not (tiltEnabled and next(rightTouches) and hrp.Parent) then
 			stopTiltSmooth()
 			return
@@ -241,74 +244,7 @@ local function startTilt()
 		else
 			camera.CFrame = targetCF
 		end
-	end)
-end
-
--- =========================
--- X Skill Hitbox Expansion
--- =========================
-local originalSizes = originalSizes or {}
-local xSkillActive = xSkillActive or false
-
-local xSkillTools = {
-    ["Shark Anchor"] = true,
-    ["Cursed Dual Katana"] = true,
-    ["TripleTrueKatana"] = true,
-}
-
-local function cacheWeaponParts(weapon)
-    if not weapon or not weapon.Parent then return end
-    for _, part in ipairs(weapon:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if not originalSizes[part] then
-                originalSizes[part] = part.Size
-            end
-        end
-    end
-end
-
-local existing = char:FindFirstChild("EquippedWeapon")
-if existing and existing:IsA("Model") then
-    cacheWeaponParts(existing)
-end
-
-track(char.ChildAdded:Connect(function(child)
-    if child and child.Name == "EquippedWeapon" and child:IsA("Model") then
-        cacheWeaponParts(child)
-    end
-end))
-
-local function expandEquippedWeaponOnce(durationSecs)
-    durationSecs = durationSecs or 1
-    local weapon = char:FindFirstChild("EquippedWeapon")
-    if not weapon then return end
-
-    local expandedParts = {}
-    for _, part in ipairs(weapon:GetDescendants()) do
-        if part:IsA("BasePart") then
-            if not originalSizes[part] then
-                originalSizes[part] = {
-                    Size = part.Size,
-                    Transparency = part.Transparency,
-                    CanCollide = part.CanCollide
-                }
-            end
-            part.Size = EXPANDED_SIZE
-            part.CanCollide = false
-            part.Transparency = 1
-            table.insert(expandedParts, part)
-        end
-    end
-
-    task.delay(durationSecs, function()
-        for _, part in ipairs(expandedParts) do
-            if part and part.Parent and originalSizes[part] then
-                part.Size = originalSizes[part].Size
-                part.Transparency = originalSizes[part].Transparency
-                part.CanCollide = originalSizes[part].CanCollide
-            end
-        end
-    end)
+	end))
 end
 
 -- =========================
@@ -355,13 +291,13 @@ local function watchEquippedWeapon(char, tool)
     local watcher = {eqConn = nil, remConn = nil, descConns = {}, ancestryConn = nil}
     toolWatchers[tool] = watcher
 
-    watcher.eqConn = char.ChildAdded:Connect(function(child)
+    watcher.eqConn = track(char.ChildAdded:Connect(function(child)
 		if child.Name == "EquippedWeapon" and child:IsA("Model") then
             if tool.Parent == char and fightingStyles[tool.Name] then
                 expandWeapon(child)
 
                 local descConn
-                descConn = child.DescendantAdded:Connect(function(desc)
+                descConn = track(child.DescendantAdded:Connect(function(desc)
                     if desc:IsA("BasePart") then
                         if tool.Parent == char and fightingStyles[tool.Name] then
                             if not originalSizes[desc] then
@@ -371,24 +307,24 @@ local function watchEquippedWeapon(char, tool)
                             desc.CanCollide = false
                         end
                     end
-                end)
+                end))
                 table.insert(watcher.descConns, descConn)
             end
 		end
-	end)
+	end))
 
-    watcher.remConn = char.ChildRemoved:Connect(function(child)
+    watcher.remConn = track(char.ChildRemoved:Connect(function(child)
         if child.Name == "EquippedWeapon" and child:IsA("Model") then
             resetWeapon(child)
         end
-    end)
+    end))
 
     local existing = char:FindFirstChild("EquippedWeapon")
     if existing and existing:IsA("Model") and tool.Parent == char and fightingStyles[tool.Name] then
         expandWeapon(existing)
     end
 
-    watcher.ancestryConn = tool.AncestryChanged:Connect(function(_, parent)
+    watcher.ancestryConn = track(tool.AncestryChanged:Connect(function(_, parent)
         if not parent or parent ~= char then
             if watcher.eqConn and watcher.eqConn.Connected then watcher.eqConn:Disconnect() end
             if watcher.remConn and watcher.remConn.Connected then watcher.remConn:Disconnect() end
@@ -407,7 +343,7 @@ local function watchEquippedWeapon(char, tool)
                 resetWeapon(weapon)
             end
         end
-    end)
+    end))
     table.insert(connections, watcher.eqConn)
     table.insert(connections, watcher.remConn)
     table.insert(connections, watcher.ancestryConn)
@@ -418,7 +354,7 @@ end
 
 local function hookToolHit(tool)
 	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
+	track(tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
             local w = toolWatchers[tool]
             if w then
@@ -431,7 +367,7 @@ local function hookToolHit(tool)
                 toolWatchers[tool] = nil
             end
 		end
-	end)
+	end))
 end
 
 track(char.ChildAdded:Connect(function(tool)
@@ -466,7 +402,7 @@ end))
 -- =========================
 local function hookTool(tool)
 	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
+	track(tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
 			currentTool = nil
 			vActive = false
@@ -475,7 +411,7 @@ local function hookTool(tool)
 			tiltEnabled = false
 			stopTiltSmooth()
 		end
-	end)
+	end))
 end
 
 track(char.ChildAdded:Connect(function(child)
@@ -557,12 +493,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
 			end
 		end
 		
-		if typeof(a1) == "string" and a1:upper() == "X" and currentTool then
-		    if xSkillTools[currentTool.Name] then
-		        xSkillActive = true
-		    end
-		end
-		
 		if typeof(a1) == "string" and a1:upper() == "DODGE" then
 
             task.defer(function()
@@ -632,11 +562,6 @@ track(UserInputService.TouchEnded:Connect(function(touch)
 		if not next(rightTouches) then
 			stopTiltSmooth()
 			
-			if xSkillActive and currentTool and xSkillTools[currentTool.Name] then
-				expandEquippedWeaponOnce()
-				xSkillActive = false
-			end
-			
 			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
 				--swapToGodhuman()
 			--end
@@ -678,7 +603,7 @@ local function watchHealth(humanoid)
 
     lastHealth = humanoid.Health
 
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
+    healthConn = track(humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -687,7 +612,7 @@ local function watchHealth(humanoid)
             end
         end
         lastHealth = newHealth
-    end)
+    end))
 end
 
 local function setAimlockTarget(targetModel)
@@ -791,16 +716,14 @@ end))
 -- =========================
 -- Ability V2
 -- =========================
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
-local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
-
 local cooldownTime = 31
 
 CommF:InvokeServer("Buso")
 
-local function clickActivateAbility()
-	CommE:FireServer("ActivateAbility")
+if V3Enabled then
+	local function clickActivateAbility()
+		CommE:FireServer("ActivateAbility")
+	end
 end
 
 task.spawn(function()
@@ -936,8 +859,19 @@ local function cleanup()
     end
     connections = {}
 
-    if dmgConn then pcall(safeDisconnect, dmgConn) dmgConn = nil end
-    if healthConn then pcall(safeDisconnect, healthConn) healthConn = nil end
+    safeDisconnect(dmgConn)
+    safeDisconnect(healthConn)
+    dmgConn, healthConn = nil, nil
+    
+    for tool, w in pairs(toolWatchers) do
+        if w.eqConn then safeDisconnect(w.eqConn) end
+        if w.remConn then safeDisconnect(w.remConn) end
+        if w.ancestryConn then safeDisconnect(w.ancestryConn) end
+        for _, dc in ipairs(w.descConns) do
+            safeDisconnect(dc)
+        end
+    end
+    toolWatchers = {}
 
     for player, billboard in pairs(ESPs) do
         if billboard and billboard.Parent then
@@ -1004,6 +938,9 @@ AimlockModule._cleanup = cleanup
 		end,
 		togglePrediction = function(state)
 	        PredictionEnabled = state
+	    end,
+		toggleV3 = function(state)
+	        V3Enabled = state
 	    end,
 		cleanup = cleanup
 	}
