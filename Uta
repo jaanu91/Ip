@@ -918,8 +918,8 @@ track(player.CharacterAdded:Connect(function(c)
 	rightTouches = {}
 	stopTiltSmooth()
 	watchHealth(humanoid)
-	task.wait(0.5) -- wait a bit so Roblox finishes building the new rig
-    AimlockModule.Init(player, newChar, workspace.CurrentCamera) -- restart Aimlock with new char
+	task.wait(0.5)
+    AimlockModule.Init(player, char, workspace.CurrentCamera)
 end))
 
 track(player.CharacterRemoving:Connect(function()
