@@ -907,7 +907,7 @@ end
 -- =========================
 -- lifecycle
 -- =========================
-track(player.CharacterAdded:Connect(function(c)
+player.CharacterAdded:Connect(function(c)
 	cleanup()
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
@@ -918,9 +918,9 @@ track(player.CharacterAdded:Connect(function(c)
 	rightTouches = {}
 	stopTiltSmooth()
 	watchHealth(humanoid)
-end))
+end)
 
-track(player.CharacterRemoving:Connect(function()
+player.CharacterRemoving:Connect(function()
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
@@ -928,7 +928,7 @@ track(player.CharacterRemoving:Connect(function()
 	rightTouches = {}
 	disconnectTiltConn()
 	currentTool = nil
-end))
+end)
 
 AimlockModule._cleanup = cleanup
 
