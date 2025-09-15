@@ -300,7 +300,7 @@ local function watchEquippedWeapon(char, tool)
                 expandWeapon(child)
 
                 local descConn
-                descConn = track(child.DescendantAdded:Connect(function(desc)
+                descConn = child.DescendantAdded:Connect(function(desc)
                     if desc:IsA("BasePart") then
                         if tool.Parent == char and fightingStyles[tool.Name] then
                             if not originalSizes[desc] then
@@ -310,7 +310,7 @@ local function watchEquippedWeapon(char, tool)
                             desc.CanCollide = false
                         end
                     end
-                end))
+                end)
                 table.insert(watcher.descConns, descConn)
             end
 		end
@@ -606,7 +606,7 @@ local function watchHealth(humanoid)
 
     lastHealth = humanoid.Health
 
-    healthConn = track(humanoid.HealthChanged:Connect(function(newHealth)
+    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -615,7 +615,7 @@ local function watchHealth(humanoid)
             end
         end
         lastHealth = newHealth
-    end))
+    end)
 end
 
 local function setAimlockTarget(targetModel)
@@ -645,13 +645,13 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
-        track(humanoid.Died:Connect(function()
+        humanoid.Died:Connect(function()
 	        if currentHighlight then
 	            currentHighlight:Destroy()
 	            currentHighlight = nil
 	        end
 	        currentTarget = nil
-	    end))
+	    end)
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
