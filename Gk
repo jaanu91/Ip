@@ -203,13 +203,13 @@ local function stopTiltSmooth()
 
 	local a = 0
 	local restoreConn
-	restoreConn = track(RunService.RenderStepped:Connect(function(dt)
+	restoreConn = RunService.RenderStepped:Connect(function(dt)
 		a = math.min(a + dt * 5, 1)
 		camera.CFrame = startCF:Lerp(endCF, a)
 		if a >= 1 then
 			restoreConn:Disconnect()
 		end
-	end))
+	end)
 end
 
 local function startTilt()
@@ -235,7 +235,7 @@ local function startTilt()
 	local targetCF = CFrame.new(camPos, downLook)
 
 	local alpha = 0
-	tiltConn = track(RunService.RenderStepped:Connect(function(dt)
+	tiltConn = RunService.RenderStepped:Connect(function(dt)
 		if not (tiltEnabled and next(rightTouches) and hrp.Parent) then
 			stopTiltSmooth()
 			return
@@ -247,7 +247,7 @@ local function startTilt()
 		else
 			camera.CFrame = targetCF
 		end
-	end))
+	end)
 end
 
 -- =========================
