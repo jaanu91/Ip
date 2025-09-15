@@ -606,7 +606,7 @@ local function watchHealth(humanoid)
 
     lastHealth = humanoid.Health
 
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
+    healthConn = track(humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -615,7 +615,7 @@ local function watchHealth(humanoid)
             end
         end
         lastHealth = newHealth
-    end)
+    end))
 end
 
 local function setAimlockTarget(targetModel)
@@ -645,13 +645,13 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
-        humanoid.Died:Connect(function()
+        track(humanoid.Died:Connect(function()
 	        if currentHighlight then
 	            currentHighlight:Destroy()
 	            currentHighlight = nil
 	        end
 	        currentTarget = nil
-	    end)
+	    end))
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -903,11 +903,11 @@ local function cleanup()
     preTiltCFrame = nil
     lastHealth = nil
 end
-
+AimlockModule._cleanup = cleanup
 -- =========================
 -- lifecycle
 -- =========================
-player.CharacterAdded:Connect(function(c)
+track(player.CharacterAdded:Connect(function(c)
 	cleanup()
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
@@ -918,9 +918,9 @@ player.CharacterAdded:Connect(function(c)
 	rightTouches = {}
 	stopTiltSmooth()
 	watchHealth(humanoid)
-end)
+end))
 
-player.CharacterRemoving:Connect(function()
+track(player.CharacterRemoving:Connect(function()
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
@@ -928,9 +928,7 @@ player.CharacterRemoving:Connect(function()
 	rightTouches = {}
 	disconnectTiltConn()
 	currentTool = nil
-end)
-
-AimlockModule._cleanup = cleanup
+end))
 
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
