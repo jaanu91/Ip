@@ -838,32 +838,6 @@ end))
 track(game.Players.PlayerRemoving:Connect(removeESP))
 
 -- =========================
--- lifecycle
--- =========================
-track(player.CharacterAdded:Connect(function(c)
-	cleanup()
-	char = c
-	humanoid = char:WaitForChild("Humanoid")
-	vActive = false
-	sharkZActive = false
-	cursedZActive = false
-	tiltEnabled = false
-	rightTouches = {}
-	stopTiltSmooth()
-	watchHealth(humanoid)
-end))
-
-track(player.CharacterRemoving:Connect(function()
-	vActive = false
-	sharkZActive = false
-	cursedZActive = false
-	tiltEnabled = false
-	rightTouches = {}
-	disconnectTiltConn()
-	currentTool = nil
-end))
-
--- =========================
 -- Cleanup 
 -- =========================
 local function cleanup()
@@ -929,6 +903,32 @@ local function cleanup()
     preTiltCFrame = nil
     lastHealth = nil
 end
+
+-- =========================
+-- lifecycle
+-- =========================
+track(player.CharacterAdded:Connect(function(c)
+	cleanup()
+	char = c
+	humanoid = char:WaitForChild("Humanoid")
+	vActive = false
+	sharkZActive = false
+	cursedZActive = false
+	tiltEnabled = false
+	rightTouches = {}
+	stopTiltSmooth()
+	watchHealth(humanoid)
+end))
+
+track(player.CharacterRemoving:Connect(function()
+	vActive = false
+	sharkZActive = false
+	cursedZActive = false
+	tiltEnabled = false
+	rightTouches = {}
+	disconnectTiltConn()
+	currentTool = nil
+end))
 
 AimlockModule._cleanup = cleanup
 
