@@ -1,7 +1,14 @@
 local AimlockModule = {}
 
+local currentTool = nil
+local vActive, sharkZActive, cursedZActive = false, false, false
+local tiltEnabled = false
+local rightTouches = {}
+local humanoid = nil
+local stopTiltSmooth 
 local hooked = false
 local oldNamecall
+humanoid = char:WaitForChild("Humanoid")
 
 local function setupHook()
     if hooked then return end
@@ -108,13 +115,8 @@ function AimlockModule.Init(player, char, camera)
         char = player.Character
     end
     
-	local humanoid = char:WaitForChild("Humanoid")
 	local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled, V3Enabled = false, false, false, false
 	local currentTarget = nil
-	local currentTool = nil
-	local vActive, sharkZActive, cursedZActive = false, false, false
-	local tiltEnabled = false
-	local rightTouches = {}
 	local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
 	local connections = {}
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
