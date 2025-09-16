@@ -97,6 +97,8 @@ local function setupHook()
     end)
 end
 
+setupHook()
+
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
@@ -538,8 +540,6 @@ end
 ------------------
 -- Hook
 -------------------
-
-setupHook()
 
 -----------------
 -- Hook
