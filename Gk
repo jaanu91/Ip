@@ -203,13 +203,13 @@ local function stopTiltSmooth()
 
 	local a = 0
 	local restoreConn
-	restoreConn = RunService.RenderStepped:Connect(function(dt)
+	restoreConn = track(RunService.RenderStepped:Connect(function(dt)
 		a = math.min(a + dt * 5, 1)
 		camera.CFrame = startCF:Lerp(endCF, a)
 		if a >= 1 then
 			restoreConn:Disconnect()
 		end
-	end)
+	end))
 end
 
 local function startTilt()
@@ -235,7 +235,7 @@ local function startTilt()
 	local targetCF = CFrame.new(camPos, downLook)
 
 	local alpha = 0
-	tiltConn = RunService.RenderStepped:Connect(function(dt)
+	tiltConn = track(RunService.RenderStepped:Connect(function(dt)
 		if not (tiltEnabled and next(rightTouches) and hrp.Parent) then
 			stopTiltSmooth()
 			return
@@ -247,7 +247,7 @@ local function startTilt()
 		else
 			camera.CFrame = targetCF
 		end
-	end)
+	end))
 end
 
 -- =========================
@@ -300,7 +300,7 @@ local function watchEquippedWeapon(char, tool)
                 expandWeapon(child)
 
                 local descConn
-                descConn = child.DescendantAdded:Connect(function(desc)
+                descConn = track(child.DescendantAdded:Connect(function(desc)
                     if desc:IsA("BasePart") then
                         if tool.Parent == char and fightingStyles[tool.Name] then
                             if not originalSizes[desc] then
@@ -310,7 +310,7 @@ local function watchEquippedWeapon(char, tool)
                             desc.CanCollide = false
                         end
                     end
-                end)
+                end))
                 table.insert(watcher.descConns, descConn)
             end
 		end
@@ -606,7 +606,7 @@ local function watchHealth(humanoid)
 
     lastHealth = humanoid.Health
 
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
+    healthConn = track(humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -615,8 +615,13 @@ local function watchHealth(humanoid)
             end
         end
         lastHealth = newHealth
-    end)
+    end))
 end
+
+track(player.CharacterAdded:Connect(function(newChar)
+    local newHumanoid = newChar:WaitForChild("Humanoid")
+    watchHealth(newHumanoid)
+end))
 
 local function setAimlockTarget(targetModel)
     if currentHighlight then
@@ -645,13 +650,13 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
-        humanoid.Died:Connect(function()
+        track(humanoid.Died:Connect(function()
 	        if currentHighlight then
 	            currentHighlight:Destroy()
 	            currentHighlight = nil
 	        end
 	        currentTarget = nil
-	    end)
+	    end))
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -749,9 +754,12 @@ end
 -- =========================
 -- Global Player ESP with Colors
 -- =========================
-local espFolder = Instance.new("Folder")
-espFolder.Name = "GlobalESP"
-espFolder.Parent = game.CoreGui
+local espFolder = game.CoreGui:FindFirstChild("GlobalESP")
+if not espFolder then
+    espFolder = Instance.new("Folder")
+    espFolder.Name = "GlobalESP"
+    espFolder.Parent = game.CoreGui
+end
 
 local function getESPColor(player)
 	if player == game.Players.LocalPlayer then
@@ -888,11 +896,6 @@ local function cleanup()
     end
     originalSizes = {}
 
-    if old then
-        pcall(function() hookmetamethod(game, "__namecall", old) end)
-        old = nil
-    end
-
     disconnectTiltConn()
     currentTool = nil
     rightTouches = {}
@@ -903,7 +906,9 @@ local function cleanup()
     preTiltCFrame = nil
     lastHealth = nil
 end
+
 AimlockModule._cleanup = cleanup
+
 -- =========================
 -- lifecycle
 -- =========================
