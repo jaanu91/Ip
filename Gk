@@ -1,25 +1,47 @@
 local AimlockModule = {}
 
-local players = game:GetService("Players")
-local player = players.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid") 
+
 local currentTool = nil
 local vActive, sharkZActive, cursedZActive = false, false, false
 local tiltEnabled = false
 local rightTouches = {}
-local humanoid = nil
-local stopTiltSmooth 
-local hooked = false
-local humanoid = char:WaitForChild("Humanoid")
+local tiltConn, preTiltCFrame = nil, nil
 
-local function setupHook()
-    if hooked then
-		return
+local function disconnectTiltConn()
+	if tiltConn then
+		tiltConn:Disconnect()
+		tiltConn = nil
 	end
-    hooked = true
-	
-	local old
-    old = hookmetamethod(game, "__namecall", function(self, ...)
+end
+
+local function stopTiltSmooth()
+	disconnectTiltConn()
+	if not preTiltCFrame then return end
+
+	local startCF = camera.CFrame
+	local endCF = preTiltCFrame
+	preTiltCFrame = nil
+
+	local a = 0
+	local restoreConn
+	restoreConn = RunService.RenderStepped:Connect(function(dt)
+		a = math.min(a + dt * 5, 1)
+		camera.CFrame = startCF:Lerp(endCF, a)
+		if a >= 1 then
+			restoreConn:Disconnect()
+		end
+	end)
+end
+
+-- =========================
+-- V Skill Detection
+-- =========================
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
 	local method = getnamecallmethod()
 	local args = {...}
 
@@ -93,9 +115,9 @@ local function setupHook()
 				stopTiltSmooth()
 			end
 		end
-        return old(self, ...)
-    end)
-end
+	end
+	return old(self, ...)
+end)
 
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
@@ -114,9 +136,14 @@ function AimlockModule.Init(player, char, camera)
         player.CharacterAdded:Wait()
         char = player.Character
     end
-    
+   
+	local humanoid = char:WaitForChild("Humanoid") 
 	local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled, V3Enabled = false, false, false, false
-	local currentTarget = nil
+	local currentTarget = ni
+	local currentTool = nil
+	local vActive, sharkZActive, cursedZActive = false, false, false
+	local tiltEnabled = false
+	local rightTouches = {}
 	local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
 	local connections = {}
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
@@ -283,25 +310,6 @@ local function disconnectTiltConn()
 		tiltConn:Disconnect()
 		tiltConn = nil
 	end
-end
-
-local function stopTiltSmooth()
-	disconnectTiltConn()
-	if not preTiltCFrame then return end
-
-	local startCF = camera.CFrame
-	local endCF = preTiltCFrame
-	preTiltCFrame = nil
-
-	local a = 0
-	local restoreConn
-	restoreConn = track(RunService.RenderStepped:Connect(function(dt)
-		a = math.min(a + dt * 5, 1)
-		camera.CFrame = startCF:Lerp(endCF, a)
-		if a >= 1 then
-			restoreConn:Disconnect()
-		end
-	end))
 end
 
 local function startTilt()
@@ -976,7 +984,5 @@ end))
 		cleanup = cleanup
 	}
 end
-
-setupHook()
 
 return AimlockModule
