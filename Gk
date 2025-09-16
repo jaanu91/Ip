@@ -24,7 +24,7 @@ function AimlockModule.Init(player, char, camera)
 	local currentTool = nil
 	local vActive, sharkZActive, cursedZActive = false, false, false
 	local tiltEnabled = false
-	local rightTouches = {}l
+	local rightTouches = {}
 	local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
 	local connections = {}
 	local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
