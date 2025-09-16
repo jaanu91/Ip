@@ -618,6 +618,11 @@ local function watchHealth(humanoid)
     end))
 end
 
+track(player.CharacterAdded:Connect(function(newChar)
+    local newHumanoid = newChar:WaitForChild("Humanoid")
+    watchHealth(newHumanoid)
+end))
+
 local function setAimlockTarget(targetModel)
     if currentHighlight then
         currentHighlight:Destroy()
@@ -749,9 +754,12 @@ end
 -- =========================
 -- Global Player ESP with Colors
 -- =========================
-local espFolder = Instance.new("Folder")
-espFolder.Name = "GlobalESP"
-espFolder.Parent = game.CoreGui
+local espFolder = game.CoreGui:FindFirstChild("GlobalESP")
+if not espFolder then
+    espFolder = Instance.new("Folder")
+    espFolder.Name = "GlobalESP"
+    espFolder.Parent = game.CoreGui
+end
 
 local function getESPColor(player)
 	if player == game.Players.LocalPlayer then
@@ -888,11 +896,6 @@ local function cleanup()
     end
     originalSizes = {}
 
-    if old then
-        pcall(function() hookmetamethod(game, "__namecall", old) end)
-        old = nil
-    end
-
     disconnectTiltConn()
     currentTool = nil
     rightTouches = {}
@@ -903,6 +906,8 @@ local function cleanup()
     preTiltCFrame = nil
     lastHealth = nil
 end
+
+AimlockModule._cleanup = cleanup
 
 -- =========================
 -- lifecycle
@@ -918,8 +923,6 @@ track(player.CharacterAdded:Connect(function(c)
 	rightTouches = {}
 	stopTiltSmooth()
 	watchHealth(humanoid)
-	task.wait(0.5)
-    AimlockModule.Init(player, char, workspace.CurrentCamera)
 end))
 
 track(player.CharacterRemoving:Connect(function()
@@ -931,8 +934,6 @@ track(player.CharacterRemoving:Connect(function()
 	disconnectTiltConn()
 	currentTool = nil
 end))
-
-AimlockModule._cleanup = cleanup
 
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
