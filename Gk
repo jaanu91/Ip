@@ -939,14 +939,7 @@ local function cleanup()
     tiltEnabled = false
     preTiltCFrame = nil
     lastHealth = nil
-    
-    AimlockModule._state.currentTool = nil
-    AimlockModule._state.vActive = false
-    AimlockModule._state.sharkZActive = false
-    AimlockModule._state.cursedZActive = false
-    AimlockModule._state.tiltEnabled = false
-    AimlockModule._state.humanoid = nil
-    AimlockModule._state._rightTouchesCount = 0
+
     AimlockModule._running = false
 end
 
