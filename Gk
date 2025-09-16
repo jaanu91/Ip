@@ -1,5 +1,94 @@
 local AimlockModule = {}
 
+-- ===== Module-level state (single place to store current player/char state) =====
+AimlockModule._state = {
+    currentTool = nil,
+    vActive = false,
+    sharkZActive = false,
+    cursedZActive = false,
+    tiltEnabled = false,
+    humanoid = nil,
+}
+
+-- Single hook for namecall (created once)
+if not AimlockModule._namecallHooked then
+    local _oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        local st = AimlockModule._state
+
+        -- Keep same logic but using module-level state (st)
+        if (method == "InvokeServer" or method == "FireServer") then
+            local a1 = args[1]
+            if typeof(a1) == "string" and a1:upper() == "V" then
+                if st.currentTool and st.currentTool.Name == "Dough-Dough" then
+                    st.vActive = true
+                    local stamp = os.clock()
+                    task.delay(2, function()
+                        if os.clock() - stamp >= 2 then
+                            st.vActive = false
+                            if st.tiltEnabled and st._rightTouchesCount and st._rightTouchesCount > 0 then
+                                st.tiltEnabled = false
+                                -- camera restore will be handled by Init's functions (they check module state)
+                            end
+                        end
+                    end)
+                end
+            end
+
+            if typeof(a1) == "string" and a1:upper() == "Z" then
+                if st.currentTool and st.currentTool.Name == "Shark Anchor" then
+                    st.sharkZActive = true
+                    local stamp = os.clock()
+                    task.delay(2, function()
+                        if os.clock() - stamp >= 2 then
+                            st.sharkZActive = false
+                            if st.tiltEnabled and st._rightTouchesCount and st._rightTouchesCount > 0 then
+                                st.tiltEnabled = false
+                            end
+                        end
+                    end)
+                end
+                if st.currentTool and st.currentTool.Name == "Cursed Dual Katana" then
+                    st.cursedZActive = true
+                    local stamp = os.clock()
+                    task.delay(2, function()
+                        if os.clock() - stamp >= 2 then
+                            st.cursedZActive = false
+                            if st.tiltEnabled and st._rightTouchesCount and st._rightTouchesCount > 0 then
+                                st.tiltEnabled = false
+                            end
+                        end
+                    end)
+                end
+            end
+
+            if typeof(a1) == "string" and a1:upper() == "DODGE" then
+                task.defer(function()
+                    if st.humanoid and st.humanoid.Parent then
+                        st.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end)
+            end
+
+            -- Example: handling EquipEvent for Shark Anchor (match your earlier logic)
+            if st.currentTool and st.currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
+                local arg1 = args[1]
+                if arg1 == false then
+                    st.currentTool = nil
+                    st.sharkZActive = false
+                    st.tiltEnabled = false
+                end
+            end
+        end
+
+        return _oldNamecall(self, ...)
+    end)
+
+    AimlockModule._namecallHooked = true
+    AimlockModule._oldNamecall = _oldNamecall
+end
+
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
@@ -8,6 +97,11 @@ function AimlockModule.Init(player, char, camera)
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
 	local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
+	
+	
+    if AimlockModule._running then
+        return
+    end
 	
 	if AimlockModule._cleanup then
         AimlockModule._cleanup()
@@ -40,6 +134,15 @@ function AimlockModule.Init(player, char, camera)
 	local cooldownTime = 31
 	local v3Loop = nil
 	local v3LoopRunning = false
+	
+	AimlockModule._state.humanoid = humanoid
+	AimlockModule._state.currentTool = currentTool
+	AimlockModule._state.vActive = vActive
+	AimlockModule._state.sharkZActive = sharkZActive
+	AimlockModule._state.cursedZActive = cursedZActive
+	AimlockModule._state.tiltEnabled = tiltEnabled
+
+	AimlockModule._state._rightTouchesCount = 0
 	
 	
 	local function track(conn)
@@ -404,17 +507,24 @@ end))
 -- Tool equip / unequip 
 -- =========================
 local function hookTool(tool)
-	currentTool = tool
-	track(tool.AncestryChanged:Connect(function(_, parent)
-		if not parent then
-			currentTool = nil
-			vActive = false
-			sharkZActive = false
-			cursedZActive = false
-			tiltEnabled = false
-			stopTiltSmooth()
-		end
-	end))
+    currentTool = tool
+    AimlockModule._state.currentTool = currentTool
+    track(tool.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            currentTool = nil
+            vActive = false
+            sharkZActive = false
+            cursedZActive = false
+            tiltEnabled = false
+            stopTiltSmooth()
+            
+            AimlockModule._state.currentTool = nil
+            AimlockModule._state.vActive = false
+            AimlockModule._state.sharkZActive = false
+            AimlockModule._state.cursedZActive = false
+            AimlockModule._state.tiltEnabled = false
+        end
+    end))
 end
 
 track(char.ChildAdded:Connect(function(child)
@@ -444,88 +554,6 @@ local function canTilt()
 end
 
 -- =========================
--- V Skill Detection
--- =========================
-local old
-old = hookmetamethod(game, "__namecall", function(self, ...)
-	local method = getnamecallmethod()
-	local args = {...}
-
-	if (method == "InvokeServer" or method == "FireServer") then
-		local a1 = args[1]
-
-		if typeof(a1) == "string" and a1:upper() == "V" then
-			if currentTool and currentTool.Name == "Dough-Dough" then
-				vActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						vActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Shark Anchor" then
-				sharkZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						sharkZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Cursed Dual Katana" then
-				cursedZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						cursedZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "DODGE" then
-
-            task.defer(function()
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end)
-        end
-
-		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
-			local arg1 = args[1]
-			if arg1 == false then
-				currentTool = nil
-				sharkZActive = false
-				tiltEnabled = false
-				stopTiltSmooth()
-			end
-		end
-	end
-	return old(self, ...)
-end)
-
--- =========================
 -- Swap function (integrated)
 -- =========================
 -- local function swapToGodhuman()
@@ -551,17 +579,17 @@ end)
 -- Touch tracking
 -- =========================
 track(UserInputService.TouchStarted:Connect(function(touch)
-	if touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouches[touch] = true
-		if tiltEnabled and canTilt() then
-			startTilt()
-		end
-	end
+    if touch.Position.X > camera.ViewportSize.X / 2 then
+        rightTouches[touch] = true
+        AimlockModule._state._rightTouchesCount = (AimlockModule._state._rightTouchesCount or 0) + 1
+        if AimlockModule._state.tiltEnabled and canTilt() then startTilt() end
+    end
 end))
 
 track(UserInputService.TouchEnded:Connect(function(touch)
 	if rightTouches[touch] then
 		rightTouches[touch] = nil
+        AimlockModule._state._rightTouchesCount = math.max((AimlockModule._state._rightTouchesCount or 1) - 1, 0)
 		if not next(rightTouches) then
 			stopTiltSmooth()
 			
@@ -573,6 +601,12 @@ track(UserInputService.TouchEnded:Connect(function(touch)
 			vActive = false
 			sharkZActive = false
 			cursedZActive = false
+			
+            AimlockModule._state.tiltEnabled = false
+            AimlockModule._state.vActive = false
+            AimlockModule._state.sharkZActive = false
+            AimlockModule._state.cursedZActive = false
+            AimlockModule._state._rightTouchesCount = 0
 		end
 	end
 end))
@@ -905,6 +939,15 @@ local function cleanup()
     tiltEnabled = false
     preTiltCFrame = nil
     lastHealth = nil
+    
+    AimlockModule._state.currentTool = nil
+    AimlockModule._state.vActive = false
+    AimlockModule._state.sharkZActive = false
+    AimlockModule._state.cursedZActive = false
+    AimlockModule._state.tiltEnabled = false
+    AimlockModule._state.humanoid = nil
+    AimlockModule._state._rightTouchesCount = 0
+    AimlockModule._running = false
 end
 
 AimlockModule._cleanup = cleanup
@@ -934,6 +977,8 @@ track(player.CharacterRemoving:Connect(function()
 	disconnectTiltConn()
 	currentTool = nil
 end))
+
+AimlockModule._running = true
 
 	-- =========================
 	-- RETURN TABLE FOR MAIN SCRIPT USAGE
