@@ -1,5 +1,92 @@
 local AimlockModule = {}
 
+local AimlockModule = {}
+
+local hooked = false
+local oldNamecall
+
+local function setupHook()
+    if hooked then return end
+    hooked = true
+
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        if (method == "InvokeServer" or method == "FireServer") then
+		local a1 = args[1]
+
+		if typeof(a1) == "string" and a1:upper() == "V" then
+			if currentTool and currentTool.Name == "Dough-Dough" then
+				vActive = true
+				local stamp = os.clock()
+				task.delay(2, function()
+					if os.clock() - stamp >= 2 then
+						vActive = false
+						if tiltEnabled and next(rightTouches) then
+							tiltEnabled = false
+							stopTiltSmooth()
+							rightTouches = {}
+						end
+					end
+				end)
+			end
+		end
+
+		if typeof(a1) == "string" and a1:upper() == "Z" then
+			if currentTool and currentTool.Name == "Shark Anchor" then
+				sharkZActive = true
+				local stamp = os.clock()
+				task.delay(2, function()
+					if os.clock() - stamp >= 2 then
+						sharkZActive = false
+						if tiltEnabled and next(rightTouches) then
+							tiltEnabled = false
+							stopTiltSmooth()
+							rightTouches = {}
+						end
+					end
+				end)
+			end
+		end
+		
+		if typeof(a1) == "string" and a1:upper() == "Z" then
+			if currentTool and currentTool.Name == "Cursed Dual Katana" then
+				cursedZActive = true
+				local stamp = os.clock()
+				task.delay(2, function()
+					if os.clock() - stamp >= 2 then
+						cursedZActive = false
+						if tiltEnabled and next(rightTouches) then
+							tiltEnabled = false
+							stopTiltSmooth()
+							rightTouches = {}
+						end
+					end
+				end)
+			end
+		end
+		
+		if typeof(a1) == "string" and a1:upper() == "DODGE" then
+
+            task.defer(function()
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end)
+        end
+
+		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
+			local arg1 = args[1]
+			if arg1 == false then
+				currentTool = nil
+				sharkZActive = false
+				tiltEnabled = false
+				stopTiltSmooth()
+			end
+		end
+        return oldNamecall(self, ...)
+    end)
+end
+
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
@@ -259,7 +346,7 @@ local fightingStyles = {
     ["Dragon Talon"] = true,
     ["Electric Claw"] = true,
     ["Sharkman Karate"] = true,
-    ["Death Step"] = true,
+    ["Death Step"] = true
 }
 
 local function expandWeapon(weapon)
@@ -443,87 +530,15 @@ local function canTilt()
 	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
 end
 
--- =========================
--- V Skill Detection
--- =========================
-local old
-old = hookmetamethod(game, "__namecall", function(self, ...)
-	local method = getnamecallmethod()
-	local args = {...}
+------------------
+-- Hook
+-------------------
 
-	if (method == "InvokeServer" or method == "FireServer") then
-		local a1 = args[1]
+setupHook()
 
-		if typeof(a1) == "string" and a1:upper() == "V" then
-			if currentTool and currentTool.Name == "Dough-Dough" then
-				vActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						vActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Shark Anchor" then
-				sharkZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						sharkZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Cursed Dual Katana" then
-				cursedZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						cursedZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "DODGE" then
-
-            task.defer(function()
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end)
-        end
-
-		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
-			local arg1 = args[1]
-			if arg1 == false then
-				currentTool = nil
-				sharkZActive = false
-				tiltEnabled = false
-				stopTiltSmooth()
-			end
-		end
-	end
-	return old(self, ...)
-end)
+-----------------
+-- Hook
+-----------------
 
 -- =========================
 -- Swap function (integrated)
