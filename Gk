@@ -1,5 +1,8 @@
 local AimlockModule = {}
 
+local players = game:GetService("Players")
+local player = players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
 local currentTool = nil
 local vActive, sharkZActive, cursedZActive = false, false, false
 local tiltEnabled = false
@@ -7,7 +10,7 @@ local rightTouches = {}
 local humanoid = nil
 local stopTiltSmooth 
 local hooked = false
-humanoid = char:WaitForChild("Humanoid")
+local humanoid = char:WaitForChild("Humanoid")
 
 local function setupHook()
     if hooked then
