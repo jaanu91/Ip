@@ -1,5 +1,10 @@
 local AimlockModule = {}
 
+local players = game:GetService("Players")
+local player = players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
 -- =========================
 -- V Skill Detection
 -- =========================
