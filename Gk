@@ -6,9 +6,14 @@ local oldNamecall
 local function setupHook()
     if hooked then return end
     hooked = true
+    
+    if not hookmetamethod then
+	    warn("hookmetamethod is not available in this environment")
+		return 
+	end
 
     oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
+        local method = getnamecallmethod and getnamecallmethod() or nil
         local args = {...}
 
         if (method == "InvokeServer" or method == "FireServer") then
