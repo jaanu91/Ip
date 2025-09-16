@@ -20,7 +20,7 @@ function AimlockModule.Init(player, char, camera)
    
 	local humanoid = char:WaitForChild("Humanoid") 
 	local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled, V3Enabled = false, false, false, false
-	local currentTarget = ni
+	local currentTarget = nil
 	local currentTool = nil
 	local vActive, sharkZActive, cursedZActive = false, false, false
 	local tiltEnabled = false
