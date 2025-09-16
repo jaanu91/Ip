@@ -259,7 +259,7 @@ local fightingStyles = {
     ["Dragon Talon"] = true,
     ["Electric Claw"] = true,
     ["Sharkman Karate"] = true,
-    ["Death Step"] = true,
+    ["Death Step"] = true
 }
 
 local function expandWeapon(weapon)
