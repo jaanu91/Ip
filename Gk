@@ -1,7 +1,5 @@
 local AimlockModule = {}
 
-local AimlockModule = {}
-
 local hooked = false
 local oldNamecall
 
