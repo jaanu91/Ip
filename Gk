@@ -7,23 +7,20 @@ local rightTouches = {}
 local humanoid = nil
 local stopTiltSmooth 
 local hooked = false
-local oldNamecall
 humanoid = char:WaitForChild("Humanoid")
 
 local function setupHook()
-    if hooked then return end
-    hooked = true
-    
-    if not hookmetamethod then
-	    warn("hookmetamethod is not available in this environment")
-		return 
+    if hooked then
+		return
 	end
+    hooked = true
+	
+	local old
+    old = hookmetamethod(game, "__namecall", function(self, ...)
+	local method = getnamecallmethod()
+	local args = {...}
 
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod and getnamecallmethod() or nil
-        local args = {...}
-
-        if (method == "InvokeServer" or method == "FireServer") then
+	if (method == "InvokeServer" or method == "FireServer") then
 		local a1 = args[1]
 
 		if typeof(a1) == "string" and a1:upper() == "V" then
@@ -93,11 +90,9 @@ local function setupHook()
 				stopTiltSmooth()
 			end
 		end
-        return oldNamecall(self, ...)
+        return old(self, ...)
     end)
 end
-
-setupHook()
 
 function AimlockModule.Init(player, char, camera)
 	local Players = game:GetService("Players")
@@ -536,14 +531,6 @@ local function canTilt()
 	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
 	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
 end
-
-------------------
--- Hook
--------------------
-
------------------
--- Hook
------------------
 
 -- =========================
 -- Swap function (integrated)
@@ -986,5 +973,7 @@ end))
 		cleanup = cleanup
 	}
 end
+
+setupHook()
 
 return AimlockModule
