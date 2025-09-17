@@ -276,7 +276,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 local ok, h = pcall(function() return humanoid end)
                 if ok and h and h.Parent then
                     task.defer(function()
-                        -- safer to check state exists
                         pcall(function()
                             h:ChangeState(Enum.HumanoidStateType.Jumping)
                         end)
@@ -342,13 +341,6 @@ local function createESP(player)
 	ESPs[player] = billboard
 end
 
-local function removeESP(player)
-	if ESPs[player] then
-		ESPs[player]:Destroy()
-		ESPs[player] = nil
-	end
-end
-
 RunService.RenderStepped:Connect(function()
 	for player, billboard in pairs(ESPs) do
 		if billboard and billboard:FindFirstChildOfClass("TextLabel") then
@@ -359,7 +351,7 @@ end)
 
 local function setupPlayerESP(player)
 	player.CharacterAdded:Connect(function(char)
-		task.wait(0.5) -- wait for head to exist
+		task.wait(0.5)
 		createESP(player)
 	end)
 	if player.Character then
@@ -368,22 +360,8 @@ local function setupPlayerESP(player)
 	end
 end
 
-for _, p in pairs(game.Players:GetPlayers()) do
-	if p ~= game.Players.LocalPlayer then
-		setupPlayerESP(p)
-	end
-end
-
-game.Players.PlayerAdded:Connect(function(p)
-	if p ~= game.Players.LocalPlayer then
-		setupPlayerESP(p)
-	end
-end)
-
-game.Players.PlayerRemoving:Connect(removeESP)
-
 -- =========================
--- Hitbox Expander State
+-- State Toggles
 -- =========================
 
 function ESPModule:SetHitbox(state)
