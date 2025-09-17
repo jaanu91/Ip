@@ -3,102 +3,118 @@ local SilentAimModule = {}
 Playersaimbot = nil
 PlayersPosition = nil
 
+NPCaimbot = nil
+NPCPosition = nil
+
 local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
 local currentCamera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
-local SilentAimEnabled = false
-
-pcall(function()
-    local core = game:GetService("CoreGui")
-    if core:FindFirstChild("infoplayers") then
-        core.infoplayers:Destroy()
-    end
-end)
-
-local function getHRP(player)
-    if not player or not player.Character then return nil end
-    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-    return hrp
-end
+local SilentAimPlayersEnabled = false
+local SilentAimNPCsEnabled = false
 
 local maxRange = 1000
 
-RunService.Heartbeat:Connect(function()
-    if not SilentAimEnabled then return end  -- only works when enabled
+local function getHRP(model)
+    if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
+    return model.HumanoidRootPart
+end
 
-    local ok, lpChar = pcall(function() return localPlayer.Character end)
-    if not ok or not lpChar then return end
-    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
-    if not lpHRP then return end
-
-    local closestPlayer = nil
+local function getClosestPlayer(lpHRP)
+    local closest = nil
     local closestDist = math.huge
     for _, pl in ipairs(Players:GetPlayers()) do
         if pl ~= localPlayer and pl.Character and pl.Character.Parent ~= nil then
-            local hrp = getHRP(pl)
+            local hrp = getHRP(pl.Character)
             if hrp then
                 local dist = (hrp.Position - lpHRP.Position).Magnitude
                 if dist <= maxRange and dist < closestDist then
                     closestDist = dist
-                    closestPlayer = pl
+                    closest = pl
                 end
             end
         end
     end
+    return closest
+end
 
-    if closestPlayer then
-        Playersaimbot = closestPlayer.Name
-        local hrp = getHRP(closestPlayer)
-        if hrp then
-            PlayersPosition = hrp.Position
-        else
-            PlayersPosition = nil
+local function getClosestNPC(lpHRP)
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if not enemiesFolder then return nil end
+
+    local closest = nil
+    local closestDist = math.huge
+    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+        if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
+            local hrp = getHRP(npc)
+            if hrp then
+                local dist = (hrp.Position - lpHRP.Position).Magnitude
+                if dist <= maxRange and dist < closestDist then
+                    closestDist = dist
+                    closest = npc
+                end
+            end
         end
-    else
-        Playersaimbot = nil
-        PlayersPosition = nil
     end
-end)
+    return closest
+end
 
 RunService.Heartbeat:Connect(function()
-    if not SilentAimEnabled then return end -- respect toggle
+    local lpChar = localPlayer.Character
+    if not lpChar then return end
+    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+    if not lpHRP then return end
 
-    if Playersaimbot then
-        local pl = Players:FindFirstChild(Playersaimbot)
-        if pl and pl.Character then
-            local hrp = pl.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                PlayersPosition = hrp.Position
-            else
-                PlayersPosition = nil
-            end
+    if SilentAimPlayersEnabled then
+        local closestPl = getClosestPlayer(lpHRP)
+        if closestPl then
+            Playersaimbot = closestPl.Name
+            local hrp = getHRP(closestPl.Character)
+            PlayersPosition = hrp and hrp.Position or nil
         else
-            PlayersPosition = nil
+            Playersaimbot, PlayersPosition = nil, nil
         end
+    else
+        Playersaimbot, PlayersPosition = nil, nil
+    end
+
+    if SilentAimNPCsEnabled then
+        local closestNPC = getClosestNPC(lpHRP)
+        if closestNPC then
+            NPCaimbot = closestNPC.Name
+            local hrp = getHRP(closestNPC)
+            NPCPosition = hrp and hrp.Position or nil
+        else
+            NPCaimbot, NPCPosition = nil, nil
+        end
+    else
+        NPCaimbot, NPCPosition = nil, nil
     end
 end)
 
 spawn(function()
     local success, gg = pcall(function() return getrawmetatable(game) end)
     if not success or not gg then return end
-
     local old = gg.__namecall
     if not old then return end
 
     setreadonly(gg, false)
     gg.__namecall = newcclosure(function(...)
-        if not SilentAimEnabled then
-            return old(...)
-        end
-
         local method = getnamecallmethod()
         local args = {...}
-        if tostring(method) == "FireServer" and PlayersPosition ~= nil then
+
+        local targetPos = nil
+        if SilentAimPlayersEnabled and PlayersPosition then
+            targetPos = PlayersPosition
+        elseif SilentAimNPCsEnabled and NPCPosition then
+            targetPos = NPCPosition
+        end
+
+        if targetPos and tostring(method) == "FireServer" then
             if tostring(args[1]) == "RemoteEvent" then
                 if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                    args[2] = PlayersPosition
+                    args[2] = targetPos
                     return old(unpack(args))
                 end
             end
@@ -108,34 +124,18 @@ spawn(function()
     setreadonly(gg, true)
 end)
 
-local mouse = localPlayer:GetMouse()
-mouse.Button1Down:Connect(function()
-    if not SilentAimEnabled then return end -- respect toggle
-
-    pcall(function()
-        if Playersaimbot ~= nil and PlayersPosition ~= nil then
-            local tool = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool and tool:FindFirstChild("RemoteFunctionShoot") and tool.RemoteFunctionShoot:IsA("RemoteFunction") then
-                local targetPl = Players:FindFirstChild(Playersaimbot)
-                if targetPl and targetPl.Character then
-                    local hrp = targetPl.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local args = {
-                            [1] = PlayersPosition,
-                            [2] = hrp
-                        }
-                        pcall(function()
-                            return tool.RemoteFunctionShoot:InvokeServer(unpack(args))
-                        end)
-                    end
-                end
-            end
-        end
-    end)
-end)
-
 function SilentAimModule:SetPlayerSilentAim(state)
-    SilentAimEnabled = state
+    SilentAimPlayersEnabled = state
+end
+
+function SilentAimModule:SetNPCSilentAim(state)
+    SilentAimNPCsEnabled = state
+end
+
+function SilentAimModule:setDistanceLimit(num)
+    if typeof(num) == "number" then
+        maxRange = num
+    end
 end
 
 return SilentAimModule
