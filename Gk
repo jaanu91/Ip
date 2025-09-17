@@ -10,7 +10,7 @@ local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
 
 local V3Enabled = false
-local BunnyhopEnabled = false
+local BunnyHopEnabled = false
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
@@ -231,10 +231,6 @@ end)
 -- =========================
 -- Ability V3
 -- =========================
-if BusoEnabled then
-	pcall(function() CommF:InvokeServer("Buso") end)
-end
-
 local function clickActivateAbility()
     if CommE then
         CommE:FireServer("ActivateAbility")
@@ -272,7 +268,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         local a1 = args[1]
 
         if typeof(a1) == "string" and a1:upper() == "DODGE" then
-            if BunnyhopEnabled then
+            if BunnyHopEnabled then
                 local ok, h = pcall(function() return humanoid end)
                 if ok and h and h.Parent then
                     task.defer(function()
@@ -360,6 +356,13 @@ local function setupPlayerESP(player)
 	end
 end
 
+local function removeESP(player)
+	if ESPs[player] then
+		ESPs[player]:Destroy()
+		ESPs[player] = nil
+	end
+end
+
 -- =========================
 -- State Toggles
 -- =========================
@@ -391,11 +394,14 @@ function ESPModule:SetV3(state)
 end
 
 function ESPModule:SetBunnyhop(state)
-    BunnyhopEnabled = state
+    BunnyHopEnabled = state
 end
 
 function ESPModule:SetBuso(state)
     BusoEnabled = state
+    if state then
+        pcall(function() CommF:InvokeServer("Buso") end)
+    end
 end
 
 function ESPModule:SetESP(state)
@@ -416,6 +422,8 @@ function ESPModule:SetESP(state)
             v:Destroy()
         end
         ESPs = {}
+        
+        removeESP(p)
 
         if espConn then
             espConn:Disconnect()
