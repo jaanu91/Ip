@@ -17,8 +17,8 @@ function AimlockModule.Init(player, char, camera)
         player.CharacterAdded:Wait()
         char = player.Character
     end
-    
-	local humanoid = char:WaitForChild("Humanoid")
+   
+	local humanoid = char:WaitForChild("Humanoid") 
 	local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled, V3Enabled = false, false, false, false
 	local currentTarget = nil
 	local currentTool = nil
@@ -435,88 +435,6 @@ track(char.ChildRemoved:Connect(function(child)
 end))
 
 -- =========================
--- V Skill Detection
--- =========================
-local old
-old = hookmetamethod(game, "__namecall", function(self, ...)
-	local method = getnamecallmethod()
-	local args = {...}
-
-	if (method == "InvokeServer" or method == "FireServer") then
-		local a1 = args[1]
-
-		if typeof(a1) == "string" and a1:upper() == "V" then
-			if currentTool and currentTool.Name == "Dough-Dough" then
-				vActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						vActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Shark Anchor" then
-				sharkZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						sharkZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool and currentTool.Name == "Cursed Dual Katana" then
-				cursedZActive = true
-				local stamp = os.clock()
-				task.delay(2, function()
-					if os.clock() - stamp >= 2 then
-						cursedZActive = false
-						if tiltEnabled and next(rightTouches) then
-							tiltEnabled = false
-							stopTiltSmooth()
-							rightTouches = {}
-						end
-					end
-				end)
-			end
-		end
-		
-		if typeof(a1) == "string" and a1:upper() == "DODGE" then
-
-            task.defer(function()
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end)
-        end
-
-		if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
-			local arg1 = args[1]
-			if arg1 == false then
-				currentTool = nil
-				sharkZActive = false
-				tiltEnabled = false
-				stopTiltSmooth()
-			end
-		end
-	end
-	return old(self, ...)
-end)
-
--- =========================
 -- Tilt trigger condition
 -- =========================
 local function canTilt()
@@ -524,6 +442,97 @@ local function canTilt()
 	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
 	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
 end
+
+-- =========================
+-- V Skill Detection
+-- =========================
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if (method == "InvokeServer" or method == "FireServer") then
+        local a1 = args[1]
+
+        if typeof(a1) == "string" and a1:upper() == "V" then
+            if currentTool and currentTool.Name == "Dough-Dough" then
+                vActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        vActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        sharkZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        cursedZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
+
+        -- Only perform dodge if V3 toggle is enabled
+        if typeof(a1) == "string" and a1:upper() == "DODGE" then
+            if V3Enabled then
+                -- ensure humanoid exists
+                local ok, h = pcall(function() return humanoid end)
+                if ok and h and h.Parent then
+                    task.defer(function()
+                        -- safer to check state exists
+                        pcall(function()
+                            h:ChangeState(Enum.HumanoidStateType.Jumping)
+                        end)
+                    end)
+                end
+            end
+        end
+
+        if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
+            local arg1 = args[1]
+            if arg1 == false then
+                currentTool = nil
+                sharkZActive = false
+                tiltEnabled = false
+                stopTiltSmooth()
+            end
+        end
+    end
+    return old(self, ...)
+end)
 
 -- =========================
 -- Swap function (integrated)
