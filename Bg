@@ -2,7 +2,6 @@ local SilentAimModule = {}
 
 Playersaimbot = nil
 PlayersPosition = nil
-
 NPCaimbot = nil
 NPCPosition = nil
 
@@ -13,12 +12,24 @@ local RunService = game:GetService("RunService")
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
+local PredictionEnabled = false
 
+local PredictionAmount = 0.1
 local maxRange = 1000
 
 local function getHRP(model)
     if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
     return model.HumanoidRootPart
+end
+
+local function getPredictedPosition(hrp)
+    if not hrp then return nil end
+    if not PredictionEnabled then
+        return hrp.Position
+    end
+
+    local velocity = hrp.Velocity
+    return hrp.Position + (velocity * PredictionAmount)
 end
 
 local function getClosestPlayer(lpHRP)
@@ -71,7 +82,7 @@ RunService.Heartbeat:Connect(function()
         if closestPl then
             Playersaimbot = closestPl.Name
             local hrp = getHRP(closestPl.Character)
-            PlayersPosition = hrp and hrp.Position or nil
+            PlayersPosition = getPredictedPosition(hrp)
         else
             Playersaimbot, PlayersPosition = nil, nil
         end
@@ -84,7 +95,7 @@ RunService.Heartbeat:Connect(function()
         if closestNPC then
             NPCaimbot = closestNPC.Name
             local hrp = getHRP(closestNPC)
-            NPCPosition = hrp and hrp.Position or nil
+            NPCPosition = getPredictedPosition(hrp)
         else
             NPCaimbot, NPCPosition = nil, nil
         end
@@ -132,9 +143,19 @@ function SilentAimModule:SetNPCSilentAim(state)
     SilentAimNPCsEnabled = state
 end
 
-function SilentAimModule:setDistanceLimit(num)
+function SilentAimModule:SetDistanceLimit(num)
     if typeof(num) == "number" then
         maxRange = num
+    end
+end
+
+function SilentAimModule:SetPrediction(state)
+    PredictionEnabled = state
+end
+
+function SilentAimModule:SetPredictionAmount(num)
+    if typeof(num) == "number" then
+        PredictionAmount = num
     end
 end
 
