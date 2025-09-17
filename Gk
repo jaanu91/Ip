@@ -16,8 +16,8 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local V3Enabled = false
-local BunnyhopEnabled= false
-local ESPEnabled= false
+local BunnyhopEnabled = false
+local ESPEnabled = false
 local currentTool = nil
 local connections = {}
 local ESPs = {}
@@ -392,7 +392,7 @@ function ESPModule:SetV3(state)
     end
 end
 
-function ESPModule:SetV3(state)
+function ESPModule:SetBunnyhop(state)
     BunnyhopEnabled = state
 end
 
