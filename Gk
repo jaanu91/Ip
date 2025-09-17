@@ -16,6 +16,8 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local V3Enabled = false
+local BunnyhopEnabled= false
+local ESPEnabled= false
 local currentTool = nil
 local connections = {}
 local ESPs = {}
@@ -272,7 +274,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         local a1 = args[1]
 
         if typeof(a1) == "string" and a1:upper() == "DODGE" then
-            if V3Enabled then
+            if BunnyhopEnabled then
                 local ok, h = pcall(function() return humanoid end)
                 if ok and h and h.Parent then
                     task.defer(function()
@@ -390,7 +392,12 @@ function ESPModule:SetV3(state)
     end
 end
 
+function ESPModule:SetV3(state)
+    BunnyhopEnabled = state
+end
+
 function ESPModule:SetESP(state)
+	ESPEnabled = state
     if state then
         for _, p in pairs(game.Players:GetPlayers()) do
             if p ~= game.Players.LocalPlayer then
