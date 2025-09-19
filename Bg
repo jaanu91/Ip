@@ -12,6 +12,9 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local camera = workspace.CurrentCamera
 
+local currentHighlight, currentTarget = nil, nil
+local dmgConn, healthConn, lastHealth = nil, nil, 0
+local currentTool, vActive, sharkZActive, cursedZActive = nil, false, false, false
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
