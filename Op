@@ -18,56 +18,16 @@ local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
 local savedSilentPlayers = false
 local savedSilentNPCs = false
+local pauseEnabled = false
 local vActive, sharkZActive, cursedZActive = false, false, false
 
 local dmgConn = nil
+local currentHighlight = nil
 local currentTool = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
 local rightTouches = {}
-
-local function disableSilentAimTemp()
-    if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-        savedSilentPlayers = SilentAimPlayersEnabled
-        savedSilentNPCs = SilentAimNPCsEnabled
-        SilentAimModule:SetPlayerSilentAim(false)
-        SilentAimModule:SetNPCSilentAim(false)
-    end
-end
-
-local function restoreSilentAim()
-    SilentAimModule:SetPlayerSilentAim(savedSilentPlayers)
-    SilentAimModule:SetNPCSilentAim(savedSilentNPCs)
-    savedSilentPlayers, savedSilentNPCs = false, false
-end
-
-local currentHighlight = nil
-local function applyHighlight(targetModel)
-	if not targetModel then return end
-	if currentHighlight and currentHighlight.Adornee == targetModel then return end
-
-	if currentHighlight then
-		currentHighlight:Destroy()
-		currentHighlight = nil
-	end
-
-	local hl = Instance.new("Highlight")
-	hl.FillColor = Color3.fromRGB(255, 255, 0)
-	hl.OutlineColor = Color3.fromRGB(255, 255, 0)
-	hl.FillTransparency = 0.5
-	hl.OutlineTransparency = 0
-	hl.Adornee = targetModel
-	hl.Parent = targetModel
-	currentHighlight = hl
-end
-
-local function clearHighlight()
-	if currentHighlight then
-		currentHighlight:Destroy()
-		currentHighlight = nil
-	end
-end
 
 local function getHRP(model)
 	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
@@ -123,6 +83,48 @@ local function getClosestNPC(lpHRP)
 	return closest
 end
 
+
+local function disableSilentAimTemp()
+    if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
+        savedSilentPlayers = SilentAimPlayersEnabled
+        savedSilentNPCs = SilentAimNPCsEnabled
+        SilentAimModule:SetPlayerSilentAim(false)
+        SilentAimModule:SetNPCSilentAim(false)
+    end
+end
+
+local function restoreSilentAim()
+    SilentAimModule:SetPlayerSilentAim(savedSilentPlayers)
+    SilentAimModule:SetNPCSilentAim(savedSilentNPCs)
+    savedSilentPlayers, savedSilentNPCs = false, false
+end
+
+local function applyHighlight(targetModel)
+	if not targetModel then return end
+	if currentHighlight and currentHighlight.Adornee == targetModel then return end
+
+	if currentHighlight then
+		currentHighlight:Destroy()
+		currentHighlight = nil
+	end
+
+	local hl = Instance.new("Highlight")
+	hl.FillColor = Color3.fromRGB(255, 255, 0)
+	hl.OutlineColor = Color3.fromRGB(255, 255, 0)
+	hl.FillTransparency = 0.5
+	hl.OutlineTransparency = 0
+	hl.Adornee = targetModel
+	hl.Parent = targetModel
+	currentHighlight = hl
+end
+
+local function clearHighlight()
+	if currentHighlight then
+		currentHighlight:Destroy()
+		currentHighlight = nil
+	end
+end
+
 RunService.Heartbeat:Connect(function()
 	local lpChar = player.Character
 	if not lpChar then return end
@@ -170,6 +172,12 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+local function canpause()
+	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
+	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
+	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
+end
+
 local function checkSkillStopCondition()
     if currentHighlight then
         if sharkZActive or cursedZActive or vActive then
@@ -193,8 +201,14 @@ local function watchDamageCounter()
 
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
-        if dmgText > 0 then
-		    checkSkillStopCondition()
+        if dmgText > 0 and canpause() and currentHighlight then
+	        pauseEnabled = true
+	        if next(rightTouches) then
+			    disableSilentAimTemp()
+			end
+		else
+			pauseEnabled = false
+			restoreSilentAim()
 		end
     end)
 end
@@ -202,7 +216,9 @@ end
 UserInputService.TouchStarted:Connect(function(touch)
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouches[touch] = true
-        watchDamageCounter()
+        if pauseEnabled and canpause() then
+	        disableSilentAimTemp()
+		end
     end
 end)
 
@@ -210,10 +226,10 @@ UserInputService.TouchEnded:Connect(function(touch)
     if rightTouches[touch] then
         rightTouches[touch] = nil
         if not next(rightTouches) then
+	        restoreSilentAim()
             vActive = false
             sharkZActive = false
             cursedZActive = false
-            restoreSilentAim()
         end
     end
 end)
@@ -226,6 +242,8 @@ local function hookTool(tool)
 			vActive = false
 			sharkZActive = false
 			cursedZActive = false
+			pauseEnabled = false
+			restoreSilentAim()
 		end
 	end)
 end
@@ -242,6 +260,8 @@ char.ChildRemoved:Connect(function(child)
 		vActive = false
 		sharkZActive = false
 		cursedZActive = false
+		pauseEnabled = false
+		restoreSilentAim()
 	end
 end)
 
