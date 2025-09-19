@@ -201,33 +201,6 @@ local function hookToolHit(tool)
 	end)
 end
 
-char.ChildAdded:Connect(function(tool)
-	if tool:IsA("Tool") and fightingStyles[tool.Name] then
-		hookToolHit(tool)
-		watchEquippedWeapon(char, tool)
-	end
-end)
-
-char.ChildRemoved:Connect(function(tool)
-	if tool:IsA("Tool") and fightingStyles[tool.Name] then
-		local weapon = char:FindFirstChild("EquippedWeapon")
-		if weapon then
-			resetWeapon(weapon)
-		end
-
-        local w = toolWatchers[tool]
-        if w then
-            if w.eqConn and w.eqConn.Connected then w.eqConn:Disconnect() end
-            if w.remConn and w.remConn.Connected then w.remConn:Disconnect() end
-            for _, dc in ipairs(w.descConns) do
-                if dc and dc.Connected then dc:Disconnect() end
-            end
-            if w.ancestryConn and w.ancestryConn.Connected then w.ancestryConn:Disconnect() end
-            toolWatchers[tool] = nil
-        end
-	end
-end)
-
 -- =========================
 -- Ability V3
 -- =========================
@@ -431,5 +404,57 @@ function ESPModule:SetESP(state)
         end
     end
 end
+
+-- =========================
+-- Character Respawn Handling
+-- =========================
+local function onCharacterAdded(newChar)
+    char = newChar
+    humanoid = char:WaitForChild("Humanoid")
+
+    char.ChildAdded:Connect(function(tool)
+        if tool:IsA("Tool") and fightingStyles[tool.Name] then
+            hookToolHit(tool)
+            watchEquippedWeapon(char, tool)
+        end
+    end)
+
+    char.ChildRemoved:Connect(function(tool)
+        if tool:IsA("Tool") and fightingStyles[tool.Name] then
+            local weapon = char:FindFirstChild("EquippedWeapon")
+            if weapon then
+                resetWeapon(weapon)
+            end
+        end
+    end)
+
+    if HITBOX_ENABLED then
+        local currentWeapon = char:FindFirstChild("EquippedWeapon")
+        if currentTool and currentWeapon and fightingStyles[currentTool.Name] then
+            expandWeapon(currentWeapon)
+        end
+    end
+    if BunnyHopEnabled then
+        -- nothing extra needed, the hookmetamethod will keep working
+    end
+    if V3Enabled then
+        startV3Loop()
+    end
+    if BusoEnabled then
+        pcall(function() CommF:InvokeServer("Buso") end)
+    end
+    if ESPEnabled then
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= player then
+                setupPlayerESP(p)
+            end
+        end
+    end
+end
+
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+player.CharacterAdded:Connect(onCharacterAdded)
 
 return ESPModule
