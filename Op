@@ -1,4 +1,4 @@
--- SilentAimModule.lua
+-- SilentAimModule.lua (small improvements)
 local SilentAimModule = {}
 
 local Players = game:GetService("Players")
@@ -20,7 +20,7 @@ local NPCPosition = nil
 
 local pausedByTouch = false           -- set by Aimlock via API when right-touch starts
 local pausedByHighlightDamage = false -- set internally when highlight+dmg+tool conditions met
-local highlightedTarget = nil         -- Model (Aimlock should also call OnHighlightedTargetChanged when highlight changes)
+local highlightedTarget = nil         -- Model (Aimlock should call OnHighlightedTargetChanged when highlight changes)
 local lastDamageValue = 0
 
 -- Tool/skill info (Aimlock should call SetActiveToolInfo when those change)
@@ -29,18 +29,24 @@ local vActive = false
 local sharkZActive = false
 local cursedZActive = false
 
--- Helper: whether the highlighted-target + damage + tool combo should suppress silent aim while touching
 local function shouldSuppressBecauseOfHighlightAndDamage()
     if not highlightedTarget then return false end
     if lastDamageValue <= 0 then return false end
 
-    -- Only suppress if one of the allowed tool+skill combos is active:
-    -- Dough-Dough with V, Shark Anchor with Z, Cursed Dual Katana with Z
     if activeToolName == "Dough-Dough" and vActive then return true end
     if activeToolName == "Shark Anchor" and sharkZActive then return true end
     if activeToolName == "Cursed Dual Katana" and cursedZActive then return true end
 
     return false
+end
+
+local function ReevaluateSuppression()
+    -- pausedByHighlightDamage should only be true when both: pausedByTouch AND suppression condition
+    if pausedByTouch and shouldSuppressBecauseOfHighlightAndDamage() then
+        pausedByHighlightDamage = true
+    else
+        pausedByHighlightDamage = false
+    end
 end
 
 -- Public API (Aimlock should call some of these)
@@ -67,47 +73,28 @@ end
 -- Called by aimlock when highlight target changes (pass model or nil)
 function SilentAimModule:OnHighlightedTargetChanged(model)
     highlightedTarget = model
-    -- reevaluate suppression immediately
-    if shouldSuppressBecauseOfHighlightAndDamage() and pausedByTouch then
-        pausedByHighlightDamage = true
-    else
-        pausedByHighlightDamage = false
-    end
+    ReevaluateSuppression()
 end
 
 -- Called by aimlock to notify current tool and skill flags
--- e.g. aimlock: SetActiveToolInfo(tool.Name, vActive, sharkZActive, cursedZActive)
 function SilentAimModule:SetActiveToolInfo(toolName, _vActive, _sharkZActive, _cursedZActive)
     activeToolName = toolName
     vActive = _vActive and true or false
     sharkZActive = _sharkZActive and true or false
     cursedZActive = _cursedZActive and true or false
-
-    -- reevaluate suppression when tool/skill changes
-    if shouldSuppressBecauseOfHighlightAndDamage() and pausedByTouch then
-        pausedByHighlightDamage = true
-    else
-        pausedByHighlightDamage = false
-    end
+    ReevaluateSuppression()
 end
 
 -- Called by aimlock when damage counter changes (pass numeric dmg)
 function SilentAimModule:OnDamageCounterChanged(dmg)
     lastDamageValue = tonumber(dmg) or 0
-    -- if right touch is active and highlight+tool conditions satisfied => pause
-    if shouldSuppressBecauseOfHighlightAndDamage() and pausedByTouch then
-        pausedByHighlightDamage = true
-    else
-        pausedByHighlightDamage = false
-    end
+    ReevaluateSuppression()
 end
 
 -- Called by aimlock on right-side touch start
 function SilentAimModule:OnRightTouchStart()
     pausedByTouch = true
-    if shouldSuppressBecauseOfHighlightAndDamage() then
-        pausedByHighlightDamage = true
-    end
+    ReevaluateSuppression()
 end
 
 -- Called by aimlock on right-side touch end
@@ -126,7 +113,7 @@ function SilentAimModule:IsAllowed()
     if pausedByHighlightDamage then
         return false
     end
-    -- paused by touch but not matching highlight/damage/tool combos => still allow (we only block when both conditions true)
+    -- otherwise allow
     return true
 end
 
@@ -188,7 +175,7 @@ RunService.Heartbeat:Connect(function()
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
     if not lpHRP then return end
 
-    if SilentAimPlayersEnabled and SilentAimModule:IsAllowed() then
+    if SilentAimPlayersEnabled and SilentAimModule:IsAllowed and SilentAimModule:IsAllowed() then
         local closestPl = getClosestPlayer(lpHRP)
         if closestPl then
             Playersaimbot = closestPl.Name
@@ -201,7 +188,7 @@ RunService.Heartbeat:Connect(function()
         Playersaimbot, PlayersPosition = nil, nil
     end
 
-    if SilentAimNPCsEnabled and SilentAimModule:IsAllowed() then
+    if SilentAimNPCsEnabled and SilentAimModule:IsAllowed and SilentAimModule:IsAllowed() then
         local closestNPC = getClosestNPC(lpHRP)
         if closestNPC then
             NPCaimbot = closestNPC.Name
@@ -228,7 +215,7 @@ spawn(function()
         local args = {...}
 
         -- If silent aim is currently disallowed, fall back to default behavior
-        if not SilentAimModule:IsAllowed() then
+        if not SilentAimModule or not SilentAimModule.IsAllowed or not SilentAimModule:IsAllowed() then
             return old(...)
         end
 
