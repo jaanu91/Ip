@@ -6,8 +6,11 @@ NPCaimbot = nil
 NPCPosition = nil
 
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
 local camera = workspace.CurrentCamera
 
 local SilentAimPlayersEnabled = false
@@ -15,8 +18,10 @@ local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
 local savedSilentPlayers = false
 local savedSilentNPCs = false
+local vActive, sharkZActive, cursedZActive = false, false, false
 
 local dmgConn = nil
+local currentTool = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -304,7 +309,6 @@ spawn(function()
 	setreadonly(gg, true)
 end)
 
--- API
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
 end
