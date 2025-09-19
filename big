@@ -14,7 +14,7 @@ local rightTouches = {}
 local GodhumanZEnabled = false
 local zActive = false
 local SilentAimModuleRef = nil
-local maxRange = 100 -- adjust as needed
+local maxRange = 1000 -- adjust as needed
 
 -- Utility: get HRP
 local function getHRP(model)
@@ -124,7 +124,7 @@ local function activateAimlock()
     local startTime = tick()
     local conn
     conn = RunService.RenderStepped:Connect(function()
-        if tick() - startTime > 1 then -- 1 second
+        if tick() - startTime > 3 then -- 1 second
             conn:Disconnect()
             zActive = false
             return
