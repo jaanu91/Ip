@@ -1,4 +1,4 @@
--- SilentAimModule.lua
+-- SilentAimModule.lua (small improvements)
 local SilentAimModule = {}
 
 local Players = game:GetService("Players")
@@ -20,7 +20,7 @@ local NPCPosition = nil
 
 local pausedByTouch = false           -- set by Aimlock via API when right-touch starts
 local pausedByHighlightDamage = false -- set internally when highlight+dmg+tool conditions met
-local highlightedTarget = nil         -- Model (Aimlock should also call OnHighlightedTargetChanged when highlight changes)
+local highlightedTarget = nil         -- Model (Aimlock should call OnHighlightedTargetChanged when highlight changes)
 local lastDamageValue = 0
 
 -- Tool/skill info (Aimlock should call SetActiveToolInfo when those change)
@@ -29,13 +29,10 @@ local vActive = false
 local sharkZActive = false
 local cursedZActive = false
 
--- Helper: whether the highlighted-target + damage + tool combo should suppress silent aim while touching
 local function shouldSuppressBecauseOfHighlightAndDamage()
     if not highlightedTarget then return false end
     if lastDamageValue <= 0 then return false end
 
-    -- Only suppress if one of the allowed tool+skill combos is active:
-    -- Dough-Dough with V, Shark Anchor with Z, Cursed Dual Katana with Z
     if activeToolName == "Dough-Dough" and vActive then return true end
     if activeToolName == "Shark Anchor" and sharkZActive then return true end
     if activeToolName == "Cursed Dual Katana" and cursedZActive then return true end
@@ -73,6 +70,7 @@ function SilentAimModule:SetPredictionAmount(num)
     if typeof(num) == "number" then PredictionAmount = num end
 end
 
+-- Called by aimlock when highlight target changes (pass model or nil)
 function SilentAimModule:OnHighlightedTargetChanged(model)
     highlightedTarget = model
     ReevaluateSuppression()
@@ -217,7 +215,7 @@ spawn(function()
         local args = {...}
 
         -- If silent aim is currently disallowed, fall back to default behavior
-        if not SilentAimModule:IsAllowed() then
+        if not SilentAimModule or not SilentAimModule:IsAllowed() then
             return old(...)
         end
 
