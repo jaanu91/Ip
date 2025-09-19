@@ -9,7 +9,6 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local cam = workspace.CurrentCamera
 
 local SilentAimPlayersEnabled = false
@@ -19,9 +18,9 @@ local PredictionEnabled = false
 local PredictionAmount = 0.1
 local maxRange = 1000
 
+-- Helpers
 local function getHRP(model)
-    if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
-    return model.HumanoidRootPart
+    return model and model:FindFirstChild("HumanoidRootPart") or nil
 end
 
 local function getPredictedPosition(hrp)
@@ -29,9 +28,7 @@ local function getPredictedPosition(hrp)
     if not PredictionEnabled then
         return hrp.Position
     end
-
-    local velocity = hrp.Velocity
-    return hrp.Position + (velocity * PredictionAmount)
+    return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
 
 local function aimlockAt(targetPos, duration)
@@ -44,15 +41,14 @@ local function aimlockAt(targetPos, duration)
 end
 
 local function getClosestPlayer(lpHRP)
-    local closest = nil
-    local closestDist = math.huge
+    local closest, dist = nil, math.huge
     for _, pl in ipairs(Players:GetPlayers()) do
         if pl ~= player and pl.Character and pl.Character.Parent ~= nil then
             local hrp = getHRP(pl.Character)
             if hrp then
-                local dist = (hrp.Position - lpHRP.Position).Magnitude
-                if dist <= maxRange and dist < closestDist then
-                    closestDist = dist
+                local d = (hrp.Position - lpHRP.Position).Magnitude
+                if d <= maxRange and d < dist then
+                    dist = d
                     closest = pl
                 end
             end
@@ -62,18 +58,17 @@ local function getClosestPlayer(lpHRP)
 end
 
 local function getClosestNPC(lpHRP)
-    local enemiesFolder = workspace:FindFirstChild("Enemies")
-    if not enemiesFolder then return nil end
+    local enemies = workspace:FindFirstChild("Enemies")
+    if not enemies then return nil end
 
-    local closest = nil
-    local closestDist = math.huge
-    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+    local closest, dist = nil, math.huge
+    for _, npc in ipairs(enemies:GetChildren()) do
         if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
             local hrp = getHRP(npc)
             if hrp then
-                local dist = (hrp.Position - lpHRP.Position).Magnitude
-                if dist <= maxRange and dist < closestDist then
-                    closestDist = dist
+                local d = (hrp.Position - lpHRP.Position).Magnitude
+                if d <= maxRange and d < dist then
+                    dist = d
                     closest = npc
                 end
             end
@@ -82,6 +77,7 @@ local function getClosestNPC(lpHRP)
     return closest
 end
 
+-- Update silent aim target
 RunService.Heartbeat:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -92,8 +88,7 @@ RunService.Heartbeat:Connect(function()
         local closestPl = getClosestPlayer(lpHRP)
         if closestPl then
             Playersaimbot = closestPl.Name
-            local hrp = getHRP(closestPl.Character)
-            PlayersPosition = getPredictedPosition(hrp)
+            PlayersPosition = getPredictedPosition(getHRP(closestPl.Character))
         else
             Playersaimbot, PlayersPosition = nil, nil
         end
@@ -105,8 +100,7 @@ RunService.Heartbeat:Connect(function()
         local closestNPC = getClosestNPC(lpHRP)
         if closestNPC then
             NPCaimbot = closestNPC.Name
-            local hrp = getHRP(closestNPC)
-            NPCPosition = getPredictedPosition(hrp)
+            NPCPosition = getPredictedPosition(getHRP(closestNPC))
         else
             NPCaimbot, NPCPosition = nil, nil
         end
@@ -115,37 +109,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-spawn(function()
-    local success, gg = pcall(function() return getrawmetatable(game) end)
-    if not success or not gg then return end
-    local old = gg.__namecall
-    if not old then return end
-
-    setreadonly(gg, false)
-    gg.__namecall = newcclosure(function(...)
-        local method = getnamecallmethod()
-        local args = {...}
-
-        local targetPos = nil
-        if SilentAimPlayersEnabled and PlayersPosition then
-            targetPos = PlayersPosition
-        elseif SilentAimNPCsEnabled and NPCPosition then
-            targetPos = NPCPosition
-        end
-
-        if targetPos and tostring(method) == "FireServer" then
-            if tostring(args[1]) == "RemoteEvent" then
-                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                    args[2] = targetPos
-                    return old(unpack(args))
-                end
-            end
-        end
-        return old(...)
-    end)
-    setreadonly(gg, true)
-end)
-
+-- Unified hook for FireServer + InvokeServer
 local mt = getrawmetatable(game)
 setreadonly(mt, false)
 local old = mt.__namecall
@@ -154,10 +118,22 @@ mt.__namecall = newcclosure(function(self, ...)
     local args = {...}
     local method = getnamecallmethod()
 
+    local targetPos = PlayersPosition or NPCPosition
+
+    -- Silent Aim (FireServer hook)
+    if method == "FireServer" and targetPos then
+        if tostring(args[1]) == "RemoteEvent" then
+            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                args[2] = targetPos
+                return old(self, unpack(args))
+            end
+        end
+    end
+
+    -- Godhuman Z Skill Camera Aimlock
     if method == "InvokeServer" and args[1] == "Z" then
-        local targetPos = SilentAimModule.PlayersPosition or SilentAimModule.NPCPosition
         if targetPos then
-            aimlockAt(targetPos, 1)
+            aimlockAt(targetPos, 1) -- Aimlock for 1 sec
         end
     end
 
@@ -165,28 +141,11 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 setreadonly(mt, true)
 
-function SilentAimModule:SetPlayerSilentAim(state)
-    SilentAimPlayersEnabled = state
-end
-
-function SilentAimModule:SetNPCSilentAim(state)
-    SilentAimNPCsEnabled = state
-end
-
-function SilentAimModule:SetDistanceLimit(num)
-    if typeof(num) == "number" then
-        maxRange = num
-    end
-end
-
-function SilentAimModule:SetPrediction(state)
-    PredictionEnabled = state
-end
-
-function SilentAimModule:SetPredictionAmount(num)
-    if typeof(num) == "number" then
-        PredictionAmount = num
-    end
-end
+-- API
+function SilentAimModule:SetPlayerSilentAim(state) SilentAimPlayersEnabled = state end
+function SilentAimModule:SetNPCSilentAim(state) SilentAimNPCsEnabled = state end
+function SilentAimModule:SetDistanceLimit(num) if typeof(num) == "number" then maxRange = num end end
+function SilentAimModule:SetPrediction(state) PredictionEnabled = state end
+function SilentAimModule:SetPredictionAmount(num) if typeof(num) == "number" then PredictionAmount = num end end
 
 return SilentAimModule
