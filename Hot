@@ -38,45 +38,50 @@ end
 -- =========================
 -- Enemies Finder
 -- =========================
+-- =========================
+-- Enemies Finder (return Model, not HRP)
+-- =========================
 local function getNearestEnemy(maxDistance)
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local nearest, shortest = nil, maxDistance or 100
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local nearestModel, shortest = nil, maxDistance or 100
 
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-			local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
-			if humanoid and humanoid.Health > 0 then
-				local enemyHRP = p.Character.HumanoidRootPart
-				local dist = (enemyHRP.Position - hrp.Position).Magnitude
-				if dist < shortest then
-					shortest = dist
-					nearest = enemyHRP
-				end
-			end
-		end
-	end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                local enemyHRP = p.Character:FindFirstChild("HumanoidRootPart")
+                local dist = (enemyHRP.Position - hrp.Position).Magnitude
+                if dist < shortest then
+                    shortest = dist
+                    nearestModel = p.Character
+                end
+            end
+        end
+    end
 
-	return nearest
+    return nearestModel
 end
 
 local function getNearestBoss(maxDistance)
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local nearest, shortest = nil, maxDistance or 500
-	local bossFolder = Workspace:FindFirstChild("Enemies")
-	if bossFolder then
-		for _, boss in pairs(bossFolder:GetChildren()) do
-			local humanoid = boss:FindFirstChildOfClass("Humanoid")
-			if boss:FindFirstChild("HumanoidRootPart") and humanoid and humanoid.Health > 0 then
-				local bossHRP = boss.HumanoidRootPart
-				local dist = (bossHRP.Position - hrp.Position).Magnitude
-				if dist < shortest then
-					shortest = dist
-					nearest = bossHRP
-				end
-			end
-		end
-	end
-	return nearest
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local nearestModel, shortest = nil, maxDistance or 500
+    local bossFolder = Workspace:FindFirstChild("Enemies")
+    if bossFolder then
+        for _, boss in pairs(bossFolder:GetChildren()) do
+            if boss:IsA("Model") then
+                local humanoid = boss:FindFirstChildOfClass("Humanoid")
+                local bossHRP = boss:FindFirstChild("HumanoidRootPart")
+                if humanoid and humanoid.Health > 0 and bossHRP then
+                    local dist = (bossHRP.Position - hrp.Position).Magnitude
+                    if dist < shortest then
+                        shortest = dist
+                        nearestModel = boss
+                    end
+                end
+            end
+        end
+    end
+    return nearestModel
 end
 
 -- =========================
@@ -383,7 +388,7 @@ end)
 -- Set highlight and notify SilentAim AFTER creating/destroying highlight
 local function setAimlockTarget(targetModel)
     if currentHighlight then
-        currentHighlight:Destroy()
+        pcall(function() currentHighlight:Destroy() end)
         currentHighlight = nil
     end
 
@@ -395,7 +400,7 @@ local function setAimlockTarget(targetModel)
         currentTarget = nil
         return
     end
-    
+
     local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then
         if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
@@ -411,20 +416,28 @@ local function setAimlockTarget(targetModel)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
         highlight.FillTransparency = 0.5
         highlight.OutlineTransparency = 0
-        highlight.Adornee = targetModel
-        highlight.Parent = targetModel
+        -- Adornee should be a BasePart or Model; prefer PrimaryPart if set
+        if targetModel.PrimaryPart then
+            highlight.Adornee = targetModel.PrimaryPart
+        else
+            -- fallback: attempt to find HumanoidRootPart
+            local hrp = targetModel:FindFirstChild("HumanoidRootPart")
+            highlight.Adornee = hrp or targetModel
+        end
+        -- Parent the Highlight to workspace for reliable rendering on NPCs and players
+        highlight.Parent = workspace
         currentHighlight = highlight
-        
+
         humanoid.Died:Connect(function()
-	        if currentHighlight then
-	            currentHighlight:Destroy()
-	            currentHighlight = nil
-	        end
-	        currentTarget = nil
-	        if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
-	            SilentAimModule:OnHighlightedTargetChanged(nil)
-	        end
-	    end)
+            if currentHighlight then
+                pcall(function() currentHighlight:Destroy() end)
+                currentHighlight = nil
+            end
+            currentTarget = nil
+            if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
+                SilentAimModule:OnHighlightedTargetChanged(nil)
+            end
+        end)
 
         -- notify SilentAim AFTER highlight is created
         if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
