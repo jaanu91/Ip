@@ -177,7 +177,7 @@ RunService.Heartbeat:Connect(function()
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
     if not lpHRP then return end
 
-    if SilentAimPlayersEnabled and SilentAimModule:IsAllowed then
+    if SilentAimPlayersEnabled and SilentAimModule:IsAllowed() then
         local closestPl = getClosestPlayer(lpHRP)
         if closestPl then
             Playersaimbot = closestPl.Name
