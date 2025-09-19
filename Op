@@ -1,283 +1,209 @@
--- SilentAimModule.lua (small improvements)
 local SilentAimModule = {}
+
+Playersaimbot = nil
+PlayersPosition = nil
+NPCaimbot = nil
+NPCPosition = nil
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
 
--- Settings
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
+
 local PredictionAmount = 0.1
 local maxRange = 1000
 
--- Internal state
-local Playersaimbot = nil
-local PlayersPosition = nil
-local NPCaimbot = nil
-local NPCPosition = nil
+-- Highlight
+local currentHighlight = nil
+local function applyHighlight(targetModel)
+	if not targetModel then return end
+	if currentHighlight and currentHighlight.Adornee == targetModel then return end
 
-local pausedByTouch = false           -- set by Aimlock via API when right-touch starts
-local pausedByHighlightDamage = false -- set internally when highlight+dmg+tool conditions met
-local highlightedTarget = nil         -- Model (Aimlock should call OnHighlightedTargetChanged when highlight changes)
-local lastDamageValue = 0
+	-- remove old
+	if currentHighlight then
+		currentHighlight:Destroy()
+		currentHighlight = nil
+	end
 
--- Tool/skill info (Aimlock should call SetActiveToolInfo when those change)
-local activeToolName = nil
-local vActive = false
-local sharkZActive = false
-local cursedZActive = false
-
-local function isModelAnNPC(model)
-    if not model then return false end
-    -- crude check: NPCs live under workspace.Enemies in your project
-    if model.Parent and model.Parent == workspace:FindFirstChild("Enemies") then
-        return true
-    end
-    -- alternatively, if the model has a Humanoid and is not a Player character, treat as NPC
-    local humanoid = model:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        local playerObj = Players:GetPlayerFromCharacter(model)
-        return playerObj == nil
-    end
-    return false
+	-- add new
+	local hl = Instance.new("Highlight")
+	hl.FillColor = Color3.fromRGB(255, 255, 0)
+	hl.OutlineColor = Color3.fromRGB(255, 255, 0)
+	hl.FillTransparency = 0.5
+	hl.OutlineTransparency = 0
+	hl.Adornee = targetModel
+	hl.Parent = targetModel
+	currentHighlight = hl
 end
 
-local function shouldSuppressBecauseOfHighlightAndDamage()
-    if not highlightedTarget then return false end
-    if lastDamageValue <= 0 then return false end
-
-    local targetIsNPC = isModelAnNPC(highlightedTarget)
-    local targetIsPlayer = not targetIsNPC and Players:GetPlayerFromCharacter(highlightedTarget) ~= nil
-
-    -- require the corresponding SilentAim toggle to be enabled
-    if targetIsPlayer and not SilentAimPlayersEnabled then
-        return false
-    end
-    if targetIsNPC and not SilentAimNPCsEnabled then
-        return false
-    end
-
-    -- Now check tool-specific skill flags
-    if activeToolName == "Dough-Dough" and vActive then return true end
-    if activeToolName == "Shark Anchor" and sharkZActive then return true end
-    if activeToolName == "Cursed Dual Katana" and cursedZActive then return true end
-
-    return false
+local function clearHighlight()
+	if currentHighlight then
+		currentHighlight:Destroy()
+		currentHighlight = nil
+	end
 end
 
-local function ReevaluateSuppression()
-    -- pausedByHighlightDamage should be true whenever both: suppression condition AND (either pausedByTouch OR we want to always pause)
-    -- You wanted highlight+dmg+tool to pause silent aim if the corresponding SilentAim toggle is ON.
-    if shouldSuppressBecauseOfHighlightAndDamage() then
-        pausedByHighlightDamage = true
-    else
-        pausedByHighlightDamage = false
-    end
-end
-
--- Public API (Aimlock should call some of these)
-function SilentAimModule:SetPlayerSilentAim(state)
-    SilentAimPlayersEnabled = state and true or false
-end
-
-function SilentAimModule:SetNPCSilentAim(state)
-    SilentAimNPCsEnabled = state and true or false
-end
-
-function SilentAimModule:SetDistanceLimit(num)
-    if typeof(num) == "number" then maxRange = num end
-end
-
-function SilentAimModule:SetPrediction(state)
-    PredictionEnabled = state and true or false
-end
-
-function SilentAimModule:SetPredictionAmount(num)
-    if typeof(num) == "number" then PredictionAmount = num end
-end
-
--- Called by aimlock when highlight target changes (pass model or nil)
-function SilentAimModule:OnHighlightedTargetChanged(model)
-    highlightedTarget = model
-    -- reset lastDamageValue when highlight is cleared
-    if not model then
-        lastDamageValue = 0
-    end
-    ReevaluateSuppression()
-end
-
--- Called by aimlock to notify current tool and skill flags
-function SilentAimModule:SetActiveToolInfo(toolName, _vActive, _sharkZActive, _cursedZActive)
-    activeToolName = toolName
-    vActive = _vActive and true or false
-    sharkZActive = _sharkZActive and true or false
-    cursedZActive = _cursedZActive and true or false
-    ReevaluateSuppression()
-end
-
--- Called by aimlock when damage counter changes (pass numeric dmg)
-function SilentAimModule:OnDamageCounterChanged(dmg)
-    lastDamageValue = tonumber(dmg) or 0
-    ReevaluateSuppression()
-end
-
--- Called by aimlock on right-side touch start
-function SilentAimModule:OnRightTouchStart()
-    pausedByTouch = true
-    ReevaluateSuppression()
-end
-
--- Called by aimlock on right-side touch end
-function SilentAimModule:OnRightTouchEnd()
-    pausedByTouch = false
-    -- recompute full suppression state
-    ReevaluateSuppression()
-end
-
--- Query if silent aim is currently allowed
-function SilentAimModule:IsAllowed()
-    -- master toggle off?
-    if not (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
-        return false
-    end
-    -- paused by external touch OR paused by highlight+dmg+tool condition
-    if pausedByTouch or pausedByHighlightDamage then
-        return false
-    end
-    -- otherwise allow
-    return true
-end
-
--- ---------- Internal aiming logic (unchanged hook approach) ----------
 local function getHRP(model)
-    if not model then return nil end
-    return model:FindFirstChild("HumanoidRootPart")
+	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
+	return model.HumanoidRootPart
 end
 
 local function getPredictedPosition(hrp)
-    if not hrp then return nil end
-    if not PredictionEnabled then return hrp.Position end
-    local velocity = hrp.Velocity
-    return hrp.Position + (velocity * PredictionAmount)
+	if not hrp then return nil end
+	if not PredictionEnabled then
+		return hrp.Position
+	end
+	return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
 
 local function getClosestPlayer(lpHRP)
-    local closest = nil
-    local closestDist = math.huge
-    for _, pl in ipairs(Players:GetPlayers()) do
-        if pl ~= player and pl.Character and pl.Character.Parent ~= nil then
-            local hrp = getHRP(pl.Character)
-            if hrp then
-                local dist = (hrp.Position - lpHRP.Position).Magnitude
-                if dist <= maxRange and dist < closestDist then
-                    closestDist = dist
-                    closest = pl
-                end
-            end
-        end
-    end
-    return closest
+	local closest = nil
+	local closestDist = math.huge
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= player and pl.Character and pl.Character.Parent ~= nil then
+			local hum = pl.Character:FindFirstChildOfClass("Humanoid")
+			local hrp = getHRP(pl.Character)
+			if hum and hum.Health > 0 and hrp then
+				local dist = (hrp.Position - lpHRP.Position).Magnitude
+				if dist <= maxRange and dist < closestDist then
+					closestDist = dist
+					closest = pl
+				end
+			end
+		end
+	end
+	return closest
 end
 
 local function getClosestNPC(lpHRP)
-    local enemiesFolder = workspace:FindFirstChild("Enemies")
-    if not enemiesFolder then return nil end
-    local closest = nil
-    local closestDist = math.huge
-    for _, npc in ipairs(enemiesFolder:GetChildren()) do
-        if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
-            local hrp = getHRP(npc)
-            if hrp then
-                local dist = (hrp.Position - lpHRP.Position).Magnitude
-                if dist <= maxRange and dist < closestDist then
-                    closestDist = dist
-                    closest = npc
-                end
-            end
-        end
-    end
-    return closest
+	local enemiesFolder = workspace:FindFirstChild("Enemies")
+	if not enemiesFolder then return nil end
+
+	local closest = nil
+	local closestDist = math.huge
+	for _, npc in ipairs(enemiesFolder:GetChildren()) do
+		if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
+			local hum = npc:FindFirstChild("Humanoid")
+			local hrp = getHRP(npc)
+			if hum and hum.Health > 0 and hrp then
+				local dist = (hrp.Position - lpHRP.Position).Magnitude
+				if dist <= maxRange and dist < closestDist then
+					closestDist = dist
+					closest = npc
+				end
+			end
+		end
+	end
+	return closest
 end
 
--- heartbeat gathers positions but respects IsAllowed()
 RunService.Heartbeat:Connect(function()
-    local lpChar = player.Character
-    if not lpChar then return end
-    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
-    if not lpHRP then return end
+	local lpChar = player.Character
+	if not lpChar then return end
+	local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+	if not lpHRP then return end
 
-    if SilentAimPlayersEnabled and SilentAimModule:IsAllowed() then
-        local closestPl = getClosestPlayer(lpHRP)
-        if closestPl then
-            Playersaimbot = closestPl.Name
-            local hrp = getHRP(closestPl.Character)
-            PlayersPosition = getPredictedPosition(hrp)
-        else
-            Playersaimbot, PlayersPosition = nil, nil
-        end
-    else
-        Playersaimbot, PlayersPosition = nil, nil
-    end
+	local targetModel = nil
 
-    if SilentAimNPCsEnabled and SilentAimModule:IsAllowed() then
-        local closestNPC = getClosestNPC(lpHRP)
-        if closestNPC then
-            NPCaimbot = closestNPC.Name
-            local hrp = getHRP(closestNPC)
-            NPCPosition = getPredictedPosition(hrp)
-        else
-            NPCaimbot, NPCPosition = nil, nil
-        end
-    else
-        NPCaimbot, NPCPosition = nil, nil
-    end
+	if SilentAimPlayersEnabled then
+		local closestPl = getClosestPlayer(lpHRP)
+		if closestPl then
+			Playersaimbot = closestPl.Name
+			local hrp = getHRP(closestPl.Character)
+			PlayersPosition = getPredictedPosition(hrp)
+			targetModel = closestPl.Character
+		else
+			Playersaimbot, PlayersPosition = nil, nil
+		end
+	else
+		Playersaimbot, PlayersPosition = nil, nil
+	end
+
+	if SilentAimNPCsEnabled and not targetModel then
+		local closestNPC = getClosestNPC(lpHRP)
+		if closestNPC then
+			NPCaimbot = closestNPC.Name
+			local hrp = getHRP(closestNPC)
+			NPCPosition = getPredictedPosition(hrp)
+			targetModel = closestNPC
+		else
+			NPCaimbot, NPCPosition = nil, nil
+		end
+	else
+		NPCaimbot, NPCPosition = nil, nil
+	end
+
+	-- Handle highlight
+	if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
+		if targetModel then
+			applyHighlight(targetModel)
+		else
+			clearHighlight()
+		end
+	else
+		clearHighlight()
+	end
 end)
 
--- namecall hook that injects predicted target position
+-- Hook
 spawn(function()
-    local success, gg = pcall(function() return getrawmetatable(game) end)
-    if not success or not gg then return end
-    local old = gg.__namecall
-    if not old then return end
+	local success, gg = pcall(function() return getrawmetatable(game) end)
+	if not success or not gg then return end
+	local old = gg.__namecall
+	if not old then return end
 
-    setreadonly(gg, false)
-    gg.__namecall = newcclosure(function(...)
-        local method = getnamecallmethod()
-        local args = {...}
+	setreadonly(gg, false)
+	gg.__namecall = newcclosure(function(...)
+		local method = getnamecallmethod()
+		local args = {...}
 
-        -- If silent aim is currently disallowed, fall back to default behavior
-        if not SilentAimModule or not SilentAimModule:IsAllowed() then
-            return old(...)
-        end
+		local targetPos = nil
+		if SilentAimPlayersEnabled and PlayersPosition then
+			targetPos = PlayersPosition
+		elseif SilentAimNPCsEnabled and NPCPosition then
+			targetPos = NPCPosition
+		end
 
-        local targetPos = nil
-        if SilentAimPlayersEnabled and PlayersPosition then
-            targetPos = PlayersPosition
-        elseif SilentAimNPCsEnabled and NPCPosition then
-            targetPos = NPCPosition
-        end
-
-        if targetPos and tostring(method) == "FireServer" then
-            if tostring(args[1]) == "RemoteEvent" then
-                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                    args[2] = targetPos
-                    return old(unpack(args))
-                end
-            end
-        end
-
-        return old(...)
-    end)
-    setreadonly(gg, true)
+		if targetPos and tostring(method) == "FireServer" then
+			if tostring(args[1]) == "RemoteEvent" then
+				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+					args[2] = targetPos
+					return old(unpack(args))
+				end
+			end
+		end
+		return old(...)
+	end)
+	setreadonly(gg, true)
 end)
 
--- expose some internals if needed (non-essential)
-SilentAimModule._internal = {
-    getPlayersPosition = function() return PlayersPosition end,
-    getNPCPosition = function() return NPCPosition end,
-    isPaused = function() return pausedByTouch or pausedByHighlightDamage end,
-}
+-- API
+function SilentAimModule:SetPlayerSilentAim(state)
+	SilentAimPlayersEnabled = state
+end
+
+function SilentAimModule:SetNPCSilentAim(state)
+	SilentAimNPCsEnabled = state
+end
+
+function SilentAimModule:SetDistanceLimit(num)
+	if typeof(num) == "number" then
+		maxRange = num
+	end
+end
+
+function SilentAimModule:SetPrediction(state)
+	PredictionEnabled = state
+end
+
+function SilentAimModule:SetPredictionAmount(num)
+	if typeof(num) == "number" then
+		PredictionAmount = num
+	end
+end
 
 return SilentAimModule
