@@ -29,10 +29,37 @@ local vActive = false
 local sharkZActive = false
 local cursedZActive = false
 
+local function isModelAnNPC(model)
+    if not model then return false end
+    -- crude check: NPCs live under workspace.Enemies in your project
+    if model.Parent and model.Parent == workspace:FindFirstChild("Enemies") then
+        return true
+    end
+    -- alternatively, if the model has a Humanoid and is not a Player character, treat as NPC
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local playerObj = Players:GetPlayerFromCharacter(model)
+        return playerObj == nil
+    end
+    return false
+end
+
 local function shouldSuppressBecauseOfHighlightAndDamage()
     if not highlightedTarget then return false end
     if lastDamageValue <= 0 then return false end
 
+    local targetIsNPC = isModelAnNPC(highlightedTarget)
+    local targetIsPlayer = not targetIsNPC and Players:GetPlayerFromCharacter(highlightedTarget) ~= nil
+
+    -- require the corresponding SilentAim toggle to be enabled
+    if targetIsPlayer and not SilentAimPlayersEnabled then
+        return false
+    end
+    if targetIsNPC and not SilentAimNPCsEnabled then
+        return false
+    end
+
+    -- Now check tool-specific skill flags
     if activeToolName == "Dough-Dough" and vActive then return true end
     if activeToolName == "Shark Anchor" and sharkZActive then return true end
     if activeToolName == "Cursed Dual Katana" and cursedZActive then return true end
@@ -41,8 +68,9 @@ local function shouldSuppressBecauseOfHighlightAndDamage()
 end
 
 local function ReevaluateSuppression()
-    -- pausedByHighlightDamage should only be true when both: pausedByTouch AND suppression condition
-    if pausedByTouch and shouldSuppressBecauseOfHighlightAndDamage() then
+    -- pausedByHighlightDamage should be true whenever both: suppression condition AND (either pausedByTouch OR we want to always pause)
+    -- You wanted highlight+dmg+tool to pause silent aim if the corresponding SilentAim toggle is ON.
+    if shouldSuppressBecauseOfHighlightAndDamage() then
         pausedByHighlightDamage = true
     else
         pausedByHighlightDamage = false
@@ -73,6 +101,10 @@ end
 -- Called by aimlock when highlight target changes (pass model or nil)
 function SilentAimModule:OnHighlightedTargetChanged(model)
     highlightedTarget = model
+    -- reset lastDamageValue when highlight is cleared
+    if not model then
+        lastDamageValue = 0
+    end
     ReevaluateSuppression()
 end
 
@@ -100,7 +132,8 @@ end
 -- Called by aimlock on right-side touch end
 function SilentAimModule:OnRightTouchEnd()
     pausedByTouch = false
-    pausedByHighlightDamage = false
+    -- recompute full suppression state
+    ReevaluateSuppression()
 end
 
 -- Query if silent aim is currently allowed
@@ -109,8 +142,8 @@ function SilentAimModule:IsAllowed()
     if not (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
         return false
     end
-    -- paused by external touch+highlight+dmg condition
-    if pausedByHighlightDamage then
+    -- paused by external touch OR paused by highlight+dmg+tool condition
+    if pausedByTouch or pausedByHighlightDamage then
         return false
     end
     -- otherwise allow
