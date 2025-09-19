@@ -146,13 +146,11 @@ spawn(function()
     setreadonly(gg, true)
 end)
 
-local mt = getrawmetatable(game)
-local old = mt.__namecall
-
-setreadonly(mt, false)
-mt.__namecall = newcclosure(function(self, ...)
-    local args = {...}
+local old
+setreadonly(old, false)
+old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
+    local args = {...}
 
     -- Detect InvokeServer for Z skill
     if method == "InvokeServer" and args[1] == "Z" then
@@ -172,7 +170,7 @@ mt.__namecall = newcclosure(function(self, ...)
 
     return old(self, ...)
 end)
-setreadonly(mt, true)
+setreadonly(old, true)
 
 function SilentAimModule:SetPlayerSilentAim(state)
     SilentAimPlayersEnabled = state
