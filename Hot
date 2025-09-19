@@ -1,3 +1,4 @@
+-- AimlockModule.lua (fixed integration with SilentAim)
 local AimlockModule = {}
 
 local Players = game:GetService("Players")
@@ -27,6 +28,12 @@ local lastSearch = 0
 local searchInterval = 0.09
 local cachedEnemy = nil
 local cachedBoss = nil
+
+-- SilentAim module reference (set by main loader)
+local SilentAimModule = nil
+function AimlockModule:SetSilentAimModule(module)
+    SilentAimModule = module
+end
 
 -- =========================
 -- Enemies Finder
@@ -150,7 +157,9 @@ local function hookTool(tool)
 			vActive = false
 			sharkZActive = false
 			cursedZActive = false
-			SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+			if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+				SilentAimModule:SetActiveToolInfo(nil, false, false, false)
+			end
 			tiltEnabled = false
 			stopTiltSmooth()
 		end
@@ -169,7 +178,9 @@ char.ChildRemoved:Connect(function(child)
 		vActive = false
 		sharkZActive = false
 		cursedZActive = false
-		SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+		if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+			SilentAimModule:SetActiveToolInfo(nil, false, false, false)
+		end
 		tiltEnabled = false
 		stopTiltSmooth()
 	end
@@ -185,7 +196,7 @@ local function canTilt()
 end
 
 -- =========================
--- V Skill Detection
+-- V/Z Skill Detection (hook)
 -- =========================
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
@@ -198,6 +209,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         if typeof(a1) == "string" and a1:upper() == "V" then
             if currentTool and currentTool.Name == "Dough-Dough" then
                 vActive = true
+                if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                    SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+                end
                 local stamp = os.clock()
                 task.delay(2, function()
                     if os.clock() - stamp >= 2 then
@@ -207,6 +221,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                             stopTiltSmooth()
                             rightTouches = {}
                         end
+                        if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                            SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+                        end
                     end
                 end)
             end
@@ -215,6 +232,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         if typeof(a1) == "string" and a1:upper() == "Z" then
             if currentTool and currentTool.Name == "Shark Anchor" then
                 sharkZActive = true
+                if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                    SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+                end
                 local stamp = os.clock()
                 task.delay(2, function()
                     if os.clock() - stamp >= 2 then
@@ -224,6 +244,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                             stopTiltSmooth()
                             rightTouches = {}
                         end
+                        if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                            SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+                        end
                     end
                 end)
             end
@@ -232,6 +255,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         if typeof(a1) == "string" and a1:upper() == "Z" then
             if currentTool and currentTool.Name == "Cursed Dual Katana" then
                 cursedZActive = true
+                if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                    SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
+                end
                 local stamp = os.clock()
                 task.delay(2, function()
                     if os.clock() - stamp >= 2 then
@@ -240,6 +266,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                             tiltEnabled = false
                             stopTiltSmooth()
                             rightTouches = {}
+                        end
+                        if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                            SilentAimModule:SetActiveToolInfo(currentTool and currentTool.Name or nil, vActive, sharkZActive, cursedZActive)
                         end
                     end
                 end)
@@ -253,6 +282,9 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 sharkZActive = false
                 tiltEnabled = false
                 stopTiltSmooth()
+                if SilentAimModule and SilentAimModule.SetActiveToolInfo then
+                    SilentAimModule:SetActiveToolInfo(nil, false, false, false)
+                end
             end
         end
     end
@@ -260,34 +292,14 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
 end)
 
 -- =========================
--- Swap function (integrated)
--- =========================
--- local function swapToGodhuman()
---	local char = player.Character
---	if not char then return end
-
---	local humanoid = char:FindFirstChildOfClass("Humanoid")
---	if not humanoid then return end
-
---	local equipped = char:FindFirstChildOfClass("Tool")
---	if equipped and equipped.Name == "Cursed Dual Katana" then
---		humanoid:UnequipTools()
-
---		local backpack = player:WaitForChild("Backpack")
---		local godhuman = backpack:FindFirstChild("Godhuman")
---		if godhuman then
---			humanoid:EquipTool(godhuman)
---		end
---	end
---end
-
--- =========================
 -- Touch tracking
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
 	if touch.Position.X > camera.ViewportSize.X / 2 then
 		rightTouches[touch] = true
-		SilentAimModule:OnRightTouchStart()
+		if SilentAimModule and SilentAimModule.OnRightTouchStart then
+			SilentAimModule:OnRightTouchStart()
+		end
 		if tiltEnabled and canTilt() then
 			startTilt()
 		end
@@ -297,15 +309,11 @@ end)
 UserInputService.TouchEnded:Connect(function(touch)
 	if rightTouches[touch] then
 		rightTouches[touch] = nil
+		if SilentAimModule and SilentAimModule.OnRightTouchEnd then
+			SilentAimModule:OnRightTouchEnd()
+		end
 		if not next(rightTouches) then
 			stopTiltSmooth()
-			
-			SilentAimModule:OnRightTouchEnd()
-			
-			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
-				--swapToGodhuman()
-			--end
-
 			tiltEnabled = false
 			vActive = false
 			sharkZActive = false
@@ -329,12 +337,17 @@ local function watchDamageCounter()
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
         if dmgText > 0 and canTilt() and currentHighlight then
-	        SilentAimModule:OnDamageCounterChanged(dmgText)
+	        if SilentAimModule and SilentAimModule.OnDamageCounterChanged then
+	            SilentAimModule:OnDamageCounterChanged(dmgText)
+	        end
             tiltEnabled = true
             if next(rightTouches) then startTilt() end
         else
             tiltEnabled = false
             stopTiltSmooth()
+            if SilentAimModule and SilentAimModule.OnDamageCounterChanged then
+                SilentAimModule:OnDamageCounterChanged(dmgText)
+            end
         end
     end)
 end
@@ -367,22 +380,27 @@ player.CharacterAdded:Connect(function(newChar)
     watchHealth(newHumanoid)
 end)
 
+-- Set highlight and notify SilentAim AFTER creating/destroying highlight
 local function setAimlockTarget(targetModel)
     if currentHighlight then
         currentHighlight:Destroy()
         currentHighlight = nil
     end
-    
-    -- after you set currentHighlight (or nil)
-	SilentAimModule:OnHighlightedTargetChanged(currentHighlight and targetModel or nil)
 
     if not targetModel then
+        -- notify silent aim immediate nil
+        if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
+            SilentAimModule:OnHighlightedTargetChanged(nil)
+        end
         currentTarget = nil
         return
     end
     
     local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then
+        if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
+            SilentAimModule:OnHighlightedTargetChanged(nil)
+        end
         currentTarget = nil
         return
     end
@@ -403,7 +421,15 @@ local function setAimlockTarget(targetModel)
 	            currentHighlight = nil
 	        end
 	        currentTarget = nil
+	        if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
+	            SilentAimModule:OnHighlightedTargetChanged(nil)
+	        end
 	    end)
+
+        -- notify SilentAim AFTER highlight is created
+        if SilentAimModule and SilentAimModule.OnHighlightedTargetChanged then
+            SilentAimModule:OnHighlightedTargetChanged(targetModel)
+        end
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -412,6 +438,7 @@ local function setAimlockTarget(targetModel)
     end
 end
 
+-- Render loop aimlock
 local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -468,9 +495,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- =========================
 -- lifecycle
--- =========================
 player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
