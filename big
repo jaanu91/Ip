@@ -1,0 +1,156 @@
+local HelperSilentAimModule = {}
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+
+local currentTool = nil
+local rightTouches = {}
+
+local GodhumanZEnabled = false
+local zActive = false
+local SilentAimModuleRef = nil
+local maxRange = 100 -- adjust as needed
+
+-- Utility: get HRP
+local function getHRP(model)
+	return model:FindFirstChild("HumanoidRootPart")
+end
+
+-- Closest Player
+local function getClosestPlayer(lpHRP)
+	local closest, closestDist = nil, math.huge
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= player and pl.Character and pl.Character.Parent then
+			local hum = pl.Character:FindFirstChildOfClass("Humanoid")
+			local hrp = getHRP(pl.Character)
+			if hum and hum.Health > 0 and hrp then
+				local dist = (hrp.Position - lpHRP.Position).Magnitude
+				if dist <= maxRange and dist < closestDist then
+					closestDist, closest = dist, pl.Character
+				end
+			end
+		end
+	end
+	return closest
+end
+
+-- Closest NPC
+local function getClosestNPC(lpHRP)
+	local enemiesFolder = workspace:FindFirstChild("Enemies")
+	if not enemiesFolder then return nil end
+
+	local closest, closestDist = nil, math.huge
+	for _, npc in ipairs(enemiesFolder:GetChildren()) do
+		if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
+			local hum = npc:FindFirstChild("Humanoid")
+			local hrp = getHRP(npc)
+			if hum and hum.Health > 0 and hrp then
+				local dist = (hrp.Position - lpHRP.Position).Magnitude
+				if dist <= maxRange and dist < closestDist then
+					closestDist, closest = dist, npc
+				end
+			end
+		end
+	end
+	return closest
+end
+
+-- Handle tool
+local function hookTool(tool)
+	currentTool = tool
+	tool.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			currentTool = nil
+			zActive = false
+		end
+	end)
+end
+
+char.ChildAdded:Connect(function(child)
+	if child:IsA("Tool") then
+		hookTool(child)
+	end
+end)
+
+char.ChildRemoved:Connect(function(child)
+	if child == currentTool then
+		currentTool = nil
+		zActive = false
+	end
+end)
+
+-- Hook namecall to detect Z usage
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+	local method = getnamecallmethod()
+	local args = { ... }
+
+	if (method == "InvokeServer" or method == "FireServer") then
+		local a1 = args[1]
+		if typeof(a1) == "string" and a1:upper() == "Z" then
+			if currentTool and currentTool.Name == "Godhuman" then
+				zActive = true
+			end
+		end
+	end
+
+	return old(self, ...)
+end)
+
+-- Aimlock for 1 second
+local function activateAimlock()
+    if not GodhumanZEnabled or not zActive then return end
+    if not SilentAimModuleRef then return end
+
+    -- must require silent aim npc or player ON
+    if not (SilentAimModuleRef.SilentAimPlayersEnabled or SilentAimModuleRef.SilentAimNPCsEnabled) then
+        return
+    end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local target = getClosestPlayer(hrp) or getClosestNPC(hrp)
+    if not target then return end
+
+    local targetHRP = target:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then return end
+
+    local startTime = tick()
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if tick() - startTime > 1 then -- 1 second
+            conn:Disconnect()
+            zActive = false
+            return
+        end
+        camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
+    end)
+end
+
+UserInputService.TouchEnded:Connect(function(touch)
+	if rightTouches[touch] then
+		rightTouches[touch] = nil
+		if not next(rightTouches) then
+			if zActive then
+				activateAimlock()
+			end
+		end
+	end
+end)
+
+function HelperSilentAimModule:SetSilentAimModule(module)
+    SilentAimModuleRef = module
+end
+
+-- Toggle function
+function HelperSilentAimModule:SetGodhumanZ(state)
+	GodhumanZEnabled = state
+end
+
+return HelperSilentAimModule
