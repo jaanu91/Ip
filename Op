@@ -22,7 +22,6 @@ local pauseEnabled = false
 local vActive, sharkZActive, cursedZActive = false, false, false
 
 local dmgConn = nil
-local currentHighlight = nil
 local currentTool = nil
 
 local PredictionAmount = 0.1
@@ -81,22 +80,6 @@ local function getClosestNPC(lpHRP)
 		end
 	end
 	return closest
-end
-
-
-local function disableSilentAimTemp()
-    if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-        savedSilentPlayers = SilentAimPlayersEnabled
-        savedSilentNPCs = SilentAimNPCsEnabled
-        SilentAimModule:SetPlayerSilentAim(false)
-        SilentAimModule:SetNPCSilentAim(false)
-    end
-end
-
-local function restoreSilentAim()
-    SilentAimModule:SetPlayerSilentAim(savedSilentPlayers)
-    SilentAimModule:SetNPCSilentAim(savedSilentNPCs)
-    savedSilentPlayers, savedSilentNPCs = false, false
 end
 
 local function applyHighlight(targetModel)
@@ -172,67 +155,20 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-local function canpause()
-	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
-	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
-	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
+local function disableSilentAimTemp()
+    if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
+        savedSilentPlayers = SilentAimPlayersEnabled
+        savedSilentNPCs = SilentAimNPCsEnabled
+        SilentAimModule:SetPlayerSilentAim(false)
+        SilentAimModule:SetNPCSilentAim(false)
+    end
 end
 
-local function checkSkillStopCondition()
-    if currentHighlight then
-        if sharkZActive or cursedZActive or vActive then
-            disableSilentAimTemp()
-            return true
-        end
-    end
-    return false
+local function restoreSilentAim()
+    SilentAimModule:SetPlayerSilentAim(savedSilentPlayers)
+    SilentAimModule:SetNPCSilentAim(savedSilentNPCs)
+    savedSilentPlayers, savedSilentNPCs = false, false
 end
-
-local function watchDamageCounter()
-    if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
-
-    local ok, dmgTextLabel = pcall(function()
-        return player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("DmgCounter"):WaitForChild("Text")
-    end)
-    if not ok or not dmgTextLabel then return end
-
-    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-        local dmgText = tonumber(dmgTextLabel.Text) or 0
-        if dmgText > 0 and canpause() and currentHighlight then
-	        pauseEnabled = true
-	        if next(rightTouches) then
-			    disableSilentAimTemp()
-			end
-		else
-			pauseEnabled = false
-			restoreSilentAim()
-		end
-    end)
-end
-
-UserInputService.TouchStarted:Connect(function(touch)
-    if touch.Position.X > camera.ViewportSize.X / 2 then
-        rightTouches[touch] = true
-        if pauseEnabled and canpause() then
-	        disableSilentAimTemp()
-		end
-    end
-end)
-
-UserInputService.TouchEnded:Connect(function(touch)
-    if rightTouches[touch] then
-        rightTouches[touch] = nil
-        if not next(rightTouches) then
-	        restoreSilentAim()
-            vActive = false
-            sharkZActive = false
-            cursedZActive = false
-        end
-    end
-end)
 
 local function hookTool(tool)
 	currentTool = tool
@@ -265,6 +201,12 @@ char.ChildRemoved:Connect(function(child)
 	end
 end)
 
+local function canpause()
+	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
+	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
+	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
+end
+
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
@@ -282,20 +224,63 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         if typeof(a1) == "string" and a1:upper() == "Z" then
             if currentTool and currentTool.Name == "Shark Anchor" then
                 sharkZActive = true
-            elseif currentTool and currentTool.Name == "Cursed Dual Katana" then
-                cursedZActive = true
             end
         end
 
-        if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
-            if args[1] == false then
-                currentTool = nil
-                sharkZActive = false
-                restoreSilentAim()
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
             end
         end
     end
     return old(self, ...)
+end)
+
+local function watchDamageCounter()
+    if dmgConn then
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
+
+    local ok, dmgTextLabel = pcall(function()
+        return player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("DmgCounter"):WaitForChild("Text")
+    end)
+    if not ok or not dmgTextLabel then return end
+
+    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+        local dmgText = tonumber(dmgTextLabel.Text) or 0
+        if dmgText > 0 and canpause() and applyHighlight() then
+	        pauseEnabled = true
+	        if next(rightTouches) then
+			    disableSilentAimTemp()
+			end
+		else
+			pauseEnabled = false
+			restoreSilentAim()
+		end
+    end)
+end
+
+UserInputService.TouchStarted:Connect(function(touch)
+    if touch.Position.X > camera.ViewportSize.X / 2 then
+        rightTouches[touch] = true
+        if pauseEnabled and canpause() then
+	        disableSilentAimTemp()
+		end
+    end
+end)
+
+UserInputService.TouchEnded:Connect(function(touch)
+    if rightTouches[touch] then
+        rightTouches[touch] = nil
+        if not next(rightTouches) then
+	        restoreSilentAim()
+            vActive = false
+            sharkZActive = false
+            cursedZActive = false
+            pauseEnabled = false
+        end
+    end
 end)
 
 spawn(function()
