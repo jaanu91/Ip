@@ -1,37 +1,24 @@
--- SilentAimModule.lua (fixed)
 local SilentAimModule = {}
+
+Playersaimbot = nil
+PlayersPosition = nil
+NPCaimbot = nil
+NPCPosition = nil
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local camera = workspace.CurrentCamera
 
--- state
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
-local savedSilentPlayers = false
-local savedSilentNPCs = false
-local pauseEnabled = false
-local vActive, sharkZActive, cursedZActive = false, false, false
-
-local dmgConn = nil
-local currentTool = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
-local rightTouches = {}
 
-local Playersaimbot = nil
-local PlayersPosition = nil
-local NPCaimbot = nil
-local NPCPosition = nil
-
-local currentHighlight = nil -- declared explicitly
-
--- helpers
 local function getHRP(model)
 	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
 	return model.HumanoidRootPart
@@ -107,12 +94,11 @@ end
 
 local function clearHighlight()
 	if currentHighlight then
-		pcall(function() currentHighlight:Destroy() end)
+		currentHighlight:Destroy()
 		currentHighlight = nil
 	end
 end
 
--- heartbeat: update target positions & highlight
 RunService.Heartbeat:Connect(function()
 	local lpChar = player.Character
 	if not lpChar then return end
@@ -160,205 +146,43 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- temporarily disable/restore helpers
-local function disableSilentAimTemp()
-    if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-        savedSilentPlayers = SilentAimPlayersEnabled
-        savedSilentNPCs = SilentAimNPCsEnabled
-        SilentAimModule:SetPlayerSilentAim(false)
-        SilentAimModule:SetNPCSilentAim(false)
-    end
-end
-
-local function restoreSilentAim()
-    SilentAimModule:SetPlayerSilentAim(savedSilentPlayers)
-    SilentAimModule:SetNPCSilentAim(savedSilentNPCs)
-    savedSilentPlayers, savedSilentNPCs = false, false
-end
-
--- tool hooks
-local function hookTool(tool)
-	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
-		if not parent then
-			currentTool = nil
-			vActive = false
-			sharkZActive = false
-			cursedZActive = false
-			pauseEnabled = false
-			restoreSilentAim()
-		end
-	end)
-end
-
--- initialize already-present tools (fixes edge-case)
-for _, child in ipairs(char:GetChildren()) do
-	if child:IsA("Tool") then
-		hookTool(child)
-	end
-end
-
-char.ChildAdded:Connect(function(child)
-	if child:IsA("Tool") then
-		hookTool(child)
-	end
-end)
-
-char.ChildRemoved:Connect(function(child)
-	if child == currentTool then
-		currentTool = nil
-		vActive = false
-		sharkZActive = false
-		cursedZActive = false
-		pauseEnabled = false
-		restoreSilentAim()
-	end
-end)
-
-local function canpause()
-	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
-	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
-	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
-end
-
--- Single guarded __namecall hook (avoid double-hooking)
-do
+spawn(function()
 	local success, gg = pcall(function() return getrawmetatable(game) end)
-	if success and gg then
-		local real = gg.__namecall
-		setreadonly(gg, false)
-		gg.__namecall = newcclosure(function(...)
-			local args = {...}
-			local method = getnamecallmethod()
+	if not success or not gg then return end
+	local old = gg.__namecall
+	if not old then return end
 
-			-- choose the latest target position
-			local targetPos = nil
-			if SilentAimPlayersEnabled and PlayersPosition then
-				targetPos = PlayersPosition
-			elseif SilentAimNPCsEnabled and NPCPosition then
-				targetPos = NPCPosition
-			end
+	setreadonly(gg, false)
+	gg.__namecall = newcclosure(function(...)
+		local method = getnamecallmethod()
+		local args = {...}
 
-			-- modify remote events arguments when applicable
-			if targetPos and tostring(method) == "FireServer" then
-				-- args[1] is usually the remote object (self)
-				if tostring(args[1]) == "RemoteEvent" then
-					-- check second arg isn't explicit "true"/"false" string
-					if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-						args[2] = targetPos
-						return real(unpack(args))
-					end
+		local targetPos = nil
+		if SilentAimPlayersEnabled and PlayersPosition then
+			targetPos = PlayersPosition
+		elseif SilentAimNPCsEnabled and NPCPosition then
+			targetPos = NPCPosition
+		end
+
+		if targetPos and tostring(method) == "FireServer" then
+			if tostring(args[1]) == "RemoteEvent" then
+				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+					args[2] = targetPos
+					return old(unpack(args))
 				end
 			end
-
-			return real(...)
-		end)
-		setreadonly(gg, true)
-	end
-end
-
--- Damage counter watcher: fixed logic (checks currentHighlight instead of calling applyHighlight())
-local function watchDamageCounter()
-    if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
-
-    local ok, dmgTextLabel = pcall(function()
-        return player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("DmgCounter"):WaitForChild("Text")
-    end)
-    if not ok or not dmgTextLabel then return end
-
-    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-        local dmgText = tonumber(dmgTextLabel.Text) or 0
-        -- if player did damage (>0) and relevant skill is active and we currently have a highlighted target, pause aimbot
-        if dmgText > 0 and canpause() and currentHighlight and currentHighlight.Adornee then
-	        pauseEnabled = true
-	        if next(rightTouches) then
-			    disableSilentAimTemp()
-			end
-		else
-			pauseEnabled = false
-			restoreSilentAim()
 		end
-    end)
-end
-
--- Touch controls
-UserInputService.TouchStarted:Connect(function(touch)
-    if touch.Position.X > camera.ViewportSize.X / 2 then
-        rightTouches[touch] = true
-        if pauseEnabled and canpause() then
-	        disableSilentAimTemp()
-		end
-    end
+		return old(...)
+	end)
+	setreadonly(gg, true)
 end)
 
-UserInputService.TouchEnded:Connect(function(touch)
-    if rightTouches[touch] then
-        rightTouches[touch] = nil
-        if not next(rightTouches) then
-	        restoreSilentAim()
-            vActive = false
-            sharkZActive = false
-            cursedZActive = false
-            pauseEnabled = false
-        end
-    end
-end)
-
--- Z/V detection hook (keeps original behavior)
-do
-	local old = hookmetamethod or nil
-	if old then
-		-- if hookmetamethod exists in environment, use it (your prior approach)
-		old = hookmetamethod(game, "__namecall", function(self, ...)
-		    local method = getnamecallmethod()
-		    local args = {...}
-
-		    if (method == "InvokeServer" or method == "FireServer") then
-		        local a1 = args[1]
-
-		        if typeof(a1) == "string" and a1:upper() == "V" then
-		            if currentTool and currentTool.Name == "Dough-Dough" then
-		                vActive = true
-		            end
-		        end
-
-		        if typeof(a1) == "string" and a1:upper() == "Z" then
-		            if currentTool and currentTool.Name == "Shark Anchor" then
-		                sharkZActive = true
-		            end
-		        end
-
-		        if typeof(a1) == "string" and a1:upper() == "Z" then
-		            if currentTool and currentTool.Name == "Cursed Dual Katana" then
-		                cursedZActive = true
-		            end
-		        end
-		    end
-		    return old(self, ...)
-		end)
-	else
-		-- fallback: rely on the getrawmetatable-hook above to detect Z/V by checking args passed,
-		-- but the above metamethod is only modifying arguments — you can implement detection similarly if needed.
-	end
-end
-
--- Ensure the damage watcher runs when aimbot is enabled
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
-	-- start watching damage only when any silent aim is enabled
-	if state or SilentAimNPCsEnabled then
-		spawn(watchDamageCounter)
-	end
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
 	SilentAimNPCsEnabled = state
-	if state or SilentAimPlayersEnabled then
-		spawn(watchDamageCounter)
-	end
 end
 
 function SilentAimModule:SetDistanceLimit(num)
