@@ -6,16 +6,22 @@ NPCaimbot = nil
 NPCPosition = nil
 
 local Players = game:GetService("Players")
-local localPlayer = Players.LocalPlayer
-local currentCamera = workspace.CurrentCamera
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
+local savedPlayerAimState = false
+local savedNPCAimState = false
+local skillHitConfirmed = false
 
 local PredictionAmount = 0.1
 local maxRange = 1000
+local rightTouches = {}
 
 local function getHRP(model)
     if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
@@ -36,7 +42,7 @@ local function getClosestPlayer(lpHRP)
     local closest = nil
     local closestDist = math.huge
     for _, pl in ipairs(Players:GetPlayers()) do
-        if pl ~= localPlayer and pl.Character and pl.Character.Parent ~= nil then
+        if pl ~= player and pl.Character and pl.Character.Parent ~= nil then
             local hrp = getHRP(pl.Character)
             if hrp then
                 local dist = (hrp.Position - lpHRP.Position).Magnitude
@@ -71,11 +77,101 @@ local function getClosestNPC(lpHRP)
     return closest
 end
 
+-- =========================
+-- Damage Counter Watch
+-- =========================
+local function watchDamageCounter()
+    if dmgConn then
+	    pcall(function() dmgConn:Disconnect() end)
+	    dmgConn = nil
+	end
+    local ok, dmgTextLabel = pcall(function()
+        return player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("DmgCounter"):WaitForChild("Text")
+    end)
+    if not ok or not dmgTextLabel then return end
+
+    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+        local dmgText = tonumber(dmgTextLabel.Text) or 0
+        if dmgText > 0 and currentHighlight then
+            skillHitConfirmed = true
+        end
+    end)
+end
+
+-- =========================
+-- Health Watch for Tilt Reset
+-- =========================
+local function watchHealth(humanoid)
+    if healthConn then
+	    pcall(function() healthConn:Disconnect() end)
+	    healthConn = nil
+	end
+
+    lastHealth = humanoid.Health
+
+    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
+	    if currentHighlight and newHealth < lastHealth then
+	        skillHitConfirmed = true
+	    end
+	    lastHealth = newHealth
+	end)
+end
+
+local function setSilentAimTarget(targetModel)
+    if currentTarget == targetModel then
+        return
+    end
+
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+    end
+
+    if not targetModel then
+        currentTarget = nil
+        return
+    end
+    
+    local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        currentTarget = nil
+        return
+    end
+
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(255, 255, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Adornee = targetModel
+    highlight.Parent = targetModel
+    currentHighlight = highlight
+    
+    humanoid.Died:Connect(function()
+        if currentHighlight then
+            currentHighlight:Destroy()
+            currentHighlight = nil
+        end
+        currentTarget = nil
+    end)
+
+    watchDamageCounter()
+    watchHealth(humanoid)
+    currentTarget = targetModel
+end
+
 RunService.Heartbeat:Connect(function()
-    local lpChar = localPlayer.Character
+    local lpChar = player.Character
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
     if not lpHRP then return end
+    if not SilentAimPlayersEnabled and not SilentAimNPCsEnabled then
+	    if currentHighlight then
+	        currentHighlight:Destroy()
+	        currentHighlight = nil
+	        currentTarget = nil
+	    end
+	end
 
     if SilentAimPlayersEnabled then
         local closestPl = getClosestPlayer(lpHRP)
@@ -83,8 +179,10 @@ RunService.Heartbeat:Connect(function()
             Playersaimbot = closestPl.Name
             local hrp = getHRP(closestPl.Character)
             PlayersPosition = getPredictedPosition(hrp)
+            setSilentAimTarget(closestPl.Character)
         else
             Playersaimbot, PlayersPosition = nil, nil
+            setSilentAimTarget(nil)
         end
     else
         Playersaimbot, PlayersPosition = nil, nil
@@ -96,8 +194,10 @@ RunService.Heartbeat:Connect(function()
             NPCaimbot = closestNPC.Name
             local hrp = getHRP(closestNPC)
             NPCPosition = getPredictedPosition(hrp)
+            setSilentAimTarget(closestNPC)
         else
             NPCaimbot, NPCPosition = nil, nil
+            setSilentAimTarget(nil)
         end
     else
         NPCaimbot, NPCPosition = nil, nil
@@ -134,6 +234,125 @@ spawn(function()
     end)
     setreadonly(gg, true)
 end)
+
+UserInputService.TouchStarted:Connect(function(touch)
+	if touch.Position.X > camera.ViewportSize.X / 2 then
+		rightTouches[touch] = true 
+		
+		savedPlayerAimState = SilentAimPlayersEnabled
+		savedNPCAimState = SilentAimNPCsEnabled
+
+		SilentAimPlayersEnabled = false
+		SilentAimNPCsEnabled = false
+
+		skillHitConfirmed = false
+	end
+end)
+
+UserInputService.TouchEnded:Connect(function(touch)
+	if rightTouches[touch] then
+		rightTouches[touch] = nil
+		if not next(rightTouches) then
+			if skillHitConfirmed then
+			else
+				SilentAimPlayersEnabled = savedPlayerAimState
+				SilentAimNPCsEnabled = savedNPCAimState
+			end
+		end
+	end
+end)
+
+local function hookTool(tool)
+	currentTool = tool
+	tool.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			currentTool = nil
+			vActive = false
+			sharkZActive = false
+			cursedZActive = false
+		end
+	end)
+end
+
+char.ChildAdded:Connect(function(child)
+	if child:IsA("Tool") then
+		hookTool(child)
+	end
+end)
+
+char.ChildRemoved:Connect(function(child)
+	if child == currentTool then
+		currentTool = nil
+		vActive = false
+		sharkZActive = false
+		cursedZActive = false
+	end
+end)
+
+-- =========================
+-- V Skill Detection
+-- =========================
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if (method == "InvokeServer" or method == "FireServer") then
+        local a1 = args[1]
+
+        if typeof(a1) == "string" and a1:upper() == "V" then
+            if currentTool and currentTool.Name == "Dough-Dough" then
+                vActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        vActive = false
+                        skillHitConfirmed = false
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        sharkZActive = false
+                        skillHitConfirmed = false
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        cursedZActive = false
+                        skillHitConfirmed = false			            
+                        end
+                    end
+                end)
+            end
+        end
+
+        if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
+            local arg1 = args[1]
+            if arg1 == false then
+                currentTool = nil
+                sharkZActive = false
+            end
+        end
+    end
+    return old(self, ...)
+end)
+
 
 function SilentAimModule:SetPlayerSilentAim(state)
     SilentAimPlayersEnabled = state
