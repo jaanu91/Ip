@@ -147,7 +147,6 @@ spawn(function()
 end)
 
 local old
-setreadonly(old, false)
 old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
@@ -170,7 +169,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
 
     return old(self, ...)
 end)
-setreadonly(old, true)
 
 function SilentAimModule:SetPlayerSilentAim(state)
     SilentAimPlayersEnabled = state
