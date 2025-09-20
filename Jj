@@ -20,7 +20,7 @@ local connections = {}
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
-local MAX_DISTANCE = 2000
+local MAX_DISTANCE = 800
 local UPDATE_INTERVAL = 0.3
 
 -- =========================
@@ -315,6 +315,12 @@ function ESPModule:SetESP(state)
         end
         ESPs = {}
     end
+end
+
+function ESPModule:SetDistanceLimit(num)
+	if typeof(num) == "number" then
+		MAX_DISTANCE = num
+	end
 end
 
 -- =========================
