@@ -208,7 +208,7 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 80, 0, 80) 
+    button.Size = UDim2.new(0, 80, 0, 50) 
     button.Position = position
     button.Text = name .. (stateVarRef.value and " ON" or " OFF")
     button.TextScaled = true
