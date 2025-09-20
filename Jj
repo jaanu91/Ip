@@ -167,34 +167,43 @@ local function createESP(player)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = player.Name
 	billboard.Adornee = head
-	billboard.Size = UDim2.new(0, 200, 0, 50)
+	billboard.Size = UDim2.new(0, 200, 0, 30) -- fixed size (no scaling with distance)
 	billboard.AlwaysOnTop = true
-	billboard.StudsOffset = Vector3.new(0, 2, 0) 
+	billboard.StudsOffset = Vector3.new(0, 3, 0) -- lift higher above default name tag
 	billboard.Parent = espFolder
-	
+
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, 0, 1, 0)
+	container.BackgroundTransparency = 1
+	container.Parent = billboard
+
+	local healthLabel = Instance.new("TextLabel")
+	healthLabel.Name = "HealthLabel"
+	healthLabel.AnchorPoint = Vector2.new(0, 0.5)
+	healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
+	healthLabel.Size = UDim2.new(0.3, 0, 1, 0) -- only takes left side
+	healthLabel.BackgroundTransparency = 1
+	healthLabel.Text = tostring(math.floor(humanoid.Health))
+	healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+	healthLabel.TextStrokeTransparency = 0
+	healthLabel.Font = Enum.Font.SourceSansBold
+	healthLabel.TextSize = 16
+	healthLabel.TextXAlignment = Enum.TextXAlignment.Left
+	healthLabel.Parent = container
+
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "NameLabel"
-	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	nameLabel.AnchorPoint = Vector2.new(0, 0.5)
+	nameLabel.Position = UDim2.new(0.3, 0, 0.5, 0) -- starts after health
+	nameLabel.Size = UDim2.new(0.7, 0, 1, 0)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Text = player.DisplayName
 	nameLabel.TextColor3 = getESPColor(player)
 	nameLabel.TextStrokeTransparency = 0
 	nameLabel.Font = Enum.Font.SourceSansBold
 	nameLabel.TextSize = 16
-	nameLabel.Parent = billboard
-
-	local healthLabel = Instance.new("TextLabel")
-	healthLabel.Name = "HealthLabel"
-	healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
-	healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
-	healthLabel.BackgroundTransparency = 1
-	healthLabel.Text = tostring(math.floor(humanoid.Health)) .. "/" .. tostring(math.floor(humanoid.MaxHealth))
-	healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-	healthLabel.TextStrokeTransparency = 0
-	healthLabel.Font = Enum.Font.SourceSansBold
-	healthLabel.TextSize = 14
-	healthLabel.TextXAlignment = Enum.TextXAlignment.Left
-	healthLabel.Parent = billboard
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Parent = container
 
 	ESPs[player] = billboard
 end
@@ -204,14 +213,14 @@ RunService.RenderStepped:Connect(function()
 		local char = player.Character
 		local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 		if billboard and char and humanoid then
-			local nameLabel = billboard:FindFirstChild("NameLabel")
-			local healthLabel = billboard:FindFirstChild("HealthLabel")
+			local nameLabel = billboard:FindFirstChild("NameLabel", true)
+			local healthLabel = billboard:FindFirstChild("HealthLabel", true)
 
 			if nameLabel then
 				nameLabel.TextColor3 = getESPColor(player)
 			end
 			if healthLabel then
-				healthLabel.Text = tostring(math.floor(humanoid.Health)) .. "/" .. tostring(math.floor(humanoid.MaxHealth))
+				healthLabel.Text = tostring(math.floor(humanoid.Health))
 			end
 		end
 	end
