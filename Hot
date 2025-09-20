@@ -15,6 +15,10 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
+local MiniPlayerState = nil
+local MiniNpcState = nil
+local MiniPlayerCreated = false
+local MiniNpcCreated = false
 local currentTarget = nil
 local currentTool = nil
 local vActive, sharkZActive, cursedZActive = false, false, false
@@ -226,12 +230,6 @@ local function createMiniToggle(name, position, stateVarRef)
         end
     end)
 end
-
-local MiniPlayerState = { value = AimlockPlayerEnabled }
-local MiniNpcState = { value = AimlockNpcEnabled }
-
-createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState)
-createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState)
 
 -- =========================
 -- Tool equip / unequip 
@@ -587,11 +585,23 @@ function AimlockModule:SetNpcAimlock(state)
 end
 
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
-    MiniPlayerState.value = state
+    if not MiniPlayerCreated then
+        MiniPlayerState = { value = state }
+        createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState)
+        MiniPlayerCreated = true
+    else
+        MiniPlayerState.value = state
+    end
 end
 
 function AimlockModule:SetMiniToggleNpcAimlock(state)
-    MiniNpcState.value = state
+    if not MiniNpcCreated then
+        MiniNpcState = { value = state }
+        createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState)
+        MiniNpcCreated = true
+    else
+        MiniNpcState.value = state
+    end
 end
 
 function AimlockModule:SetPrediction(state)
