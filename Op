@@ -32,11 +32,65 @@ local function getPredictedPosition(hrp)
 	return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
 
+-- =========================
+-- Team Check
+-- =========================
+local function isAllyWithMe(targetPlayer)
+	local myGui = player:FindFirstChild("PlayerGui")
+	if not myGui then return false end
+
+	local scrolling = myGui:FindFirstChild("Main")
+		and myGui.Main:FindFirstChild("Allies")
+		and myGui.Main.Allies:FindFirstChild("Container")
+		and myGui.Main.Allies.Container:FindFirstChild("Allies")
+		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+
+	if scrolling then
+		for _, frame in pairs(scrolling:GetDescendants()) do
+			if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isEnemy(targetPlayer)
+	if not targetPlayer or targetPlayer == player then
+		return false
+	end
+
+	local myTeam = player.Team
+	local targetTeam = targetPlayer.Team
+
+	if myTeam and targetTeam then
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+			return true
+		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+			return true
+		end
+
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+			if isAllyWithMe(targetPlayer) then
+				return false -- ally, not enemy
+			end
+			return true
+		end
+
+		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+			return false
+		end
+	end
+
+	return true
+end
+
 local function getClosestPlayer(lpHRP)
 	local closest = nil
 	local closestDist = math.huge
 	for _, pl in ipairs(Players:GetPlayers()) do
-		if pl ~= player and pl.Character and pl.Character.Parent ~= nil then
+		if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
 			local hum = pl.Character:FindFirstChildOfClass("Humanoid")
 			local hrp = getHRP(pl.Character)
 			if hum and hum.Health > 0 and hrp then
@@ -176,17 +230,6 @@ spawn(function()
 	end)
 	setreadonly(gg, true)
 end)
-
-function SilentAimModule:IsPlayerSilentAim()
-    return SilentAimPlayersEnabled
-end
-
-function SilentAimModule:IsNPCSilentAim()
-    return SilentAimNPCsEnabled
-end
-
-SilentAimModule.PlayerSilentAimEnabled = SilentAimPlayersEnabled
-SilentAimModule.NPCSilentAimEnabled = SilentAimNPCsEnabled
 
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
