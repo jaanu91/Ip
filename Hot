@@ -15,6 +15,7 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
+local AimlockMiniToggleNpcEnabled, AimlockMiniTogglePlayerEnabled = false, false
 local currentTarget = nil
 local currentTool = nil
 local vActive, sharkZActive, cursedZActive = false, false, false
@@ -192,6 +193,41 @@ local function startTilt()
 		end
 	end)
 end
+
+-- =========================
+-- Mini UI Buttons
+-- =========================
+-- Helper function to create a toggle button
+local function createMiniToggle(name, position, initialState, callback)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = name .. "MiniToggleGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 60, 0, 30)
+    button.Position = position
+    button.Text = name .. (initialState and " ON" or " OFF")
+    button.BackgroundColor3 = initialState and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    button.Parent = screenGui
+
+    button.MouseButton1Click:Connect(function()
+        initialState = not initialState
+        button.Text = name .. (initialState and " ON" or " OFF")
+        button.BackgroundColor3 = initialState and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        callback(initialState)
+    end)
+end
+
+-- Create NPC Aimlock mini toggle
+createMiniToggle("NPC Aimlock", UDim2.new(0, 10, 0, 50), AimlockMiniToggleNpcEnabled, function(state)
+    AimlockMiniToggleNpcEnabled = state
+end)
+
+-- Create Player Aimlock mini toggle
+createMiniToggle("Player Aimlock", UDim2.new(0, 10, 0, 90), AimlockMiniTogglePlayerEnabled, function(state)
+    AimlockMiniTogglePlayerEnabled = state
+end)
 
 -- =========================
 -- Tool equip / unequip 
@@ -465,7 +501,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
 
     if lastSearch >= searchInterval then
         lastSearch = 0
-        if AimlockPlayerEnabled then
+        if AimlockPlayerEnabled and AimlockMiniTogglePlayerEnabled then
             if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
                 cachedEnemy = getNearestEnemy(500)
             end
@@ -473,7 +509,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
             cachedEnemy = nil
         end
 
-        if AimlockNpcEnabled then
+        if AimlockNpcEnabled and AimlockMiniToggleNpcEnabled then
             if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
                 cachedBoss = getNearestBoss(500)
             end
@@ -484,8 +520,8 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
 
     if not tiltEnabled then
         local targetHRP = nil
-        if AimlockPlayerEnabled then targetHRP = cachedEnemy end
-        if AimlockNpcEnabled then targetHRP = cachedBoss end
+        if AimlockPlayerEnabled and AimlockMiniTogglePlayerEnabled then targetHRP = cachedEnemy end
+        if AimlockNpcEnabled and AimlockMiniToggleNpcEnabled then targetHRP = cachedBoss end
 
         if targetHRP then
             local camCFrame = camera.CFrame
@@ -504,9 +540,9 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    if AimlockPlayerEnabled and cachedEnemy and currentTarget ~= cachedEnemy.Parent then
+    if AimlockPlayerEnabled and AimlockMiniTogglePlayerEnabled and cachedEnemy and currentTarget ~= cachedEnemy.Parent then
         setAimlockTarget(cachedEnemy.Parent)
-    elseif AimlockNpcEnabled and cachedBoss and currentTarget ~= cachedBoss.Parent then
+    elseif AimlockNpcEnabled and AimlockMiniToggleNpcEnabled and cachedBoss and currentTarget ~= cachedBoss.Parent then
         setAimlockTarget(cachedBoss.Parent)
     elseif not cachedEnemy and not cachedBoss and currentTarget then
         setAimlockTarget(nil)
@@ -544,6 +580,14 @@ end
 
 function AimlockModule:SetNpcAimlock(state)
     AimlockNpcEnabled = state
+end
+
+function AimlockModule:SetMiniTogglePlayerAimlock(state)
+    AimlockMiniTogglePlayerEnabled = state
+end
+
+function AimlockModule:SetMiniToggleNpcAimlock(state)
+    AimlockMiniToggleNpcEnabled = state
 end
 
 function AimlockModule:SetPrediction(state)
