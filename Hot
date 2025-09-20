@@ -200,7 +200,7 @@ end
 -- =========================
 -- Mini UI Buttons
 -- =========================
-local function createMiniToggle(name, position, stateVarRef)
+local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = name .. "MiniToggleGui"
     screenGui.ResetOnSpawn = false
@@ -220,6 +220,7 @@ local function createMiniToggle(name, position, stateVarRef)
 
     button.MouseButton1Click:Connect(function()
         stateVarRef.value = not stateVarRef.value
+        realVarSetter(stateVarRef.value) 
         updateUI(stateVarRef.value)
     end)
 
@@ -587,21 +588,27 @@ end
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
     if not MiniPlayerCreated then
         MiniPlayerState = { value = AimlockPlayerEnabled }
-        createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState)
+        createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
+            AimlockPlayerEnabled = val
+        end)
         MiniPlayerCreated = true
+    else
+        MiniPlayerState.value = state
+        AimlockPlayerEnabled = state
     end
-    MiniPlayerState.value = state
-    AimlockPlayerEnabled = state
 end
 
 function AimlockModule:SetMiniToggleNpcAimlock(state)
     if not MiniNpcCreated then
         MiniNpcState = { value = AimlockNpcEnabled }
-        createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState)
+        createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState, function(val)
+            AimlockNpcEnabled = val
+        end)
         MiniNpcCreated = true
+    else
+        MiniNpcState.value = state
+        AimlockNpcEnabled = state
     end
-    MiniNpcState.value = state
-    AimlockNpcEnabled = state
 end
 
 function AimlockModule:SetPrediction(state)
