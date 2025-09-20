@@ -208,7 +208,7 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 60, 0, 60) -- bigger for text
+    button.Size = UDim2.new(0, 60, 0, 60) 
     button.Position = position
     button.Text = name .. (stateVarRef.value and " ON" or " OFF")
     button.TextScaled = true
@@ -644,7 +644,7 @@ end
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
     if not MiniPlayerCreated and state then
         MiniPlayerState = { value = AimlockPlayerEnabled }
-        MiniPlayerGui = createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
+        MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
             AimlockPlayerEnabled = val
         end)
         MiniPlayerCreated = true
@@ -659,7 +659,7 @@ end
 function AimlockModule:SetMiniToggleNpcAimlock(state)
     if not MiniNpcCreated and state then
         MiniNpcState = { value = AimlockNpcEnabled }
-        MiniNpcGui = createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState, function(val)
+        MiniNpcGui = createMiniToggle("NPC", UDim2.new(0,10,0,50), MiniNpcState, function(val)
             AimlockNpcEnabled = val
         end)
         MiniNpcCreated = true
