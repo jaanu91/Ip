@@ -177,6 +177,17 @@ spawn(function()
 	setreadonly(gg, true)
 end)
 
+function SilentAimModule:IsPlayerSilentAim()
+    return SilentAimPlayersEnabled
+end
+
+function SilentAimModule:IsNPCSilentAim()
+    return SilentAimNPCsEnabled
+end
+
+SilentAimModule.PlayerSilentAimEnabled = SilentAimPlayersEnabled
+SilentAimModule.NPCSilentAimEnabled = SilentAimNPCsEnabled
+
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
 end
