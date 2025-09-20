@@ -120,7 +120,6 @@ do
 			if typeof(a1) == "string" and a1:upper() == "Z" then
 				if currentTool and currentTool.Name == "Godhuman" then
 					zActive = true
-					activateAimlock()
 				end
 			end
 		end
