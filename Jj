@@ -11,10 +11,7 @@ local humanoid = char:WaitForChild("Humanoid")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
-local ESPNameEnabled = true
-local ESPHealthEnabled = false
-local ESPLevelEnabled = false
-local ESPDistanceEnabled = false
+local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
 
@@ -23,6 +20,60 @@ local connections = {}
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
+
+-- =========================
+-- Team Check
+-- =========================
+local function isAllyWithMe(targetPlayer)
+	local myGui = player:FindFirstChild("PlayerGui")
+	if not myGui then return false end
+
+	local scrolling = myGui:FindFirstChild("Main")
+		and myGui.Main:FindFirstChild("Allies")
+		and myGui.Main.Allies:FindFirstChild("Container")
+		and myGui.Main.Allies.Container:FindFirstChild("Allies")
+		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+
+	if scrolling then
+		for _, frame in pairs(scrolling:GetDescendants()) do
+			if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isEnemy(targetPlayer)
+	if not targetPlayer or targetPlayer == player then
+		return false
+	end
+
+	local myTeam = player.Team
+	local targetTeam = targetPlayer.Team
+
+	if myTeam and targetTeam then
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+			return true
+		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+			return true
+		end
+
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+			if isAllyWithMe(targetPlayer) then
+				return false -- ally, not enemy
+			end
+			return true
+		end
+
+		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+			return false
+		end
+	end
+
+	return true
+end
 
 -- =========================
 -- Ability V3
@@ -101,125 +152,92 @@ local function getESPColor(player)
 	end
 end
 
--- =========================
--- ESP Toggles
--- =========================
-local function createESP(target)
-	if ESPs[target] then 
-		ESPs[target]:Destroy() 
-		ESPs[target] = nil 
+local function createESP(player)
+	if ESPs[player] then
+		ESPs[player]:Destroy()
+		ESPs[player] = nil
 	end
 
-	local char = target.Character
+	local char = player.Character
 	if not char then return end
 	local head = char:FindFirstChild("Head")
-	if not head then return end
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if not head or not humanoid then return end
 
 	local billboard = Instance.new("BillboardGui")
-	billboard.Name = target.Name
+	billboard.Name = player.Name
 	billboard.Adornee = head
-	billboard.Size = UDim2.new(0, 200, 0, 100)
+	billboard.Size = UDim2.new(0, 200, 0, 50)
 	billboard.AlwaysOnTop = true
-	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.StudsOffset = Vector3.new(0, 2, 0) 
 	billboard.Parent = espFolder
+	
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "NameLabel"
+	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = player.DisplayName
+	nameLabel.TextColor3 = getESPColor(player)
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.Font = Enum.Font.SourceSansBold
+	nameLabel.TextSize = 16
+	nameLabel.Parent = billboard
 
-	local function makeLabel(name, posY)
-		local label = Instance.new("TextLabel")
-		label.Name = name
-		label.Size = UDim2.new(1, 0, 0, 20)
-		label.Position = UDim2.new(0, 0, 0, posY)
-		label.BackgroundTransparency = 1
-		label.Font = Enum.Font.SourceSansBold
-		label.TextSize = 14
-		label.TextStrokeTransparency = 0
-		label.Visible = false -- will be enabled in RenderStepped
-		label.Parent = billboard
-		return label
-	end
+	local healthLabel = Instance.new("TextLabel")
+	healthLabel.Name = "HealthLabel"
+	healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
+	healthLabel.BackgroundTransparency = 1
+	healthLabel.Text = tostring(math.floor(humanoid.Health)) .. "/" .. tostring(math.floor(humanoid.MaxHealth))
+	healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+	healthLabel.TextStrokeTransparency = 0
+	healthLabel.Font = Enum.Font.SourceSansBold
+	healthLabel.TextSize = 14
+	healthLabel.TextXAlignment = Enum.TextXAlignment.Left
+	healthLabel.Parent = billboard
 
-	makeLabel("NameLabel", 0)
-	makeLabel("HealthLabel", 20)
-	makeLabel("LevelLabel", 40)
-	makeLabel("DistLabel", 60)
-
-	ESPs[target] = billboard
+	ESPs[player] = billboard
 end
 
 RunService.RenderStepped:Connect(function()
-	for target, billboard in pairs(ESPs) do
-		if target and target.Character and billboard then
-			local char = target.Character
-			local head = char:FindFirstChild("Head")
-			local humanoid = char:FindFirstChildOfClass("Humanoid")
-
-			if not (head and humanoid) then continue end
-
+	for player, billboard in pairs(ESPs) do
+		local char = player.Character
+		local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+		if billboard and char and humanoid then
 			local nameLabel = billboard:FindFirstChild("NameLabel")
 			local healthLabel = billboard:FindFirstChild("HealthLabel")
-			local levelLabel = billboard:FindFirstChild("LevelLabel")
-			local distLabel = billboard:FindFirstChild("DistLabel")
 
 			if nameLabel then
-				nameLabel.Visible = ESPNameEnabled
-				if ESPNameEnabled then
-					nameLabel.Text = target.DisplayName
-					nameLabel.TextColor3 = getESPColor(target)
-				end
+				nameLabel.TextColor3 = getESPColor(player)
 			end
-
 			if healthLabel then
-				healthLabel.Visible = ESPHealthEnabled
-				if ESPHealthEnabled then
-					healthLabel.Text = "HP: " .. math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth)
-					healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-				end
-			end
-
-			if levelLabel then
-				levelLabel.Visible = ESPLevelEnabled
-				if ESPLevelEnabled then
-					local level = "??"
-					local leaderstats = target:FindFirstChild("leaderstats")
-					if leaderstats and leaderstats:FindFirstChild("Level") then
-						level = leaderstats.Level.Value
-					end
-					levelLabel.Text = "Level: " .. tostring(level)
-					levelLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
-				end
-			end
-
-			if distLabel then
-				distLabel.Visible = ESPDistanceEnabled
-				if ESPDistanceEnabled then
-					local dist = (player.Character.Head.Position - head.Position).Magnitude
-					distLabel.Text = "Dist: " .. math.floor(dist)
-					distLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-				end
+				healthLabel.Text = tostring(math.floor(humanoid.Health)) .. "/" .. tostring(math.floor(humanoid.MaxHealth))
 			end
 		end
 	end
 end)
 
-local function setupPlayerESP(p)
-	p.CharacterAdded:Connect(function()
+local function setupPlayerESP(player)
+	player.CharacterAdded:Connect(function(char)
 		task.wait(0.5)
-		createESP(p)
+		createESP(player)
 	end)
-	if p.Character then
+	if player.Character then
 		task.wait(0.5)
-		createESP(p)
+		createESP(player)
 	end
 end
 
-Players.PlayerAdded:Connect(setupPlayerESP)
-for _, p in pairs(Players:GetPlayers()) do
-	if p ~= player then setupPlayerESP(p) end
+local function removeESP(player)
+	if ESPs[player] then
+		ESPs[player]:Destroy()
+		ESPs[player] = nil
+	end
 end
 
 -- =========================
 -- State Toggles
 -- =========================
-
 function ESPModule:SetV3(state)
     V3Enabled = state
     if state then
@@ -240,20 +258,32 @@ function ESPModule:SetBuso(state)
     end
 end
 
-function ESPModule:SetNameESP(state)
-	ESPNameEnabled = state
-end
+function ESPModule:SetESP(state)
+	ESPEnabled = state
+    if state then
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer then
+                setupPlayerESP(p)
+            end
+        end
+        espConn = game.Players.PlayerAdded:Connect(function(p)
+            if p ~= game.Players.LocalPlayer then
+                setupPlayerESP(p)
+            end
+        end)
+    else
+        for _, v in pairs(ESPs) do
+            v:Destroy()
+        end
+        ESPs = {}
+        
+        removeESP(p)
 
-function ESPModule:SetHealthESP(state) 
-	ESPHealthEnabled = state 
-end
-
-function ESPModule:SetLevelESP(state) 
-	ESPLevelEnabled = state 
-end
-
-function ESPModule:SetDistanceESP(state) 
-	ESPDistanceEnabled = state 
+        if espConn then
+            espConn:Disconnect()
+            espConn = nil
+        end
+    end
 end
 
 -- =========================
@@ -264,6 +294,7 @@ local function onCharacterAdded(newChar)
     humanoid = char:WaitForChild("Humanoid")
 
     if BunnyHopEnabled then
+        -- nothing extra needed, the hookmetamethod will keep working
     end
     if V3Enabled then
         startV3Loop()
