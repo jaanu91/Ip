@@ -167,22 +167,36 @@ local function createESP(player)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = player.Name
 	billboard.Adornee = head
-	billboard.Size = UDim2.fromOffset(200, 30) -- fixed pixel size
+	billboard.Size = UDim2.fromOffset(200, 50) -- taller to fit level above
 	billboard.AlwaysOnTop = true
-	billboard.StudsOffset = Vector3.new(0, 3, 0) -- push above Roblox default name tag
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
 	billboard.Parent = espFolder
 
-	local textLabel = Instance.new("TextLabel")
-	textLabel.Name = "MainLabel"
-	textLabel.Size = UDim2.new(1, 0, 1, 0)
-	textLabel.BackgroundTransparency = 1
-	textLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName
-	textLabel.TextColor3 = getESPColor(player)
-	textLabel.TextStrokeTransparency = 0
-	textLabel.Font = Enum.Font.SourceSansBold
-	textLabel.TextSize = 16
-	textLabel.TextXAlignment = Enum.TextXAlignment.Center
-	textLabel.Parent = billboard
+	local levelLabel = Instance.new("TextLabel")
+	levelLabel.Name = "LevelLabel"
+	levelLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	levelLabel.Position = UDim2.new(0, 0, 0, 0)
+	levelLabel.BackgroundTransparency = 1
+	levelLabel.Text = "Lv. ???"
+	levelLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+	levelLabel.TextStrokeTransparency = 0
+	levelLabel.Font = Enum.Font.SourceSansBold
+	levelLabel.TextSize = 14
+	levelLabel.TextXAlignment = Enum.TextXAlignment.Center
+	levelLabel.Parent = billboard
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "MainLabel"
+	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	nameLabel.Position = UDim2.new(0, 0, 0.5, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName
+	nameLabel.TextColor3 = getESPColor(player)
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.Font = Enum.Font.SourceSansBold
+	nameLabel.TextSize = 16
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Center
+	nameLabel.Parent = billboard
 
 	ESPs[player] = billboard
 end
@@ -192,10 +206,22 @@ RunService.RenderStepped:Connect(function()
 		local char = player.Character
 		local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 		if billboard and char and humanoid then
-			local mainLabel = billboard:FindFirstChild("MainLabel")
-			if mainLabel then
-				mainLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName
-				mainLabel.TextColor3 = getESPColor(player)
+			local nameLabel = billboard:FindFirstChild("MainLabel")
+			local levelLabel = billboard:FindFirstChild("LevelLabel")
+
+			if nameLabel then
+				nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName
+				nameLabel.TextColor3 = getESPColor(player)
+			end
+
+			if levelLabel then
+				local dataFolder = player:FindFirstChild("Data")
+				local levelValue = dataFolder and dataFolder:FindFirstChild("Level")
+				if levelValue and levelValue:IsA("IntValue") then
+					levelLabel.Text = "Lv. "..levelValue.Value
+				else
+					levelLabel.Text = "Lv. ???"
+				end
 			end
 		end
 	end
