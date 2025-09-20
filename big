@@ -16,11 +16,19 @@ local GodhumanZEnabled = false
 local zActive = false
 local maxRange = 1000
 
+-- flags linked to SilentAimModule
+local SilentAimPlayersEnabled = false
+local SilentAimNPCsEnabled = false
+
+function HelperGodhumanZ:SetSilentAimFlags(players, npcs)
+    SilentAimPlayersEnabled = players
+    SilentAimNPCsEnabled = npcs
+end
+
 local function getHRP(model)
 	return model and model:FindFirstChild("HumanoidRootPart")
 end
 
--- Closest Player
 local function getClosestPlayer(lpHRP)
 	local closest, closestDist = nil, math.huge
 	for _, pl in ipairs(Players:GetPlayers()) do
@@ -38,7 +46,6 @@ local function getClosestPlayer(lpHRP)
 	return closest
 end
 
--- Closest NPC
 local function getClosestNPC(lpHRP)
 	local enemiesFolder = workspace:FindFirstChild("Enemies")
 	if not enemiesFolder then return nil end
@@ -59,58 +66,37 @@ local function getClosestNPC(lpHRP)
 	return closest
 end
 
--- Handle tool
-local function hookTool(tool)
-	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
-		if not parent then
-			currentTool = nil
-			zActive = false
-		end
-	end)
-end
-
-char.ChildAdded:Connect(function(child)
-	if child:IsA("Tool") then
-		hookTool(child)
-	end
-end)
-
-char.ChildRemoved:Connect(function(child)
-	if child == currentTool then
-		currentTool = nil
-		zActive = false
-	end
-end)
-
--- Aim activation (no silent aim module)
 local function activateAimlock()
 	if not GodhumanZEnabled or not zActive then return end
 
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	local target = getClosestPlayer(hrp) or getClosestNPC(hrp)
-	if not target then return end
+	local target = nil
 
-	local targetHRP = target:FindFirstChild("HumanoidRootPart")
+	if SilentAimPlayersEnabled then
+		target = getClosestPlayer(hrp)
+	elseif SilentAimNPCsEnabled then
+		target = getClosestNPC(hrp)
+	end
+
+	if not target then return end
+	local targetHRP = getHRP(target)
 	if not targetHRP then return end
 
 	local startTime = tick()
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
-		-- small safeguard in case ability should not last long
 		if tick() - startTime > 1 then
 			conn:Disconnect()
 			zActive = false
 			return
 		end
-		-- only change camera orientation (not position)
 		camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
 	end)
 end
 
--- Detect Z usage via namecall hook (exploit environment)
+-- detect Godhuman Z
 do
 	local old
 	old = hookmetamethod(game, "__namecall", function(self, ...)
@@ -119,47 +105,19 @@ do
 
 		if (method == "InvokeServer" or method == "FireServer") then
 			local a1 = args[1]
-			-- detect Z being sent (case-insensitive)
 			if typeof(a1) == "string" and a1:upper() == "Z" then
-				-- only act if holding Godhuman
 				if currentTool and currentTool.Name == "Godhuman" then
-					-- mark zActive and run aim immediately (debounced below)
 					zActive = true
 					activateAimlock()
 				end
 			end
 		end
-
 		return old(self, ...)
 	end)
 end
 
--- Mobile touch detection (keeps original right-side touch logic)
-UserInputService.TouchStarted:Connect(function(touch)
-	if touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouches[touch] = true
-	end
-end)
-
-UserInputService.TouchEnded:Connect(function(touch)
-	if rightTouches[touch] then
-		rightTouches[touch] = nil
-		-- we keep this so you can also trigger on lift if desired
-		if not next(rightTouches) then
-			if zActive then
-				-- already handled in namecall hook; this is an extra safety
-				activateAimlock()
-			end
-		end
-	end
-end)
-
 function HelperGodhumanZ:SetGodhumanZ(state)
 	GodhumanZEnabled = state and true or false
-end
-
-function HelperGodhumanZ:IsEnabled()
-	return GodhumanZEnabled
 end
 
 return HelperGodhumanZ
