@@ -589,9 +589,9 @@ function AimlockModule:SetMiniTogglePlayerAimlock(state)
         MiniPlayerState = { value = AimlockPlayerEnabled }
         createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState)
         MiniPlayerCreated = true
-    else
-        MiniPlayerState.value = state
     end
+    MiniPlayerState.value = state
+    AimlockPlayerEnabled = state
 end
 
 function AimlockModule:SetMiniToggleNpcAimlock(state)
@@ -599,9 +599,9 @@ function AimlockModule:SetMiniToggleNpcAimlock(state)
         MiniNpcState = { value = AimlockNpcEnabled }
         createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState)
         MiniNpcCreated = true
-    else
-        MiniNpcState.value = state
     end
+    MiniNpcState.value = state
+    AimlockNpcEnabled = state
 end
 
 function AimlockModule:SetPrediction(state)
