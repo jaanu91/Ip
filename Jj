@@ -105,7 +105,11 @@ end
 -- ESP Toggles
 -- =========================
 local function createESP(target)
-	if ESPs[target] then ESPs[target]:Destroy() ESPs[target] = nil end
+	if ESPs[target] then 
+		ESPs[target]:Destroy() 
+		ESPs[target] = nil 
+	end
+
 	local char = target.Character
 	if not char then return end
 	local head = char:FindFirstChild("Head")
@@ -119,30 +123,24 @@ local function createESP(target)
 	billboard.StudsOffset = Vector3.new(0, 2, 0)
 	billboard.Parent = espFolder
 
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Name = "NameLabel"
-	nameLabel.Size = UDim2.new(1, 0, 0, 20)
-	nameLabel.Position = UDim2.new(0, 0, 0, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.TextSize = 14
-	nameLabel.TextStrokeTransparency = 0
-	nameLabel.Parent = billboard
+	local function makeLabel(name, posY)
+		local label = Instance.new("TextLabel")
+		label.Name = name
+		label.Size = UDim2.new(1, 0, 0, 20)
+		label.Position = UDim2.new(0, 0, 0, posY)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.SourceSansBold
+		label.TextSize = 14
+		label.TextStrokeTransparency = 0
+		label.Visible = false -- will be enabled in RenderStepped
+		label.Parent = billboard
+		return label
+	end
 
-	local healthLabel = nameLabel:Clone()
-	healthLabel.Name = "HealthLabel"
-	healthLabel.Position = UDim2.new(0, 0, 0, 20)
-	healthLabel.Parent = billboard
-
-	local levelLabel = nameLabel:Clone()
-	levelLabel.Name = "LevelLabel"
-	levelLabel.Position = UDim2.new(0, 0, 0, 40)
-	levelLabel.Parent = billboard
-
-	local distLabel = nameLabel:Clone()
-	distLabel.Name = "DistLabel"
-	distLabel.Position = UDim2.new(0, 0, 0, 60)
-	distLabel.Parent = billboard
+	makeLabel("NameLabel", 0)
+	makeLabel("HealthLabel", 20)
+	makeLabel("LevelLabel", 40)
+	makeLabel("DistLabel", 60)
 
 	ESPs[target] = billboard
 end
