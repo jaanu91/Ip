@@ -20,7 +20,6 @@ local connections = {}
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
-local MAX_DISTANCE = 800
 local UPDATE_INTERVAL = 0.3
 
 -- =========================
