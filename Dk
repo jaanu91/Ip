@@ -15,8 +15,13 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
+local MiniPlayerState = nil
+local MiniNpcState = nil
+local MiniPlayerCreated = false
+local MiniNpcCreated = false
 local currentTarget = nil
 local currentTool = nil
+local MiniPlayerGui, MiniNpcGui = nil, nil
 local vActive, sharkZActive, cursedZActive = false, false, false
 local tiltEnabled = false
 local rightTouches = {}
@@ -191,6 +196,96 @@ local function startTilt()
 			camera.CFrame = targetCF
 		end
 	end)
+end
+
+-- =========================
+-- Mini UI Buttons
+-- =========================
+local function createMiniToggle(name, position, stateVarRef, realVarSetter)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = name .. "MiniToggleGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 60, 0, 60) 
+    button.Position = position
+    button.Text = name .. (stateVarRef.value and " ON" or " OFF")
+    button.TextScaled = true
+    button.TextWrapped = false
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    button.BorderSizePixel = 0
+    button.Parent = screenGui
+
+    local uicorner = Instance.new("UICorner")
+    uicorner.CornerRadius = UDim.new(0, 8)
+    uicorner.Parent = button
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 50))
+    }
+    gradient.Rotation = 45
+    gradient.Parent = button
+
+    local function updateUI(state)
+        button.Text = name .. (state and " ON" or " OFF")
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, state and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+            ColorSequenceKeypoint.new(1, state and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+        }
+    end
+
+    button.MouseButton1Click:Connect(function()
+        stateVarRef.value = not stateVarRef.value
+        realVarSetter(stateVarRef.value)
+        updateUI(stateVarRef.value)
+    end)
+
+    -- =========================
+    -- Dragging functionality
+    -- =========================
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    local function onInputBegan(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = button.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end
+
+    local function onInputChanged(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            local delta = input.Position - dragStart
+            button.Position = UDim2.new(
+                0,
+                math.clamp(startPos.X.Offset + delta.X, 0, camera.ViewportSize.X - button.AbsoluteSize.X),
+                0,
+                math.clamp(startPos.Y.Offset + delta.Y, 0, camera.ViewportSize.Y - button.AbsoluteSize.Y)
+            )
+        end
+    end
+
+    button.InputBegan:Connect(onInputBegan)
+    button.InputChanged:Connect(onInputChanged)
+
+    task.spawn(function()
+        while true do
+            updateUI(stateVarRef.value)
+            task.wait(0.1)
+        end
+    end)
+    return screenGui
 end
 
 -- =========================
@@ -544,6 +639,36 @@ end
 
 function AimlockModule:SetNpcAimlock(state)
     AimlockNpcEnabled = state
+end
+
+function AimlockModule:SetMiniTogglePlayerAimlock(state)
+    if not MiniPlayerCreated and state then
+        MiniPlayerState = { value = AimlockPlayerEnabled }
+        MiniPlayerGui = createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
+            AimlockPlayerEnabled = val
+        end)
+        MiniPlayerCreated = true
+    elseif MiniPlayerCreated then
+        MiniPlayerState.value = state
+        if MiniPlayerGui then
+            MiniPlayerGui.Enabled = state
+        end
+    end
+end
+
+function AimlockModule:SetMiniToggleNpcAimlock(state)
+    if not MiniNpcCreated and state then
+        MiniNpcState = { value = AimlockNpcEnabled }
+        MiniNpcGui = createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState, function(val)
+            AimlockNpcEnabled = val
+        end)
+        MiniNpcCreated = true
+    elseif MiniNpcCreated then
+        MiniNpcState.value = state
+        if MiniNpcGui then
+            MiniNpcGui.Enabled = state
+        end
+    end
 end
 
 function AimlockModule:SetPrediction(state)
