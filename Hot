@@ -21,6 +21,7 @@ local MiniPlayerCreated = false
 local MiniNpcCreated = false
 local currentTarget = nil
 local currentTool = nil
+local MiniPlayerGui, MiniNpcGui = nil, nil
 local vActive, sharkZActive, cursedZActive = false, false, false
 local tiltEnabled = false
 local rightTouches = {}
@@ -284,6 +285,7 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
             task.wait(0.1)
         end
     end)
+    return screenGui
 end
 
 -- =========================
@@ -640,28 +642,32 @@ function AimlockModule:SetNpcAimlock(state)
 end
 
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
-    if not MiniPlayerCreated then
+    if not MiniPlayerCreated and state then
         MiniPlayerState = { value = AimlockPlayerEnabled }
-        createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
+        MiniPlayerGui = createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
             AimlockPlayerEnabled = val
         end)
         MiniPlayerCreated = true
-    else
+    elseif MiniPlayerCreated then
         MiniPlayerState.value = state
-        AimlockPlayerEnabled = state
+        if MiniPlayerGui then
+            MiniPlayerGui.Enabled = state
+        end
     end
 end
 
 function AimlockModule:SetMiniToggleNpcAimlock(state)
-    if not MiniNpcCreated then
+    if not MiniNpcCreated and state then
         MiniNpcState = { value = AimlockNpcEnabled }
-        createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState, function(val)
+        MiniNpcGui = createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState, function(val)
             AimlockNpcEnabled = val
         end)
         MiniNpcCreated = true
-    else
+    elseif MiniNpcCreated then
         MiniNpcState.value = state
-        AimlockNpcEnabled = state
+        if MiniNpcGui then
+            MiniNpcGui.Enabled = state
+        end
     end
 end
 
