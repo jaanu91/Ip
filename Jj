@@ -20,6 +20,8 @@ local connections = {}
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
+local MAX_DISTANCE = 800
+local UPDATE_INTERVAL = 0.3
 
 -- =========================
 -- Team Check
@@ -152,11 +154,47 @@ local function getESPColor(player)
 	end
 end
 
-local function createESP(player)
-	if ESPs[player] then
-		ESPs[player]:Destroy()
-		ESPs[player] = nil
+-- =========================
+-- Optimized ESP System
+-- =========================
+local function updateESP(player, billboard)
+	local myChar = player.Character
+	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+	local char = player.Character
+	local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+	if not billboard or not char or not humanoid or not myHRP or not hrp then
+		if billboard then billboard.Enabled = false end
+		return
 	end
+
+	local dist = (myHRP.Position - hrp.Position).Magnitude
+	if dist > MAX_DISTANCE then
+		billboard.Enabled = false
+		return
+	end
+
+	billboard.Enabled = true
+
+	local nameLabel = billboard:FindFirstChild("MainLabel")
+	local levelLabel = billboard:FindFirstChild("LevelLabel")
+
+	if levelLabel then
+		local dataFolder = player:FindFirstChild("Data")
+		local levelValue = dataFolder and dataFolder:FindFirstChild("Level")
+		levelLabel.Text = levelValue and ("Lv. "..levelValue.Value) or "Lv. ???"
+	end
+
+	if nameLabel then
+		nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName.." ("..math.floor(dist).."m)"
+		nameLabel.TextColor3 = getESPColor(player)
+	end
+end
+
+local function createESP(player)
+	if ESPs[player] then return end
 
 	local char = player.Character
 	if not char then return end
@@ -167,7 +205,7 @@ local function createESP(player)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = player.Name
 	billboard.Adornee = head
-	billboard.Size = UDim2.fromOffset(220, 50) -- wider to fit distance text
+	billboard.Size = UDim2.fromOffset(220, 50)
 	billboard.AlwaysOnTop = true
 	billboard.StudsOffset = Vector3.new(0, 3, 0)
 	billboard.Parent = espFolder
@@ -175,11 +213,11 @@ local function createESP(player)
 	local levelLabel = Instance.new("TextLabel")
 	levelLabel.Name = "LevelLabel"
 	levelLabel.Size = UDim2.new(1, 0, 0.5, 0)
-	levelLabel.Position = UDim2.new(0, 0, -0.5, 0)
+	levelLabel.Position = UDim2.new(0, 0, 0, 0)
 	levelLabel.BackgroundTransparency = 1
 	levelLabel.Text = "Lv. ???"
 	levelLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-	levelLabel.TextStrokeTransparency = 0
+	levelLabel.TextStrokeTransparency = 0.2 -- lighter stroke
 	levelLabel.Font = Enum.Font.SourceSansBold
 	levelLabel.TextSize = 14
 	levelLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -192,7 +230,7 @@ local function createESP(player)
 	mainLabel.BackgroundTransparency = 1
 	mainLabel.Text = "[0] "..player.DisplayName.." (0m)"
 	mainLabel.TextColor3 = getESPColor(player)
-	mainLabel.TextStrokeTransparency = 0
+	mainLabel.TextStrokeTransparency = 0.2
 	mainLabel.Font = Enum.Font.SourceSansBold
 	mainLabel.TextSize = 16
 	mainLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -201,43 +239,8 @@ local function createESP(player)
 	ESPs[player] = billboard
 end
 
-RunService.RenderStepped:Connect(function()
-	local myChar = game.Players.LocalPlayer.Character
-	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
-	for player, billboard in pairs(ESPs) do
-		local char = player.Character
-		local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-		if billboard and char and humanoid then
-			local nameLabel = billboard:FindFirstChild("MainLabel")
-			local levelLabel = billboard:FindFirstChild("LevelLabel")
-
-			if levelLabel then
-				local dataFolder = player:FindFirstChild("Data")
-				local levelValue = dataFolder and dataFolder:FindFirstChild("Level")
-				if levelValue and levelValue:IsA("IntValue") then
-					levelLabel.Text = "Lv. "..levelValue.Value
-				else
-					levelLabel.Text = "Lv. ???"
-				end
-			end
-
-			if nameLabel then
-				local dist = 0
-				if myHRP and hrp then
-					dist = (myHRP.Position - hrp.Position).Magnitude
-				end
-				nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName.." ("..math.floor(dist).."m)"
-				nameLabel.TextColor3 = getESPColor(player)
-			end
-		end
-	end
-end)
-
 local function setupPlayerESP(player)
-	player.CharacterAdded:Connect(function(char)
+	player.CharacterAdded:Connect(function()
 		task.wait(0.5)
 		createESP(player)
 	end)
@@ -253,6 +256,27 @@ local function removeESP(player)
 		ESPs[player] = nil
 	end
 end
+
+task.spawn(function()
+	while true do
+		if ESPEnabled then
+			for plr, billboard in pairs(ESPs) do
+				updateESP(plr, billboard)
+			end
+		end
+		task.wait(UPDATE_INTERVAL)
+	end
+end)
+
+game.Players.PlayerAdded:Connect(function(p)
+	if ESPEnabled then
+		setupPlayerESP(p)
+	end
+end)
+
+game.Players.PlayerRemoving:Connect(function(p)
+	removeESP(p)
+end)
 
 -- =========================
 -- State Toggles
@@ -278,30 +302,18 @@ function ESPModule:SetBuso(state)
 end
 
 function ESPModule:SetESP(state)
-	ESPEnabled = state
+    ESPEnabled = state
     if state then
         for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= game.Players.LocalPlayer then
+            if p ~= player then
                 setupPlayerESP(p)
             end
         end
-        espConn = game.Players.PlayerAdded:Connect(function(p)
-            if p ~= game.Players.LocalPlayer then
-                setupPlayerESP(p)
-            end
-        end)
     else
         for _, v in pairs(ESPs) do
             v:Destroy()
         end
         ESPs = {}
-        
-        removeESP(p)
-
-        if espConn then
-            espConn:Disconnect()
-            espConn = nil
-        end
     end
 end
 
