@@ -207,22 +207,76 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 60, 0, 30)
+    button.Size = UDim2.new(0, 120, 0, 40) -- bigger for text
     button.Position = position
     button.Text = name .. (stateVarRef.value and " ON" or " OFF")
-    button.BackgroundColor3 = stateVarRef.value and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    button.TextScaled = true
+    button.TextWrapped = true
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    button.BorderSizePixel = 0
     button.Parent = screenGui
+
+    local uicorner = Instance.new("UICorner")
+    uicorner.CornerRadius = UDim.new(0, 12)
+    uicorner.Parent = button
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 50))
+    }
+    gradient.Rotation = 45
+    gradient.Parent = button
 
     local function updateUI(state)
         button.Text = name .. (state and " ON" or " OFF")
-        button.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, state and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+            ColorSequenceKeypoint.new(1, state and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+        }
     end
 
     button.MouseButton1Click:Connect(function()
         stateVarRef.value = not stateVarRef.value
-        realVarSetter(stateVarRef.value) 
+        realVarSetter(stateVarRef.value)
         updateUI(stateVarRef.value)
     end)
+
+    -- =========================
+    -- Dragging functionality
+    -- =========================
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    local function onInputBegan(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = button.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end
+
+    local function onInputChanged(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            local delta = input.Position - dragStart
+            button.Position = UDim2.new(
+                0,
+                math.clamp(startPos.X.Offset + delta.X, 0, camera.ViewportSize.X - button.AbsoluteSize.X),
+                0,
+                math.clamp(startPos.Y.Offset + delta.Y, 0, camera.ViewportSize.Y - button.AbsoluteSize.Y)
+            )
+        end
+    end
+
+    button.InputBegan:Connect(onInputBegan)
+    button.InputChanged:Connect(onInputChanged)
 
     task.spawn(function()
         while true do
