@@ -202,11 +202,13 @@ local function createESP(player)
 end
 
 RunService.RenderStepped:Connect(function()
+	local myChar = game.Players.LocalPlayer.Character
+	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
 	for player, billboard in pairs(ESPs) do
 		local char = player.Character
 		local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
 		if billboard and char and humanoid then
 			local nameLabel = billboard:FindFirstChild("MainLabel")
@@ -224,8 +226,6 @@ RunService.RenderStepped:Connect(function()
 
 			if nameLabel then
 				local dist = 0
-				local myChar = game.Players.LocalPlayer.Character
-				local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
 				if myHRP and hrp then
 					dist = (myHRP.Position - hrp.Position).Magnitude
 				end
