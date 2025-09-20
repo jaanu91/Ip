@@ -586,7 +586,7 @@ end
 
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
     if not MiniPlayerCreated then
-        MiniPlayerState = { value = state }
+        MiniPlayerState = { value = AimlockPlayerEnabled }
         createMiniToggle("Player Aimlock", UDim2.new(0,10,0,90), MiniPlayerState)
         MiniPlayerCreated = true
     else
@@ -596,7 +596,7 @@ end
 
 function AimlockModule:SetMiniToggleNpcAimlock(state)
     if not MiniNpcCreated then
-        MiniNpcState = { value = state }
+        MiniNpcState = { value = AimlockNpcEnabled }
         createMiniToggle("NPC Aimlock", UDim2.new(0,10,0,50), MiniNpcState)
         MiniNpcCreated = true
     else
