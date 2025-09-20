@@ -1,0 +1,297 @@
+local ESPModule = {}
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
+local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid") 
+
+local V3Enabled = false
+local BunnyHopEnabled = false
+local ESPEnabled = false
+local ESP_ShowHealth = false
+local ESP_ShowLevel = false
+local ESP_ShowDistance = false
+local BusoEnabled = false
+local v3LoopRunning = false
+
+local currentTool = nil
+local connections = {}
+local ESPs = {}
+local cooldownTime = 31
+local v3Loop = nil
+
+-- =========================
+-- Ability V3
+-- =========================
+local function clickActivateAbility()
+    if CommE then
+        CommE:FireServer("ActivateAbility")
+    end
+end
+
+local function startV3Loop()
+    if v3LoopRunning then return end
+    v3LoopRunning = true
+    v3Loop = task.spawn(function()
+        while v3LoopRunning do
+            if not player or not player.Parent then break end
+            pcall(clickActivateAbility)
+            task.wait(cooldownTime)
+        end
+        v3Loop = nil
+    end)
+end
+
+local function stopV3Loop()
+    if not v3LoopRunning then return end
+    v3LoopRunning = false
+    v3Loop = nil
+end
+
+-- =========================
+-- V Skill Detection
+-- =========================
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if (method == "InvokeServer" or method == "FireServer") then
+        local a1 = args[1]
+
+        if typeof(a1) == "string" and a1:upper() == "DODGE" then
+            if BunnyHopEnabled then
+                local ok, h = pcall(function() return humanoid end)
+                if ok and h and h.Parent then
+                    task.defer(function()
+                        pcall(function()
+                            h:ChangeState(Enum.HumanoidStateType.Jumping)
+                        end)
+                    end)
+                end
+            end
+        end
+    end
+    return old(self, ...)
+end)
+
+-- =========================
+-- Global Player ESP with Colors
+-- =========================
+local espFolder = game.CoreGui:FindFirstChild("GlobalESP")
+if not espFolder then
+    espFolder = Instance.new("Folder")
+    espFolder.Name = "GlobalESP"
+    espFolder.Parent = game.CoreGui
+end
+
+local function getESPColor(player)
+	if player == game.Players.LocalPlayer then
+		return Color3.fromRGB(0, 255, 0)
+	elseif isAllyWithMe(player) then
+		return Color3.fromRGB(0, 255, 0)
+	elseif isEnemy(player) then
+		return Color3.fromRGB(255, 255, 0)
+	else
+		return Color3.fromRGB(0, 255, 0)
+	end
+end
+
+-- =========================
+-- ESP Toggles
+-- =========================
+local function createESP(player)
+    if ESPs[player] then
+        ESPs[player]:Destroy()
+        ESPs[player] = nil
+    end
+
+    local char = player.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = player.Name
+    billboard.Adornee = head
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.AlwaysOnTop = true
+    billboard.StudsOffset = Vector3.new(0, 2, 0) 
+    billboard.Parent = espFolder
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = getESPColor(player)
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextSize = 16
+    textLabel.Name = "ESPText"
+    textLabel.Parent = billboard
+
+    ESPs[player] = billboard
+end
+
+-- Update ESP text dynamically
+RunService.RenderStepped:Connect(function()
+    for player, billboard in pairs(ESPs) do
+        if billboard and billboard:FindFirstChild("ESPText") then
+            local textLabel = billboard:FindFirstChild("ESPText")
+            if textLabel then
+                -- Build text dynamically
+                local displayText = player.DisplayName
+                local char = player.Character
+                if char then
+                    if ESP_ShowHealth then
+                        local hum = char:FindFirstChild("Humanoid")
+                        if hum then
+                            displayText = displayText .. " | HP: " .. math.floor(hum.Health)
+                        end
+                    end
+                    if ESP_ShowLevel then
+                        local leaderstats = player:FindFirstChild("leaderstats")
+                        if leaderstats and leaderstats:FindFirstChild("Level") then
+                            displayText = displayText .. " | Lv: " .. leaderstats.Level.Value
+                        end
+                    end
+                    if ESP_ShowDistance then
+                        local root = char:FindFirstChild("HumanoidRootPart")
+                        if root and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            local dist = (root.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                            displayText = displayText .. " | " .. math.floor(dist) .. "m"
+                        end
+                    end
+                end
+                textLabel.Text = displayText
+                textLabel.TextColor3 = getESPColor(player)
+            end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+	for player, billboard in pairs(ESPs) do
+		if billboard and billboard:FindFirstChildOfClass("TextLabel") then
+			billboard.TextLabel.TextColor3 = getESPColor(player)
+		end
+	end
+end)
+
+local function setupPlayerESP(player)
+	player.CharacterAdded:Connect(function(char)
+		task.wait(0.5)
+		createESP(player)
+	end)
+	if player.Character then
+		task.wait(0.5)
+		createESP(player)
+	end
+end
+
+local function removeESP(player)
+	if ESPs[player] then
+		ESPs[player]:Destroy()
+		ESPs[player] = nil
+	end
+end
+
+-- =========================
+-- State Toggles
+-- =========================
+
+function ESPModule:SetV3(state)
+    V3Enabled = state
+    if state then
+        startV3Loop()
+    else
+        stopV3Loop()
+    end
+end
+
+function ESPModule:SetBunnyhop(state)
+    BunnyHopEnabled = state
+end
+
+function ESPModule:SetBuso(state)
+    BusoEnabled = state
+    if state then
+        pcall(function() CommF:InvokeServer("Buso") end)
+    end
+end
+
+function ESPModule:SetESP(state)
+	ESPEnabled = state
+    if state then
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer then
+                setupPlayerESP(p)
+            end
+        end
+        espConn = game.Players.PlayerAdded:Connect(function(p)
+            if p ~= game.Players.LocalPlayer then
+                setupPlayerESP(p)
+            end
+        end)
+    else
+        for _, v in pairs(ESPs) do
+            v:Destroy()
+        end
+        ESPs = {}
+        
+        removeESP(p)
+
+        if espConn then
+            espConn:Disconnect()
+            espConn = nil
+        end
+    end
+end
+
+-- Toggle functions
+function ESPModule:SetESPHealth(state)
+    ESP_ShowHealth = state
+end
+
+function ESPModule:SetESPLevel(state)
+    ESP_ShowLevel = state
+end
+
+function ESPModule:SetESPDistance(state)
+    ESP_ShowDistance = state
+end
+
+-- =========================
+-- Character Respawn Handling
+-- =========================
+local function onCharacterAdded(newChar)
+    char = newChar
+    humanoid = char:WaitForChild("Humanoid")
+
+    if BunnyHopEnabled then
+        -- nothing extra needed, the hookmetamethod will keep working
+    end
+    if V3Enabled then
+        startV3Loop()
+    end
+    if BusoEnabled then
+        pcall(function() CommF:InvokeServer("Buso") end)
+    end
+    if ESPEnabled then
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= player then
+                setupPlayerESP(p)
+            end
+        end
+    end
+end
+
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+player.CharacterAdded:Connect(onCharacterAdded)
+
+return ESPModule
