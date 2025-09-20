@@ -158,14 +158,14 @@ end
 -- Optimized ESP System
 -- =========================
 local function updateESP(player, billboard)
-	local myChar = player.Character
-	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
 	local char = player.Character
 	local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+	local head = char and char:FindFirstChild("Head")
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local myChar = player.Character or player.CharacterAdded:Wait()
+	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
 
-	if not billboard or not char or not humanoid or not myHRP or not hrp then
+	if not char or not humanoid or not head or not hrp or not myHRP or not billboard then
 		if billboard then billboard.Enabled = false end
 		return
 	end
@@ -174,9 +174,9 @@ local function updateESP(player, billboard)
 	if dist > MAX_DISTANCE then
 		billboard.Enabled = false
 		return
+	else
+		billboard.Enabled = true
 	end
-
-	billboard.Enabled = true
 
 	local nameLabel = billboard:FindFirstChild("MainLabel")
 	local levelLabel = billboard:FindFirstChild("LevelLabel")
