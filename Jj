@@ -157,42 +157,6 @@ end
 -- =========================
 -- Optimized ESP System
 -- =========================
-local function updateESP(player, billboard)
-	local char = player.Character
-	local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-	local head = char and char:FindFirstChild("Head")
-	local hrp = char and char:FindFirstChild("HumanoidRootPart")
-	local myChar = player.Character or player.CharacterAdded:Wait()
-	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-
-	if not char or not humanoid or not head or not hrp or not myHRP or not billboard then
-		if billboard then billboard.Enabled = false end
-		return
-	end
-
-	local dist = (myHRP.Position - hrp.Position).Magnitude
-	if dist > MAX_DISTANCE then
-		billboard.Enabled = false
-		return
-	else
-		billboard.Enabled = true
-	end
-
-	local nameLabel = billboard:FindFirstChild("MainLabel")
-	local levelLabel = billboard:FindFirstChild("LevelLabel")
-
-	if levelLabel then
-		local dataFolder = player:FindFirstChild("Data")
-		local levelValue = dataFolder and dataFolder:FindFirstChild("Level")
-		levelLabel.Text = levelValue and ("Lv. "..levelValue.Value) or "Lv. ???"
-	end
-
-	if nameLabel then
-		nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName.." ("..math.floor(dist).."m)"
-		nameLabel.TextColor3 = getESPColor(player)
-	end
-end
-
 local function createESP(player)
 	if ESPs[player] then return end
 
@@ -237,6 +201,37 @@ local function createESP(player)
 	mainLabel.Parent = billboard
 
 	ESPs[player] = billboard
+end
+
+local function updateESP(player, billboard)
+	local char = player.Character
+	local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+	local head = char and char:FindFirstChild("Head")
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local myChar = player.Character or player.CharacterAdded:Wait()
+	local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+	if not char or not humanoid or not head or not hrp or not myHRP or not billboard then
+		if billboard then billboard.Enabled = false end
+		return
+	end
+
+	local dist = (myHRP.Position - hrp.Position).Magnitude
+	billboard.Enabled = true
+
+	local nameLabel = billboard:FindFirstChild("MainLabel")
+	local levelLabel = billboard:FindFirstChild("LevelLabel")
+
+	if levelLabel then
+		local dataFolder = player:FindFirstChild("Data")
+		local levelValue = dataFolder and dataFolder:FindFirstChild("Level")
+		levelLabel.Text = levelValue and ("Lv. "..levelValue.Value) or "Lv. ???"
+	end
+
+	local nameLabel = billboard:FindFirstChild("MainLabel")
+	if nameLabel then
+	    nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName.." ("..math.floor(dist).."m)"
+	end
 end
 
 local function setupPlayerESP(player)
@@ -315,12 +310,6 @@ function ESPModule:SetESP(state)
         end
         ESPs = {}
     end
-end
-
-function ESPModule:SetDistanceLimit(num)
-	if typeof(num) == "number" then
-		MAX_DISTANCE = num
-	end
 end
 
 -- =========================
