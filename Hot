@@ -208,18 +208,18 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 120, 0, 40) -- bigger for text
+    button.Size = UDim2.new(0, 60, 0, 60) -- bigger for text
     button.Position = position
     button.Text = name .. (stateVarRef.value and " ON" or " OFF")
     button.TextScaled = true
-    button.TextWrapped = true
+    button.TextWrapped = false
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     button.BorderSizePixel = 0
     button.Parent = screenGui
 
     local uicorner = Instance.new("UICorner")
-    uicorner.CornerRadius = UDim.new(0, 12)
+    uicorner.CornerRadius = UDim.new(0, 8)
     uicorner.Parent = button
 
     local gradient = Instance.new("UIGradient")
