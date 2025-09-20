@@ -29,6 +29,60 @@ local cachedEnemy = nil
 local cachedBoss = nil
 
 -- =========================
+-- Team Check
+-- =========================
+local function isAllyWithMe(targetPlayer)
+	local myGui = player:FindFirstChild("PlayerGui")
+	if not myGui then return false end
+
+	local scrolling = myGui:FindFirstChild("Main")
+		and myGui.Main:FindFirstChild("Allies")
+		and myGui.Main.Allies:FindFirstChild("Container")
+		and myGui.Main.Allies.Container:FindFirstChild("Allies")
+		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+
+	if scrolling then
+		for _, frame in pairs(scrolling:GetDescendants()) do
+			if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isEnemy(targetPlayer)
+	if not targetPlayer or targetPlayer == player then
+		return false
+	end
+
+	local myTeam = player.Team
+	local targetTeam = targetPlayer.Team
+
+	if myTeam and targetTeam then
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+			return true
+		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+			return true
+		end
+
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+			if isAllyWithMe(targetPlayer) then
+				return false -- ally, not enemy
+			end
+			return true
+		end
+
+		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+			return false
+		end
+	end
+
+	return true
+end
+
+-- =========================
 -- Enemies Finder
 -- =========================
 local function getNearestEnemy(maxDistance)
@@ -36,7 +90,7 @@ local function getNearestEnemy(maxDistance)
 	local nearest, shortest = nil, maxDistance or 100
 
 	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+		if p ~= player and isEnemy(p) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 			local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
 			if humanoid and humanoid.Health > 0 then
 				local enemyHRP = p.Character.HumanoidRootPart
