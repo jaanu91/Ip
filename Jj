@@ -167,7 +167,7 @@ local function createESP(player)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = player.Name
 	billboard.Adornee = head
-	billboard.Size = UDim2.fromOffset(200, 50) -- taller to fit level above
+	billboard.Size = UDim2.fromOffset(220, 50) -- wider to fit distance text
 	billboard.AlwaysOnTop = true
 	billboard.StudsOffset = Vector3.new(0, 3, 0)
 	billboard.Parent = espFolder
@@ -185,18 +185,18 @@ local function createESP(player)
 	levelLabel.TextXAlignment = Enum.TextXAlignment.Center
 	levelLabel.Parent = billboard
 
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Name = "MainLabel"
-	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-	nameLabel.Position = UDim2.new(0, 0, 0.5, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName
-	nameLabel.TextColor3 = getESPColor(player)
-	nameLabel.TextStrokeTransparency = 0
-	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.TextSize = 16
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Center
-	nameLabel.Parent = billboard
+	local mainLabel = Instance.new("TextLabel")
+	mainLabel.Name = "MainLabel"
+	mainLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	mainLabel.Position = UDim2.new(0, 0, 0.5, 0)
+	mainLabel.BackgroundTransparency = 1
+	mainLabel.Text = "[0] "..player.DisplayName.." (0m)"
+	mainLabel.TextColor3 = getESPColor(player)
+	mainLabel.TextStrokeTransparency = 0
+	mainLabel.Font = Enum.Font.SourceSansBold
+	mainLabel.TextSize = 16
+	mainLabel.TextXAlignment = Enum.TextXAlignment.Center
+	mainLabel.Parent = billboard
 
 	ESPs[player] = billboard
 end
@@ -205,14 +205,12 @@ RunService.RenderStepped:Connect(function()
 	for player, billboard in pairs(ESPs) do
 		local char = player.Character
 		local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		local myHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+
 		if billboard and char and humanoid then
 			local nameLabel = billboard:FindFirstChild("MainLabel")
 			local levelLabel = billboard:FindFirstChild("LevelLabel")
-
-			if nameLabel then
-				nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName
-				nameLabel.TextColor3 = getESPColor(player)
-			end
 
 			if levelLabel then
 				local dataFolder = player:FindFirstChild("Data")
@@ -222,6 +220,17 @@ RunService.RenderStepped:Connect(function()
 				else
 					levelLabel.Text = "Lv. ???"
 				end
+			end
+
+			if nameLabel then
+				local dist = 0
+				local myChar = game.Players.LocalPlayer.Character
+				local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+				if myHRP and hrp then
+					dist = (myHRP.Position - hrp.Position).Magnitude
+				end
+				nameLabel.Text = "["..math.floor(humanoid.Health).."] "..player.DisplayName.." ("..math.floor(dist).."m)"
+				nameLabel.TextColor3 = getESPColor(player)
 			end
 		end
 	end
