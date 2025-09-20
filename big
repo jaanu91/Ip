@@ -1,6 +1,6 @@
--- HelperGodhumanZAim.lua
 local HelperGodhumanZ = {}
 
+local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
@@ -8,21 +8,22 @@ local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 
-local GodhumanZEnabled = false
+local currentTool = nil
+local rightTouches = {}
+
+-- Two separate toggles
+local GodhumanZPlayersEnabled = false
+local GodhumanZNPCsEnabled = false
+
 local zActive = false
 local maxRange = 1000
-
--- store reference to SilentAimModule
-local SilentAimModule = nil
-function HelperGodhumanZ:SetSilentAimModule(module)
-    SilentAimModule = module
-end
 
 local function getHRP(model)
 	return model and model:FindFirstChild("HumanoidRootPart")
 end
 
 local function getClosestPlayer(lpHRP)
+	if not GodhumanZPlayersEnabled then return nil end -- respect toggle
 	local closest, closestDist = nil, math.huge
 	for _, pl in ipairs(Players:GetPlayers()) do
 		if pl ~= player and pl.Character and pl.Character.Parent then
@@ -40,6 +41,7 @@ local function getClosestPlayer(lpHRP)
 end
 
 local function getClosestNPC(lpHRP)
+	if not GodhumanZNPCsEnabled then return nil end -- respect toggle
 	local enemiesFolder = workspace:FindFirstChild("Enemies")
 	if not enemiesFolder then return nil end
 
@@ -59,22 +61,40 @@ local function getClosestNPC(lpHRP)
 	return closest
 end
 
+local function hookTool(tool)
+	currentTool = tool
+	tool.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			currentTool = nil
+			zActive = false
+		end
+	end)
+end
+
+char.ChildAdded:Connect(function(child)
+	if child:IsA("Tool") then
+		hookTool(child)
+	end
+end)
+
+char.ChildRemoved:Connect(function(child)
+	if child == currentTool then
+		currentTool = nil
+		zActive = false
+	end
+end)
+
 local function activateAimlock()
-	if not GodhumanZEnabled or not zActive or not SilentAimModule then return end
+	if not zActive then return end
 
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	local target = nil
-
-	if SilentAimModule:IsPlayerSilentAim() then
-		target = getClosestPlayer(hrp)
-	elseif SilentAimModule:IsNPCSilentAim() then
-		target = getClosestNPC(hrp)
-	end
-
+	-- Try players first if enabled, else NPCs
+	local target = getClosestPlayer(hrp) or getClosestNPC(hrp)
 	if not target then return end
-	local targetHRP = getHRP(target)
+
+	local targetHRP = target:FindFirstChild("HumanoidRootPart")
 	if not targetHRP then return end
 
 	local startTime = tick()
@@ -89,7 +109,6 @@ local function activateAimlock()
 	end)
 end
 
--- detect Godhuman Z
 do
 	local old
 	old = hookmetamethod(game, "__namecall", function(self, ...)
@@ -99,18 +118,49 @@ do
 		if (method == "InvokeServer" or method == "FireServer") then
 			local a1 = args[1]
 			if typeof(a1) == "string" and a1:upper() == "Z" then
-				if char:FindFirstChildWhichIsA("Tool") and char:FindFirstChildWhichIsA("Tool").Name == "Godhuman" then
+				if currentTool and currentTool.Name == "Godhuman" then
 					zActive = true
 					activateAimlock()
 				end
 			end
 		end
+
 		return old(self, ...)
 	end)
 end
 
-function HelperGodhumanZ:SetGodhumanZ(state)
-	GodhumanZEnabled = state and true or false
+UserInputService.TouchStarted:Connect(function(touch)
+	if touch.Position.X > camera.ViewportSize.X / 2 then
+		rightTouches[touch] = true
+	end
+end)
+
+UserInputService.TouchEnded:Connect(function(touch)
+	if rightTouches[touch] then
+		rightTouches[touch] = nil
+		if not next(rightTouches) then
+			if zActive then
+				activateAimlock()
+			end
+		end
+	end
+end)
+
+-- Public API
+function HelperGodhumanZ:SetPlayersState(state)
+	GodhumanZPlayersEnabled = state and true or false
+end
+
+function HelperGodhumanZ:SetNPCsState(state)
+	GodhumanZNPCsEnabled = state and true or false
+end
+
+function HelperGodhumanZ:IsPlayersEnabled()
+	return GodhumanZPlayersEnabled
+end
+
+function HelperGodhumanZ:IsNPCsEnabled()
+	return GodhumanZNPCsEnabled
 end
 
 return HelperGodhumanZ
