@@ -152,9 +152,10 @@ RunService.RenderStepped:Connect(function()
 		if target and target.Character and billboard then
 			local char = target.Character
 			local head = char:FindFirstChild("Head")
-			if not head then continue end
-
 			local humanoid = char:FindFirstChildOfClass("Humanoid")
+
+			if not (head and humanoid) then continue end
+
 			local nameLabel = billboard:FindFirstChild("NameLabel")
 			local healthLabel = billboard:FindFirstChild("HealthLabel")
 			local levelLabel = billboard:FindFirstChild("LevelLabel")
@@ -170,7 +171,7 @@ RunService.RenderStepped:Connect(function()
 
 			if healthLabel then
 				healthLabel.Visible = ESPHealthEnabled
-				if ESPHealthEnabled and humanoid then
+				if ESPHealthEnabled then
 					healthLabel.Text = "HP: " .. math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth)
 					healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 				end
@@ -179,8 +180,11 @@ RunService.RenderStepped:Connect(function()
 			if levelLabel then
 				levelLabel.Visible = ESPLevelEnabled
 				if ESPLevelEnabled then
-					-- ⚠ Replace with your game’s method of getting level
-					local level = target:FindFirstChild("Level") and target.Level.Value or "??"
+					local level = "??"
+					local leaderstats = target:FindFirstChild("leaderstats")
+					if leaderstats and leaderstats:FindFirstChild("Level") then
+						level = leaderstats.Level.Value
+					end
 					levelLabel.Text = "Level: " .. tostring(level)
 					levelLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
 				end
