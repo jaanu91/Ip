@@ -1,137 +1,70 @@
 local StuffsModule = {}
 
 local BuddySwordXEnabled = false
-local DEBOUNCE_TIME = 0.2
-
--- SERVICES
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- UTILS
+-- Function to get HumanoidRootPart safely
 local function getHRP(char)
-	return (char and char:FindFirstChild("HumanoidRootPart")) or nil
+	return char and char:FindFirstChild("HumanoidRootPart")
 end
 
--- Find nearest target HRP
+-- Function to get nearest player
 local function getNearestTarget()
 	local char = LocalPlayer.Character
 	local hrp = getHRP(char)
 	if not hrp then return nil end
 
 	local nearestDist = math.huge
-	local nearestHRP = nil
+	local nearestTarget = nil
 
 	for _, plr in pairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer and plr.Character then
-			local phrp = getHRP(plr.Character)
-			if phrp then
-				local d = (hrp.Position - phrp.Position).Magnitude
-				if d < nearestDist then
-					nearestDist = d
-					nearestHRP = phrp
+			local targetHRP = getHRP(plr.Character)
+			if targetHRP then
+				local dist = (hrp.Position - targetHRP.Position).Magnitude
+				if dist < nearestDist then
+					nearestDist = dist
+					nearestTarget = plr
 				end
 			end
 		end
 	end
 
-	return nearestHRP
+	return nearestTarget
 end
 
--- Fire X skill at nearest target
-local function fireXAtNearest()
-	if not BuddySwordXEnabled then return end -- only run when toggled on
+-- Function to fire X skill at nearest target
+local function fireXSkill()
+	if not BuddySwordXEnabled then return end  -- Only fire if toggled on
 
-	local targetHRP = getNearestTarget()
-	if not targetHRP then return end
+	local target = getNearestTarget()
+	if target and target.Character then
+		local targetHRP = getHRP(target.Character)
+		if targetHRP then
+			local pos = targetHRP.Position
+			local args = {
+				"X",
+				Vector3.new(pos.X, pos.Y, pos.Z)
+			}
 
-	local pos = targetHRP.Position
-	local args = {
-		"X",
-		Vector3.new(pos.X, pos.Y, pos.Z)
-	}
-
-	local char = LocalPlayer.Character
-	if not char then return end
-
-	local success, err = pcall(function()
-		local humanoid = char:WaitForChild("Humanoid")
-		local invoker = humanoid:FindFirstChild("")
-		if invoker and invoker.InvokeServer then
-			invoker:InvokeServer(unpack(args))
-		end
-	end)
-
-	if not success then
-		warn("Failed to fire X skill invoker: " .. tostring(err))
-	end
-end
-
--- Detect Buddy Sword Remote
-local TargetRemote
-local lastFired = 0
-
-local function connectBuddySword(tool)
-	if tool.Name == "Buddy Sword" then
-		TargetRemote = tool:FindFirstChildWhichIsA("RemoteEvent")
-	end
-end
-
--- Character added handling
-LocalPlayer.CharacterAdded:Connect(function(char)
-	char.ChildAdded:Connect(connectBuddySword)
-end)
-
-if LocalPlayer.Character then
-	LocalPlayer.Character.ChildAdded:Connect(connectBuddySword)
-	for _, tool in ipairs(LocalPlayer.Character:GetChildren()) do
-		connectBuddySword(tool)
-	end
-end
-
--- Hook __namecall
-local ok, rawMT = pcall(function() return getrawmetatable(game) end)
-if ok then
-	if type(setreadonly) == "function" then
-		pcall(function() setreadonly(rawMT, false) end)
-	end
-
-	local oldNamecall = rawMT.__namecall
-	rawMT.__namecall = newcclosure(function(self, ...)
-		local method = getnamecallmethod()
-		local args = { ... }
-
-		-- Only hook Buddy Sword remote and only if toggle is enabled
-		if method == "FireServer" and TargetRemote and self == TargetRemote and BuddySwordXEnabled then
-			local result
-			local ok2, err2 = pcall(function()
-				result = oldNamecall(self, unpack(args))
-			end)
-			if not ok2 then
-				warn("original FireServer failed: " .. tostring(err2))
+			-- Replace "" with the actual RemoteFunction name
+			local remote = LocalPlayer.Character:FindFirstChild("")
+			if remote then
+				remote:InvokeServer(unpack(args))
+			else
+				warn("RemoteFunction not found in character")
 			end
-
-			local now = tick()
-			if now - lastFired >= DEBOUNCE_TIME then
-				lastFired = now
-				task.spawn(function()
-					pcall(fireXAtNearest)
-				end)
-			end
-
-			return result
 		end
-
-		return oldNamecall(self, unpack(args))
-	end)
-
-	if type(setreadonly) == "function" then
-		pcall(function() setreadonly(rawMT, true) end)
 	end
 end
 
 -- Public toggle function
 function StuffsModule:SetBuddySwordX(state)
 	BuddySwordXEnabled = state
+	if state then
+		fireXSkill()
+	end
 end
 
 return StuffsModule
