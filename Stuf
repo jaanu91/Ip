@@ -39,10 +39,11 @@ RunService.RenderStepped:Connect(function()
         fps = 1 / (now - lastTime)
         lastTime = now
         
-        -- Get ping
-        local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- seconds to ms
-
-        textLabel.Text = string.format("FPS: %d / Ping: %d", fps, ping)
+        -- Get ping in ms
+        local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+        
+        -- Show FPS and Ping without leading zeros
+        textLabel.Text = "FPS: " .. math.floor(fps) .. " / Ping: " .. ping
     end
 end)
 
