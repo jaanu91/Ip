@@ -10,75 +10,105 @@ local BuddySwordXEnabled = false
 local function getCooldownFrame()
     local skills = LocalPlayer.PlayerGui:WaitForChild("Main"):WaitForChild("Skills")
     local buddySwordFrame = skills:FindFirstChild("Buddy Sword")
-    if not buddySwordFrame then return nil end
+    if not buddySwordFrame then 
+        warn("[DEBUG] Buddy Sword frame not found in GUI")
+        return nil 
+    end
     return buddySwordFrame:WaitForChild("X"):WaitForChild("Cooldown")
 end
 
--- Later in your code, instead of defining cooldownFrame once:
 local function isSkillReady()
     local cooldownFrame = getCooldownFrame()
-    if cooldownFrame and cooldownFrame.Size.X.Scale == 1 then
-        return true
+    if not cooldownFrame then 
+        warn("[DEBUG] Cooldown frame missing")
+        return false 
     end
-    return false
+    local ready = cooldownFrame.Size.X.Scale == 1
+    print("[DEBUG] isSkillReady:", ready)
+    return ready
 end
 
--- Utility to get HumanoidRootPart
 local function getHRP(char)
-return (char and char:FindFirstChild("HumanoidRootPart")) or nil
+    return (char and char:FindFirstChild("HumanoidRootPart")) or nil
 end
 
 -- Find nearest player
 local function getNearestTarget()
-local char = LocalPlayer.Character
-local hrp = getHRP(char)
-if not hrp then return nil end
+    local char = LocalPlayer.Character
+    local hrp = getHRP(char)
+    if not hrp then 
+        warn("[DEBUG] LocalPlayer HRP not found") 
+        return nil 
+    end
 
-local nearestDist = math.huge  
-local nearestPlayer = nil  
+    local nearestDist = math.huge  
+    local nearestPlayer = nil  
 
-for _, plr in ipairs(Players:GetPlayers()) do  
-    if plr ~= LocalPlayer then  
-        local pchar = plr.Character  
-        local phrp = getHRP(pchar)  
-        if phrp then  
-            local d = (hrp.Position - phrp.Position).Magnitude  
-            if d < nearestDist then  
-                nearestDist = d  
-                nearestPlayer = plr  
+    for _, plr in ipairs(Players:GetPlayers()) do  
+        if plr ~= LocalPlayer then  
+            local pchar = plr.Character  
+            local phrp = getHRP(pchar)  
+            if phrp then  
+                local d = (hrp.Position - phrp.Position).Magnitude  
+                if d < nearestDist then  
+                    nearestDist = d  
+                    nearestPlayer = plr  
+                end  
             end  
         end  
     end  
-end  
 
-return nearestPlayer
+    if nearestPlayer then
+        print("[DEBUG] Nearest target:", nearestPlayer.Name, "Dist:", nearestDist)
+    else
+        warn("[DEBUG] No target found")
+    end
 
+    return nearestPlayer
 end
 
 -- Fire Skill X
 local function fireSkillX()
+    print("[DEBUG] fireSkillX called")
+
     local targetPlayer = getNearestTarget()
-    if not targetPlayer or not targetPlayer.Character then return end
+    if not targetPlayer or not targetPlayer.Character then 
+        warn("[DEBUG] No target character")
+        return 
+    end
 
     local targetHRP = getHRP(targetPlayer.Character)  
-    if not targetHRP then return end  
+    if not targetHRP then 
+        warn("[DEBUG] Target has no HRP")
+        return 
+    end  
 
     local pos = targetHRP.Position  
     local args = {  
         "X",  
         Vector3.new(pos.X, pos.Y, pos.Z)  
     }  
+    print("[DEBUG] Args prepared:", args[1], args[2])
 
     local char = LocalPlayer.Character  
-    if not char then return end  
+    if not char then 
+        warn("[DEBUG] Local character missing")
+        return 
+    end  
 
     local humanoid = char:FindFirstChild("Humanoid")  
-    if not humanoid then return end  
+    if not humanoid then 
+        warn("[DEBUG] Local humanoid missing")
+        return 
+    end  
 
     -- find the RemoteFunction (even if it has no name)
     local invoker = humanoid:FindFirstChildOfClass("RemoteFunction")  
     if invoker and invoker.InvokeServer then  
+        print("[DEBUG] Invoking RemoteFunction...")
         invoker:InvokeServer(unpack(args))  
+    else
+        warn("[DEBUG] RemoteFunction not found in Humanoid")
     end
 end
 
@@ -86,17 +116,21 @@ end
 UserInputService.TouchEnded:Connect(function(input, gameProcessed)
     if gameProcessed then return end
 
-    -- Only right side of screen
     local screenSize = workspace.CurrentCamera.ViewportSize
     if input.Position.X <= screenSize.X / 2 then return end
 
+    print("[DEBUG] Right screen touched. BuddySwordXEnabled:", BuddySwordXEnabled)
+
     if BuddySwordXEnabled and isSkillReady() then
         fireSkillX()
+    else
+        warn("[DEBUG] Either disabled or skill not ready")
     end
 end)
 
 function StuffsModule:SetBuddySwordX(state)
     BuddySwordXEnabled = state
+    print("[DEBUG] BuddySwordXEnabled set to:", state)
 end
 
 return StuffsModule
