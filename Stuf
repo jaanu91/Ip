@@ -46,7 +46,7 @@ RunService.Heartbeat:Connect(function()
 					"X",
 					targetHRP.Position
 				}
-				hum:FindFirstChildOfClass("RemoteFunction"):InvokeServer(unpack(args))
+				hum:FindFirstChild(""):InvokeServer(unpack(args))
 				BuddySwordXEnabled = false -- auto-turn off after firing once
 			end
 		end
