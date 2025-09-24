@@ -19,14 +19,14 @@ local function createGui()
 
 	FpsPingLabel = Instance.new("TextLabel")
 	FpsPingLabel.Name = "FpsPingLabel"
-	FpsPingLabel.Size = UDim2.new(0, 120, 0, 30) -- smaller size
-	FpsPingLabel.Position = UDim2.new(1, -130, 0, 10) -- top-right corner
+	FpsPingLabel.Size = UDim2.new(0, 150, 0, 30) -- slightly wider
+	FpsPingLabel.Position = UDim2.new(1, -160, 0, 10) -- top-right corner
 	FpsPingLabel.AnchorPoint = Vector2.new(0, 0) 
-	FpsPingLabel.BackgroundTransparency = 1 -- fully invisible background
+	FpsPingLabel.BackgroundTransparency = 1
 	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	FpsPingLabel.Font = Enum.Font.SourceSansBold
 	FpsPingLabel.TextSize = 18
-	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right -- align text to the right
+	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right
 	FpsPingLabel.Parent = ScreenGui
 end
 
@@ -54,10 +54,32 @@ RunService.RenderStepped:Connect(function(deltaTime)
 		lastTime = tick()
 	end
 
-	-- Ping calculation
-	local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- in ms
+	-- Ping calculation (round trip, to match Roblox stats)
+	local ping = math.floor(LocalPlayer:GetNetworkPing() * 2000)
+
+	-- Decide color based on performance
+	local textColor = Color3.fromRGB(255, 255, 255) -- default white
+
+	-- Ping thresholds
+	if ping <= 80 then
+		textColor = Color3.fromRGB(0, 255, 0) -- Green
+	elseif ping <= 150 then
+		textColor = Color3.fromRGB(255, 255, 0) -- Yellow
+	else
+		textColor = Color3.fromRGB(255, 0, 0) -- Red
+	end
+
+	-- FPS thresholds
+	if fps >= 50 then
+		-- keep current ping color
+	elseif fps >= 30 then
+		textColor = Color3.fromRGB(255, 165, 0) -- Orange
+	else
+		textColor = Color3.fromRGB(255, 0, 0) -- Red
+	end
 
 	-- Update text
+	FpsPingLabel.TextColor3 = textColor
 	FpsPingLabel.Text = string.format("FPS: %d  |  Ping: %dms", fps, ping)
 end)
 
