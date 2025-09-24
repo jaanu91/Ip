@@ -29,7 +29,7 @@ local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
 local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 local healthConn, lastHealth = nil, nil
 local lastSearch = 0
-local searchInterval = 0.02
+local searchInterval = 0.01
 local cachedEnemy = nil
 local cachedBoss = nil
 
@@ -208,7 +208,7 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 80, 0, 50) 
+    button.Size = UDim2.new(0, 80, 0, 80) 
     button.Position = position
     button.Text = name .. (stateVarRef.value and " ON" or " OFF")
     button.TextScaled = true
@@ -528,15 +528,6 @@ end
 local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
-    local currentFPS = math.floor(1 / dt)
-    if currentFPS < 30 then
-        searchInterval = 0.12
-    elseif currentFPS < 45 then
-        searchInterval = 0.07
-    else
-        searchInterval = 0.02
-    end
 
     lastSearch = lastSearch + dt
 
