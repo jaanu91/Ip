@@ -29,7 +29,7 @@ local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
 local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 local healthConn, lastHealth = nil, nil
 local lastSearch = 0
-local searchInterval = 0.02
+local searchInterval = 0.01
 local cachedEnemy = nil
 local cachedBoss = nil
 
