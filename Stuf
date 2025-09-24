@@ -18,7 +18,7 @@ local function createGui()
 
 	FpsPingLabel = Instance.new("TextLabel")
 	FpsPingLabel.Name = "FpsPingLabel"
-	FpsPingLabel.Size = UDim2.new(0, 140, 0, 25) -- wider for both values
+	FpsPingLabel.Size = UDim2.new(0, 120, 0, 20) -- wider for both values
 	FpsPingLabel.Position = UDim2.new(1, -10, 0, 10) -- top-right corner
 	FpsPingLabel.AnchorPoint = Vector2.new(1, 0) 
 	FpsPingLabel.BackgroundTransparency = 1
