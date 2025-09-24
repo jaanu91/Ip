@@ -1,69 +1,70 @@
 local StuffsModule = {}
 
-local BuddySwordXEnabled = false
+local PingsOrFpsEnabled = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 
--- Function to get HumanoidRootPart safely
-local function getHRP(char)
-	return char and char:FindFirstChild("HumanoidRootPart")
+-- GUI setup
+local ScreenGui
+local FpsPingLabel
+
+local function createGui()
+	if ScreenGui then return end -- Prevent multiple GUIs
+
+	ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "FpsPingGui"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	FpsPingLabel = Instance.new("TextLabel")
+	FpsPingLabel.Name = "FpsPingLabel"
+	FpsPingLabel.Size = UDim2.new(0, 200, 0, 50)
+	FpsPingLabel.Position = UDim2.new(0, 10, 0, 10)
+	FpsPingLabel.BackgroundTransparency = 0.5
+	FpsPingLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	FpsPingLabel.Font = Enum.Font.SourceSansBold
+	FpsPingLabel.TextSize = 20
+	FpsPingLabel.Parent = ScreenGui
 end
 
--- Function to get nearest player
-local function getNearestTarget()
-	local char = LocalPlayer.Character
-	local hrp = getHRP(char)
-	if not hrp then return nil end
+-- FPS calculation
+local lastTime = tick()
+local frameCount = 0
+local fps = 0
 
-	local nearestDist = math.huge
-	local nearestTarget = nil
-
-	for _, plr in pairs(Players:GetPlayers()) do
-		if plr ~= LocalPlayer and plr.Character then
-			local targetHRP = getHRP(plr.Character)
-			if targetHRP then
-				local dist = (hrp.Position - targetHRP.Position).Magnitude
-				if dist < nearestDist then
-					nearestDist = dist
-					nearestTarget = plr
-				end
-			end
+RunService.RenderStepped:Connect(function(deltaTime)
+	if not PingsOrFpsEnabled then
+		if ScreenGui then
+			ScreenGui.Enabled = false
 		end
+		return
 	end
 
-	return nearestTarget
-end
+	createGui()
+	ScreenGui.Enabled = true
 
--- Function to fire X skill at nearest target
-local function fireXSkill()
-	if not BuddySwordXEnabled then return end  -- Only fire if toggled on
-
-	local target = getNearestTarget()
-	if target and target.Character then
-		local targetHRP = getHRP(target.Character)
-		if targetHRP then
-			local pos = targetHRP.Position
-			local args = {
-				"X",
-				Vector3.new(pos.X, pos.Y, pos.Z)
-			}
-
-			-- Replace "" with the actual RemoteFunction name
-			local remote = LocalPlayer.Character:FindFirstChild("")
-			if remote then
-				remote:InvokeServer(unpack(args))
-			else
-				warn("RemoteFunction not found in character")
-			end
-		end
+	-- FPS calculation
+	frameCount = frameCount + 1
+	if tick() - lastTime >= 1 then
+		fps = frameCount
+		frameCount = 0
+		lastTime = tick()
 	end
-end
 
--- Public toggle function
-function StuffsModule:SetBuddySwordX(state)
-	BuddySwordXEnabled = state
-	if state then
-		fireXSkill()
+	-- Ping calculation
+	local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- in ms
+
+	-- Update text
+	FpsPingLabel.Text = string.format("Fps:%03d/Pings:%03d", fps, ping)
+end)
+
+-- Toggle function
+function StuffsModule:SetPingsOrFps(state)
+	PingsOrFpsEnabled = state
+	if ScreenGui then
+		ScreenGui.Enabled = state
 	end
 end
 
