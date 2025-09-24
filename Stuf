@@ -1,136 +1,103 @@
 local StuffsModule = {}
 
+local BuddySwordXEnabled = false
+local DEBOUNCE_TIME = 0.2
+
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local BuddySwordXEnabled = false
+local lastFired = 0
+local BuddySwordRemote -- RemoteFunction reference
 
--- Utility to safely wait for cooldown frame
-local function getCooldownFrame()
-    local skills = LocalPlayer.PlayerGui:WaitForChild("Main"):WaitForChild("Skills")
-    local buddySwordFrame = skills:FindFirstChild("Buddy Sword")
-    if not buddySwordFrame then 
-        warn("[DEBUG] Buddy Sword frame not found in GUI")
-        return nil 
-    end
-    return buddySwordFrame:WaitForChild("X"):WaitForChild("Cooldown")
-end
-
-local function isSkillReady()
-    local cooldownFrame = getCooldownFrame()
-    if not cooldownFrame then 
-        warn("[DEBUG] Cooldown frame missing")
-        return false 
-    end
-    local ready = cooldownFrame.Size.X.Scale == 1
-    print("[DEBUG] isSkillReady:", ready)
-    return ready
-end
-
+-- Utility
 local function getHRP(char)
     return (char and char:FindFirstChild("HumanoidRootPart")) or nil
 end
 
--- Find nearest player
 local function getNearestTarget()
     local char = LocalPlayer.Character
     local hrp = getHRP(char)
-    if not hrp then 
-        warn("[DEBUG] LocalPlayer HRP not found") 
-        return nil 
+    if not hrp then return nil end
+
+    local nearestDist, nearestPlr = math.huge, nil
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local phrp = getHRP(plr.Character)
+            if phrp then
+                local d = (hrp.Position - phrp.Position).Magnitude
+                if d < nearestDist then
+                    nearestDist, nearestPlr = d, plr
+                end
+            end
+        end
     end
-
-    local nearestDist = math.huge  
-    local nearestPlayer = nil  
-
-    for _, plr in ipairs(Players:GetPlayers()) do  
-        if plr ~= LocalPlayer then  
-            local pchar = plr.Character  
-            local phrp = getHRP(pchar)  
-            if phrp then  
-                local d = (hrp.Position - phrp.Position).Magnitude  
-                if d < nearestDist then  
-                    nearestDist = d  
-                    nearestPlayer = plr  
-                end  
-            end  
-        end  
-    end  
-
-    if nearestPlayer then
-        print("[DEBUG] Nearest target:", nearestPlayer.Name, "Dist:", nearestDist)
-    else
-        warn("[DEBUG] No target found")
-    end
-
-    return nearestPlayer
+    return nearestPlr
 end
 
--- Fire Skill X
-local function fireSkillX()
-    print("[DEBUG] fireSkillX called")
-
+local function fireXAtNearest()
+    if not BuddySwordRemote then return end
     local targetPlayer = getNearestTarget()
-    if not targetPlayer or not targetPlayer.Character then 
-        warn("[DEBUG] No target character")
-        return 
-    end
+    if not targetPlayer or not targetPlayer.Character then return end
+    local targetHRP = getHRP(targetPlayer.Character)
+    if not targetHRP then return end
 
-    local targetHRP = getHRP(targetPlayer.Character)  
-    if not targetHRP then 
-        warn("[DEBUG] Target has no HRP")
-        return 
-    end  
+    local args = {
+        "X",
+        targetHRP.Position
+    }
 
-    local pos = targetHRP.Position  
-    local args = {  
-        "X",  
-        Vector3.new(pos.X, pos.Y, pos.Z)  
-    }  
-    print("[DEBUG] Args prepared:", args[1], args[2])
-
-    local char = LocalPlayer.Character  
-    if not char then 
-        warn("[DEBUG] Local character missing")
-        return 
-    end  
-
-    local humanoid = char:FindFirstChild("Humanoid")  
-    if not humanoid then 
-        warn("[DEBUG] Local humanoid missing")
-        return 
-    end  
-
-    -- find the RemoteFunction (even if it has no name)
-    local invoker = humanoid:FindFirstChildOfClass("RemoteFunction")  
-    if invoker and invoker.InvokeServer then  
-        print("[DEBUG] Invoking RemoteFunction...")
-        invoker:InvokeServer(unpack(args))  
-    else
-        warn("[DEBUG] RemoteFunction not found in Humanoid")
+    local ok, err = pcall(function()
+        BuddySwordRemote:InvokeServer(unpack(args))
+    end)
+    if not ok then
+        warn("Failed InvokeServer: " .. tostring(err))
     end
 end
 
--- Detect touches on right side
-UserInputService.TouchEnded:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-
-    local screenSize = workspace.CurrentCamera.ViewportSize
-    if input.Position.X <= screenSize.X / 2 then return end
-
-    print("[DEBUG] Right screen touched. BuddySwordXEnabled:", BuddySwordXEnabled)
-
-    if BuddySwordXEnabled and isSkillReady() then
-        fireSkillX()
-    else
-        warn("[DEBUG] Either disabled or skill not ready")
+-- Detect Buddy Sword remote under humanoid
+local function scanForRemote()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChild("Humanoid")
+    if hum then
+        BuddySwordRemote = hum:FindFirstChildWhichIsA("RemoteFunction")
     end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
+    scanForRemote()
+end)
+scanForRemote()
+
+-- Hook __namecall to auto-fire when BuddySwordXEnabled
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+
+local oldNamecall = mt.__namecall
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if method == "InvokeServer" and self == BuddySwordRemote then
+        local result = oldNamecall(self, unpack(args))
+
+        local now = tick()
+        if BuddySwordXEnabled and now - lastFired >= DEBOUNCE_TIME then
+            lastFired = now
+            task.spawn(fireXAtNearest)
+        end
+        return result
+    end
+
+    return oldNamecall(self, unpack(args))
 end)
 
+setreadonly(mt, true)
+
+-- API
 function StuffsModule:SetBuddySwordX(state)
     BuddySwordXEnabled = state
-    print("[DEBUG] BuddySwordXEnabled set to:", state)
 end
 
 return StuffsModule
