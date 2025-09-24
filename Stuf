@@ -57,32 +57,31 @@ end
 
 -- Fire Skill X
 local function fireSkillX()
-local targetPlayer = getNearestTarget()
-if not targetPlayer or not targetPlayer.Character then return end
+    local targetPlayer = getNearestTarget()
+    if not targetPlayer or not targetPlayer.Character then return end
 
-local targetHRP = getHRP(targetPlayer.Character)  
-if not targetHRP then return end  
+    local targetHRP = getHRP(targetPlayer.Character)  
+    if not targetHRP then return end  
 
-local pos = targetHRP.Position  
-local args = {  
-    "X",  
-    Vector3.new(pos.X, pos.Y, pos.Z)  
-}  
+    local pos = targetHRP.Position  
+    local args = {  
+        "X",  
+        Vector3.new(pos.X, pos.Y, pos.Z)  
+    }  
 
-local char = LocalPlayer.Character  
-if not char then return end  
+    local char = LocalPlayer.Character  
+    if not char then return end  
 
-local humanoid = char:FindFirstChild("Humanoid")  
-if not humanoid then return end  
+    local humanoid = char:FindFirstChild("Humanoid")  
+    if not humanoid then return end  
 
-local invoker = humanoid:FindFirstChild("")  
-if invoker and invoker.InvokeServer then  
-    invoker:InvokeServer(unpack(args))  
+    -- find the RemoteFunction (even if it has no name)
+    local invoker = humanoid:FindFirstChildOfClass("RemoteFunction")  
+    if invoker and invoker.InvokeServer then  
+        invoker:InvokeServer(unpack(args))  
+    end
 end
 
-end
-
--- Detect touches on right side
 -- Detect touches on right side
 UserInputService.TouchEnded:Connect(function(input, gameProcessed)
     if gameProcessed then return end
