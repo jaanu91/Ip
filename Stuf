@@ -1,139 +1,61 @@
 local StuffsModule = {}
 
 local BuddySwordXEnabled = false
-local DEBOUNCE_TIME = 0.2
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 
-local lastFired = 0
-local BuddySwordRemote -- RemoteFunction reference
-
--- Utility
+-- helper
 local function getHRP(char)
-    return (char and char:FindFirstChild("HumanoidRootPart")) or nil
+	return (char and char:FindFirstChild("HumanoidRootPart")) or nil
 end
 
+-- find nearest target
 local function getNearestTarget()
-    local char = LocalPlayer.Character
-    local hrp = getHRP(char)
-    if not hrp then return nil end
+	local char = LocalPlayer.Character
+	local hrp = getHRP(char)
+	if not hrp then return nil end
 
-    local nearestDist, nearestPlr = math.huge, nil
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            local phrp = getHRP(plr.Character)
-            if phrp then
-                local d = (hrp.Position - phrp.Position).Magnitude
-                if d < nearestDist then
-                    nearestDist, nearestPlr = d, plr
-                end
-            end
-        end
-    end
-    return nearestPlr
+	local nearestDist = math.huge
+	local nearestHRP = nil
+
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			local phrp = getHRP(plr.Character)
+			if phrp then
+				local d = (hrp.Position - phrp.Position).Magnitude
+				if d < nearestDist then
+					nearestDist = d
+					nearestHRP = phrp
+				end
+			end
+		end
+	end
+
+	return nearestHRP
 end
 
-local function fireXAtNearest()
-    if not BuddySwordRemote then
-        warn("[DEBUG] No BuddySwordRemote found")
-        return
-    end
-    local targetPlayer = getNearestTarget()
-    if not targetPlayer or not targetPlayer.Character then return end
-    local targetHRP = getHRP(targetPlayer.Character)
-    if not targetHRP then return end
-
-    print("[DEBUG] Firing X at", targetPlayer.Name)
-
-    local args = {
-        "X",
-        targetHRP.Position
-    }
-
-    local ok, err = pcall(function()
-        BuddySwordRemote:InvokeServer(unpack(args))
-    end)
-    if not ok then
-        warn("Failed InvokeServer: " .. tostring(err))
-    end
-end
-
--- Scan character + backpack for Buddy Sword remote
-local function scanForRemote()
-    BuddySwordRemote = nil
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            local r = hum:FindFirstChildWhichIsA("RemoteFunction")
-            if r then
-                BuddySwordRemote = r
-                print("[DEBUG] Found BuddySwordRemote in character humanoid")
-                return
-            end
-        end
-    end
-
-    -- also check backpack in case sword isn’t equipped yet
-    local bp = LocalPlayer:FindFirstChild("Backpack")
-    if bp then
-        local tool = bp:FindFirstChild("Buddy Sword")
-        if tool then
-            local r = tool:FindFirstChildWhichIsA("RemoteFunction", true)
-            if r then
-                BuddySwordRemote = r
-                print("[DEBUG] Found BuddySwordRemote in backpack")
-            end
-        end
-    end
-end
-
-LocalPlayer.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    task.wait(0.2)
-    scanForRemote()
+-- repeatedly check & cast X if toggle on
+RunService.Heartbeat:Connect(function()
+	if BuddySwordXEnabled then
+		local targetHRP = getNearestTarget()
+		if targetHRP then
+			local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+			if hum then
+				local args = {
+					"X",
+					targetHRP.Position
+				}
+				hum:FindFirstChildOfClass("RemoteFunction"):InvokeServer(unpack(args))
+				BuddySwordXEnabled = false -- auto-turn off after firing once
+			end
+		end
+	end
 end)
 
-scanForRemote()
-
--- Hook __namecall once
-do
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-
-    local oldNamecall = mt.__namecall
-    mt.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-
-        -- Only react if it’s the Buddy Sword’s RemoteFunction
-        if method == "InvokeServer" and self == BuddySwordRemote then
-            local result = oldNamecall(self, unpack(args))
-
-            if BuddySwordXEnabled then
-                local now = tick()
-                if now - lastFired >= DEBOUNCE_TIME then
-                    lastFired = now
-                    task.spawn(fireXAtNearest)
-                else
-                    print("[DEBUG] Debounced X fire")
-                end
-            end
-            return result
-        end
-
-        return oldNamecall(self, unpack(args))
-    end)
-
-    setreadonly(mt, true)
-end
-
--- API
+-- toggle setter
 function StuffsModule:SetBuddySwordX(state)
-    BuddySwordXEnabled = state
-    print("[DEBUG] BuddySwordXEnabled =", state)
-    scanForRemote()
+	BuddySwordXEnabled = state
 end
 
 return StuffsModule
