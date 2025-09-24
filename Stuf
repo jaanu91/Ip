@@ -1,71 +1,49 @@
 local StuffsModule = {}
 
 local PingsOrFpsEnabled = false
+
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
--- GUI setup
-local ScreenGui
-local FpsPingLabel
+-- Create GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FPSPingDisplay"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local function createGui()
-	if ScreenGui then return end -- Prevent multiple GUIs
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(0, 150, 0, 30)
+textLabel.Position = UDim2.new(0, 10, 0, 10)
+textLabel.BackgroundTransparency = 0.5
+textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.TextScaled = true
+textLabel.Text = "FPS: 0 / Ping: 0"
+textLabel.Visible = false
+textLabel.Parent = screenGui
 
-	ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "FpsPingGui"
-	ScreenGui.ResetOnSpawn = false
-	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-	FpsPingLabel = Instance.new("TextLabel")
-	FpsPingLabel.Name = "FpsPingLabel"
-	FpsPingLabel.Size = UDim2.new(0, 200, 0, 50)
-	FpsPingLabel.Position = UDim2.new(0, 10, 0, 10)
-	FpsPingLabel.BackgroundTransparency = 0.5
-	FpsPingLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	FpsPingLabel.Font = Enum.Font.SourceSansBold
-	FpsPingLabel.TextSize = 20
-	FpsPingLabel.Parent = ScreenGui
+-- Toggle function
+function StuffsModule:SetBuddySwordX(state)
+    PingsOrFpsEnabled = state
+    textLabel.Visible = state
 end
 
 -- FPS calculation
 local lastTime = tick()
-local frameCount = 0
 local fps = 0
 
-RunService.RenderStepped:Connect(function(deltaTime)
-	if not PingsOrFpsEnabled then
-		if ScreenGui then
-			ScreenGui.Enabled = false
-		end
-		return
-	end
+RunService.RenderStepped:Connect(function()
+    if PingsOrFpsEnabled then
+        local now = tick()
+        fps = 1 / (now - lastTime)
+        lastTime = now
+        
+        -- Get ping
+        local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- seconds to ms
 
-	createGui()
-	ScreenGui.Enabled = true
-
-	-- FPS calculation
-	frameCount = frameCount + 1
-	if tick() - lastTime >= 1 then
-		fps = frameCount
-		frameCount = 0
-		lastTime = tick()
-	end
-
-	-- Ping calculation
-	local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- in ms
-
-	-- Update text
-	FpsPingLabel.Text = string.format("Fps:%03d/Pings:%03d", fps, ping)
+        textLabel.Text = string.format("FPS: %d / Ping: %d", fps, ping)
+    end
 end)
-
--- Toggle function
-function StuffsModule:SetPingsOrFps(state)
-	PingsOrFpsEnabled = state
-	if ScreenGui then
-		ScreenGui.Enabled = state
-	end
-end
 
 return StuffsModule
