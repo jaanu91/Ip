@@ -19,13 +19,14 @@ local function createGui()
 
 	FpsPingLabel = Instance.new("TextLabel")
 	FpsPingLabel.Name = "FpsPingLabel"
-	FpsPingLabel.Size = UDim2.new(0, 200, 0, 50)
-	FpsPingLabel.Position = UDim2.new(0, 10, 0, 10)
-	FpsPingLabel.BackgroundTransparency = 0.5
-	FpsPingLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	FpsPingLabel.Size = UDim2.new(0, 120, 0, 30) -- smaller size
+	FpsPingLabel.Position = UDim2.new(1, -130, 0, 10) -- top-right corner
+	FpsPingLabel.AnchorPoint = Vector2.new(0, 0) 
+	FpsPingLabel.BackgroundTransparency = 1 -- fully invisible background
 	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	FpsPingLabel.Font = Enum.Font.SourceSansBold
-	FpsPingLabel.TextSize = 20
+	FpsPingLabel.TextSize = 18
+	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right -- align text to the right
 	FpsPingLabel.Parent = ScreenGui
 end
 
@@ -57,7 +58,7 @@ RunService.RenderStepped:Connect(function(deltaTime)
 	local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- in ms
 
 	-- Update text
-	FpsPingLabel.Text = string.format("Fps:%3d/Pings:%3d", fps, ping)
+	FpsPingLabel.Text = string.format("FPS: %d  |  Ping: %dms", fps, ping)
 end)
 
 -- Toggle function
