@@ -1,1 +1,88 @@
+local StuffsModule = {}
 
+local PingsOrFpsEnabled = false
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local ScreenGui
+local FpsPingLabel
+
+local function createGui()
+	if ScreenGui then return end -- Prevent multiple GUIs
+
+	ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "FpsPingGui"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	FpsPingLabel = Instance.new("TextLabel")
+	FpsPingLabel.Name = "FpsPingLabel"
+	FpsPingLabel.Size = UDim2.new(0, 140, 0, 25) -- wider for both values
+	FpsPingLabel.Position = UDim2.new(1, -190, 0, 10) -- top-right corner
+	FpsPingLabel.AnchorPoint = Vector2.new(0, 0) 
+	FpsPingLabel.BackgroundTransparency = 1
+	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	FpsPingLabel.Font = Enum.Font.SourceSansBold
+	FpsPingLabel.TextSize = 18
+	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right
+	FpsPingLabel.RichText = true -- allow color tags
+	FpsPingLabel.Parent = ScreenGui
+end
+
+local lastTime = tick()
+local frameCount = 0
+local fps = 0
+
+RunService.RenderStepped:Connect(function(deltaTime)
+	if not PingsOrFpsEnabled then
+		if ScreenGui then
+			ScreenGui.Enabled = false
+		end
+		return
+	end
+
+	createGui()
+	ScreenGui.Enabled = true
+
+	frameCount = frameCount + 1
+	if tick() - lastTime >= 1 then
+		fps = frameCount
+		frameCount = 0
+		lastTime = tick()
+	end
+
+	local ping = math.floor(LocalPlayer:GetNetworkPing() * 2000)
+
+	local fpsColor
+	if fps >= 50 then
+		fpsColor = "00FF00" -- Green
+	elseif fps >= 30 then
+		fpsColor = "FFA500" -- Orange
+	else
+		fpsColor = "FF0000" -- Red
+	end
+
+	local pingColor
+	if ping <= 80 then
+		pingColor = "00FF00" -- Green
+	elseif ping <= 150 then
+		pingColor = "FFFF00" -- Yellow
+	else
+		pingColor = "FF0000" -- Red
+	end
+
+	FpsPingLabel.Text = string.format(
+		'<font color="#%s">FPS: %d</font>  |  <font color="#%s">Ping: %dms</font>',
+		fpsColor, fps, pingColor, ping
+	)
+end)
+
+function StuffsModule:SetPingsOrFps(state)
+	PingsOrFpsEnabled = state
+	if ScreenGui then
+		ScreenGui.Enabled = state
+	end
+end
+
+return StuffsModule
