@@ -15,6 +15,7 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
+local PredictionAmount = 0.1
 local MiniPlayerState = nil
 local MiniNpcState = nil
 local MiniPlayerCreated = false
@@ -28,8 +29,6 @@ local rightTouches = {}
 local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
 local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 local healthConn, lastHealth = nil, nil
-local lastSearch = 0
-local searchInterval = 0.01
 local cachedEnemy = nil
 local cachedBoss = nil
 
@@ -528,26 +527,21 @@ end
 local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-
-    lastSearch = lastSearch + dt
-
-    if lastSearch >= searchInterval then
-        lastSearch = 0
-        if AimlockPlayerEnabled then
-            if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
-                cachedEnemy = getNearestEnemy(500)
-            end
-        else
-            cachedEnemy = nil
+    
+    if AimlockPlayerEnabled then
+        if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
+            cachedEnemy = getNearestEnemy(500)
         end
+    else
+        cachedEnemy = nil
+    end
 
-        if AimlockNpcEnabled then
-            if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
-                cachedBoss = getNearestBoss(500)
-            end
-        else
-            cachedBoss = nil
+    if AimlockNpcEnabled then
+        if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
+            cachedBoss = getNearestBoss(500)
         end
+    else
+        cachedBoss = nil
     end
 
     if not tiltEnabled then
@@ -559,7 +553,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
             local camCFrame = camera.CFrame
             local camPos = camCFrame.Position
             local dist = (targetHRP.Position - camPos).Magnitude
-            local predictionTime = math.clamp(dist / 150, 0.1, 0.3)
+            local predictionTime = PredictionAmount
             local enemyVelocity = targetHRP.Velocity
             local predictedPos = targetHRP.Position
             if PredictionEnabled and enemyVelocity.Magnitude > 3 then
@@ -646,6 +640,12 @@ end
 
 function AimlockModule:SetPrediction(state)
     PredictionEnabled = state
+end
+
+function AimlockModule:SetPredictionAmount(num)
+	if typeof(num) == "number" then
+		PredictionAmount = num
+	end
 end
 
 return AimlockModule
