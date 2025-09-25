@@ -7,22 +7,11 @@ local char = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-
-if not char then
-    player.CharacterAdded:Wait()
-    char = player.Character
-end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
-local PredictionAmount = 0.1
-local MiniPlayerState = nil
-local MiniNpcState = nil
-local MiniPlayerCreated = false
-local MiniNpcCreated = false
 local currentTarget = nil
 local currentTool = nil
-local MiniPlayerGui, MiniNpcGui = nil, nil
 local vActive, sharkZActive, cursedZActive = false, false, false
 local tiltEnabled = false
 local rightTouches = {}
@@ -31,60 +20,12 @@ local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 local healthConn, lastHealth = nil, nil
 local cachedEnemy = nil
 local cachedBoss = nil
-
--- =========================
--- Team Check
--- =========================
-local function isAllyWithMe(targetPlayer)
-	local myGui = player:FindFirstChild("PlayerGui")
-	if not myGui then return false end
-
-	local scrolling = myGui:FindFirstChild("Main")
-		and myGui.Main:FindFirstChild("Allies")
-		and myGui.Main.Allies:FindFirstChild("Container")
-		and myGui.Main.Allies.Container:FindFirstChild("Allies")
-		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
-
-	if scrolling then
-		for _, frame in pairs(scrolling:GetDescendants()) do
-			if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
-				return true
-			end
-		end
-	end
-
-	return false
-end
-
-local function isEnemy(targetPlayer)
-	if not targetPlayer or targetPlayer == player then
-		return false
-	end
-
-	local myTeam = player.Team
-	local targetTeam = targetPlayer.Team
-
-	if myTeam and targetTeam then
-		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
-			return true
-		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
-			return true
-		end
-
-		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
-			if isAllyWithMe(targetPlayer) then
-				return false -- ally, not enemy
-			end
-			return true
-		end
-
-		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
-			return false
-		end
-	end
-
-	return true
-end
+local PredictionAmount = 0.1
+local MiniPlayerState = nil
+local MiniNpcState = nil
+local MiniPlayerCreated = false
+local MiniNpcCreated = false
+local MiniPlayerGui, MiniNpcGui = nil, nil
 
 -- =========================
 -- Enemies Finder
@@ -94,7 +35,7 @@ local function getNearestEnemy(maxDistance)
 	local nearest, shortest = nil, maxDistance or 100
 
 	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and isEnemy(p) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 			local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
 			if humanoid and humanoid.Health > 0 then
 				local enemyHRP = p.Character.HumanoidRootPart
@@ -138,6 +79,14 @@ local function disconnectTiltConn()
 		tiltConn:Disconnect()
 		tiltConn = nil
 	end
+end
+
+local function safeDisconnect(conn)
+    if conn then
+        pcall(function() conn:Disconnect() end)
+        conn = nil
+    end
+    return nil
 end
 
 local function stopTiltSmooth()
@@ -207,7 +156,7 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 80, 0, 80) 
+    button.Size = UDim2.new(0, 70, 0, 40) 
     button.Position = position
     button.Text = name .. (stateVarRef.value and " ON" or " OFF")
     button.TextScaled = true
@@ -354,16 +303,38 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         end
 
         if typeof(a1) == "string" and a1:upper() == "Z" then
-		    if currentTool then
-		        if currentTool.Name == "Shark Anchor" then
-		            sharkZActive = true
-		            task.delay(2, function() sharkZActive = false end)
-		        elseif currentTool.Name == "Cursed Dual Katana" then
-		            cursedZActive = true
-		            task.delay(2, function() cursedZActive = false end)
-		        end
-		    end
-		end
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        sharkZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        cursedZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
 
         if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
             local arg1 = args[1]
@@ -379,49 +350,25 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
 end)
 
 -- =========================
--- Swap function (integrated)
--- =========================
--- local function swapToGodhuman()
---	local char = player.Character
---	if not char then return end
-
---	local humanoid = char:FindFirstChildOfClass("Humanoid")
---	if not humanoid then return end
-
---	local equipped = char:FindFirstChildOfClass("Tool")
---	if equipped and equipped.Name == "Cursed Dual Katana" then
---		humanoid:UnequipTools()
-
---		local backpack = player:WaitForChild("Backpack")
---		local godhuman = backpack:FindFirstChild("Godhuman")
---		if godhuman then
---			humanoid:EquipTool(godhuman)
---		end
---	end
---end
-
--- =========================
 -- Touch tracking
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
-	if touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouches[touch] = true
-		if tiltEnabled and canTilt() then
-			startTilt()
-		end
-	end
+    camera = workspace.CurrentCamera
+    if not camera then return end
+
+    if touch.Position.X > camera.ViewportSize.X / 2 then
+        rightTouches[touch] = true
+        if tiltEnabled and canTilt() then
+            startTilt()
+        end
+    end
 end)
 
 UserInputService.TouchEnded:Connect(function(touch)
 	if rightTouches[touch] then
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
-			stopTiltSmooth()
-			
-			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
-				--swapToGodhuman()
-			--end
-
+			stopTiltSmooth()			
 			tiltEnabled = false
 			vActive = false
 			sharkZActive = false
@@ -435,18 +382,28 @@ end)
 -- =========================
 local function watchDamageCounter()
     if dmgConn then
-	    pcall(function() dmgConn:Disconnect() end)
-	    dmgConn = nil
-	end
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
+
     local ok, dmgTextLabel = pcall(function()
-        return player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("DmgCounter"):WaitForChild("Text")
+        return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
     end)
-    if not ok or not dmgTextLabel then return end
+
+    if not ok or not dmgTextLabel then
+        task.delay(0.5, function()
+            pcall(watchDamageCounter)
+        end)
+        return
+    end
+
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
         if dmgText > 0 and canTilt() and currentHighlight then
             tiltEnabled = true
-            if next(rightTouches) then startTilt() end
+            if next(rightTouches) then
+                startTilt()
+            end
         else
             tiltEnabled = false
             stopTiltSmooth()
@@ -454,9 +411,6 @@ local function watchDamageCounter()
     end)
 end
 
--- =========================
--- Health Watch for Tilt Reset
--- =========================
 local function watchHealth(humanoid)
     if healthConn then
 	    pcall(function() healthConn:Disconnect() end)
@@ -477,11 +431,6 @@ local function watchHealth(humanoid)
     end)
 end
 
-player.CharacterAdded:Connect(function(newChar)
-    local newHumanoid = newChar:WaitForChild("Humanoid")
-    watchHealth(newHumanoid)
-end)
-
 local function setAimlockTarget(targetModel)
     if currentHighlight then
         currentHighlight:Destroy()
@@ -489,6 +438,10 @@ local function setAimlockTarget(targetModel)
     end
 
     if not targetModel then
+        if dmgConn then
+            pcall(function() dmgConn:Disconnect() end)
+            dmgConn = nil
+        end
         currentTarget = nil
         return
     end
@@ -509,13 +462,29 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
+        if dmgConn then
+            pcall(function() dmgConn:Disconnect() end)
+            dmgConn = nil
+        end
+        
         humanoid.Died:Connect(function()
-	        if currentHighlight then
-	            currentHighlight:Destroy()
-	            currentHighlight = nil
-	        end
-	        currentTarget = nil
-	    end)
+            if currentHighlight then
+                currentHighlight:Destroy()
+                currentHighlight = nil
+            end
+            currentTarget = nil
+
+            if dmgConn then
+                pcall(function() dmgConn:Disconnect() end)
+                dmgConn = nil
+            end
+
+            if tiltEnabled then
+                tiltEnabled = false
+                stopTiltSmooth()
+                rightTouches = {}
+            end
+        end)
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -527,7 +496,7 @@ end
 local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
+
     if AimlockPlayerEnabled then
         if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
             cachedEnemy = getNearestEnemy(500)
@@ -535,7 +504,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     else
         cachedEnemy = nil
     end
-
+    
     if AimlockNpcEnabled then
         if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
             cachedBoss = getNearestBoss(500)
@@ -581,13 +550,48 @@ end)
 player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
+	camera = workspace.CurrentCamera
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
 	tiltEnabled = false
 	rightTouches = {}
-	stopTiltSmooth()
+	disconnectTiltConn()
+	preTiltCFrame = nil
+	if char:FindFirstChildOfClass("Tool") then
+		hookTool(char:FindFirstChildOfClass("Tool"))
+	end
+	if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
+    if healthConn then pcall(function() healthConn:Disconnect() end) healthConn = nil end
+    
+	watchDamageCounter()
 	watchHealth(humanoid)
+
+	task.defer(function()
+		if currentTarget and currentTarget:FindFirstChildOfClass("Humanoid") 
+		   and currentTarget:FindFirstChildOfClass("Humanoid").Health > 0 then
+			setAimlockTarget(currentTarget)
+		else
+			if AimlockPlayerEnabled then
+				cachedEnemy = getNearestEnemy(500)
+				if cachedEnemy and cachedEnemy.Parent then
+					setAimlockTarget(cachedEnemy.Parent)
+				end
+			end
+			if AimlockNpcEnabled then
+				cachedBoss = getNearestBoss(500)
+				if cachedBoss and cachedBoss.Parent then
+					setAimlockTarget(cachedBoss.Parent)
+				end
+			end
+		end
+		if currentTool and canTilt() then
+			tiltEnabled = true
+            if next(rightTouches) then
+				startTilt()
+			end
+		end
+	end)
 end)
 
 player.CharacterRemoving:Connect(function()
@@ -598,6 +602,21 @@ player.CharacterRemoving:Connect(function()
 	rightTouches = {}
 	disconnectTiltConn()
 	currentTool = nil
+	
+	if dmgConn then
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
+    if healthConn then
+        pcall(function() healthConn:Disconnect() end)
+        healthConn = nil
+    end
+    if currentHighlight then
+        pcall(function() currentHighlight:Destroy() end)
+        currentHighlight = nil
+    end
+    currentTarget = nil
+    preTiltCFrame = nil
 end)
 
 function AimlockModule:SetPlayerAimlock(state)
