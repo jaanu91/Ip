@@ -7,11 +7,6 @@ local char = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-
-if not char then
-    player.CharacterAdded:Wait()
-    char = player.Character
-end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
@@ -417,11 +412,6 @@ local function watchHealth(humanoid)
         lastHealth = newHealth
     end)
 end
-
-player.CharacterAdded:Connect(function(newChar)
-    local newHumanoid = newChar:WaitForChild("Humanoid")
-    watchHealth(newHumanoid)
-end)
 
 local function setAimlockTarget(targetModel)
     if currentHighlight then
