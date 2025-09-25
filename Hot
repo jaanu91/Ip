@@ -15,14 +15,8 @@ end
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
-local PredictionAmount = 0.1
-local MiniPlayerState = nil
-local MiniNpcState = nil
-local MiniPlayerCreated = false
-local MiniNpcCreated = false
 local currentTarget = nil
 local currentTool = nil
-local MiniPlayerGui, MiniNpcGui = nil, nil
 local vActive, sharkZActive, cursedZActive = false, false, false
 local tiltEnabled = false
 local rightTouches = {}
@@ -31,60 +25,12 @@ local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
 local healthConn, lastHealth = nil, nil
 local cachedEnemy = nil
 local cachedBoss = nil
-
--- =========================
--- Team Check
--- =========================
-local function isAllyWithMe(targetPlayer)
-	local myGui = player:FindFirstChild("PlayerGui")
-	if not myGui then return false end
-
-	local scrolling = myGui:FindFirstChild("Main")
-		and myGui.Main:FindFirstChild("Allies")
-		and myGui.Main.Allies:FindFirstChild("Container")
-		and myGui.Main.Allies.Container:FindFirstChild("Allies")
-		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
-
-	if scrolling then
-		for _, frame in pairs(scrolling:GetDescendants()) do
-			if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
-				return true
-			end
-		end
-	end
-
-	return false
-end
-
-local function isEnemy(targetPlayer)
-	if not targetPlayer or targetPlayer == player then
-		return false
-	end
-
-	local myTeam = player.Team
-	local targetTeam = targetPlayer.Team
-
-	if myTeam and targetTeam then
-		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
-			return true
-		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
-			return true
-		end
-
-		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
-			if isAllyWithMe(targetPlayer) then
-				return false -- ally, not enemy
-			end
-			return true
-		end
-
-		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
-			return false
-		end
-	end
-
-	return true
-end
+local PredictionAmount = 0.1
+local MiniPlayerState = nil
+local MiniNpcState = nil
+local MiniPlayerCreated = false
+local MiniNpcCreated = false
+local MiniPlayerGui, MiniNpcGui = nil, nil
 
 -- =========================
 -- Enemies Finder
@@ -94,7 +40,7 @@ local function getNearestEnemy(maxDistance)
 	local nearest, shortest = nil, maxDistance or 100
 
 	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and isEnemy(p) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 			local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
 			if humanoid and humanoid.Health > 0 then
 				local enemyHRP = p.Character.HumanoidRootPart
@@ -354,16 +300,38 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         end
 
         if typeof(a1) == "string" and a1:upper() == "Z" then
-		    if currentTool then
-		        if currentTool.Name == "Shark Anchor" then
-		            sharkZActive = true
-		            task.delay(2, function() sharkZActive = false end)
-		        elseif currentTool.Name == "Cursed Dual Katana" then
-		            cursedZActive = true
-		            task.delay(2, function() cursedZActive = false end)
-		        end
-		    end
-		end
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        sharkZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        cursedZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
 
         if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
             local arg1 = args[1]
@@ -377,28 +345,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
     end
     return old(self, ...)
 end)
-
--- =========================
--- Swap function (integrated)
--- =========================
--- local function swapToGodhuman()
---	local char = player.Character
---	if not char then return end
-
---	local humanoid = char:FindFirstChildOfClass("Humanoid")
---	if not humanoid then return end
-
---	local equipped = char:FindFirstChildOfClass("Tool")
---	if equipped and equipped.Name == "Cursed Dual Katana" then
---		humanoid:UnequipTools()
-
---		local backpack = player:WaitForChild("Backpack")
---		local godhuman = backpack:FindFirstChild("Godhuman")
---		if godhuman then
---			humanoid:EquipTool(godhuman)
---		end
---	end
---end
 
 -- =========================
 -- Touch tracking
@@ -416,12 +362,7 @@ UserInputService.TouchEnded:Connect(function(touch)
 	if rightTouches[touch] then
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
-			stopTiltSmooth()
-			
-			--if currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive and tiltEnabled then
-				--swapToGodhuman()
-			--end
-
+			stopTiltSmooth()			
 			tiltEnabled = false
 			vActive = false
 			sharkZActive = false
@@ -527,7 +468,7 @@ end
 local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
+
     if AimlockPlayerEnabled then
         if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
             cachedEnemy = getNearestEnemy(500)
@@ -535,7 +476,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
     else
         cachedEnemy = nil
     end
-
+    
     if AimlockNpcEnabled then
         if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
             cachedBoss = getNearestBoss(500)
