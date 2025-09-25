@@ -642,7 +642,7 @@ function AimlockModule:SetPrediction(state)
     PredictionEnabled = state
 end
 
-function AimlockModule:SetPredictionAmount(num)
+function AimlockModule:SetPredictionTime(num)
 	if typeof(num) == "number" then
 		PredictionAmount = num
 	end
