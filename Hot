@@ -71,6 +71,12 @@ local function getNearestBoss(maxDistance)
 	return nearest
 end
 
+
+-- Debug function
+local function debugPrint(tag, msg)
+    print("[TiltDebug]["..tag.."] ".. tostring(msg))
+end
+
 -- =========================
 -- Tilt Camera Function
 -- =========================
@@ -83,7 +89,10 @@ end
 
 local function stopTiltSmooth()
 	disconnectTiltConn()
-	if not preTiltCFrame then return end
+	if not preTiltCFrame then 
+        debugPrint("stopTiltSmooth", "No preTiltCFrame, nothing to restore")
+        return 
+    end
 
 	local startCF = camera.CFrame
 	local endCF = preTiltCFrame
@@ -95,6 +104,7 @@ local function stopTiltSmooth()
 		a = math.min(a + dt * 5, 1)
 		camera.CFrame = startCF:Lerp(endCF, a)
 		if a >= 1 then
+			debugPrint("stopTiltSmooth", "Restore complete")
 			restoreConn:Disconnect()
 		end
 	end)
@@ -102,10 +112,14 @@ end
 
 local function startTilt()
 	disconnectTiltConn()
+	debugPrint("startTilt", "Attempting to start tilt")
 
 	preTiltCFrame = preTiltCFrame or camera.CFrame
 	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
+	if not hrp then 
+        debugPrint("startTilt", "No HRP found, aborting tilt") 
+        return 
+    end
 	local humanoid = char:FindFirstChildOfClass("Humanoid")
 	if not humanoid then return end
 
@@ -121,13 +135,16 @@ local function startTilt()
 
 	local downLook = hrp.Position - tiltOffset
 	local targetCF = CFrame.new(camPos, downLook)
+	
+	debugPrint("startTilt", "Tilting toward ".. tostring(downLook))
 
 	local alpha = 0
 	tiltConn = RunService.RenderStepped:Connect(function(dt)
 		if not (tiltEnabled and next(rightTouches) and hrp.Parent) then
-			stopTiltSmooth()
-			return
-		end
+            debugPrint("tiltConn", "Tilt stopped (state reset)")
+            stopTiltSmooth()
+            return
+        end
 
 		if alpha < 1 then
 			alpha = math.min(alpha + dt * 2, 1)
@@ -512,6 +529,7 @@ end)
 player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
+	debugPrint("CharacterAdded", "New character loaded: ".. tostring(c))
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
@@ -544,6 +562,7 @@ player.CharacterAdded:Connect(function(c)
 end)
 
 player.CharacterRemoving:Connect(function()
+	debugPrint("CharacterRemoving", "Character despawned, cleaning tilt state")
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
