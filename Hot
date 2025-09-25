@@ -522,6 +522,11 @@ end)
 player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
+
+    camera = workspace.CurrentCamera
+    camera.CameraSubject = humanoid
+    camera.CameraType = Enum.CameraType.Custom
+
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
