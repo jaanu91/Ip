@@ -81,6 +81,14 @@ local function disconnectTiltConn()
 	end
 end
 
+local function safeDisconnect(conn)
+    if conn then
+        pcall(function() conn:Disconnect() end)
+        conn = nil
+    end
+    return nil
+end
+
 local function stopTiltSmooth()
 	disconnectTiltConn()
 	if not preTiltCFrame then return end
@@ -403,9 +411,6 @@ local function watchDamageCounter()
     end)
 end
 
--- =========================
--- Health Watch for Tilt Reset
--- =========================
 local function watchHealth(humanoid)
     if healthConn then
 	    pcall(function() healthConn:Disconnect() end)
@@ -433,6 +438,10 @@ local function setAimlockTarget(targetModel)
     end
 
     if not targetModel then
+        if dmgConn then
+            pcall(function() dmgConn:Disconnect() end)
+            dmgConn = nil
+        end
         currentTarget = nil
         return
     end
@@ -453,13 +462,29 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
         
+        if dmgConn then
+            pcall(function() dmgConn:Disconnect() end)
+            dmgConn = nil
+        end
+        
         humanoid.Died:Connect(function()
-	        if currentHighlight then
-	            currentHighlight:Destroy()
-	            currentHighlight = nil
-	        end
-	        currentTarget = nil
-	    end)
+            if currentHighlight then
+                currentHighlight:Destroy()
+                currentHighlight = nil
+            end
+            currentTarget = nil
+
+            if dmgConn then
+                pcall(function() dmgConn:Disconnect() end)
+                dmgConn = nil
+            end
+
+            if tiltEnabled then
+                tiltEnabled = false
+                stopTiltSmooth()
+                rightTouches = {}
+            end
+        end)
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -536,6 +561,9 @@ player.CharacterAdded:Connect(function(c)
 	if char:FindFirstChildOfClass("Tool") then
 		hookTool(char:FindFirstChildOfClass("Tool"))
 	end
+	if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
+    if healthConn then pcall(function() healthConn:Disconnect() end) healthConn = nil end
+    
 	watchDamageCounter()
 	watchHealth(humanoid)
 
@@ -574,6 +602,21 @@ player.CharacterRemoving:Connect(function()
 	rightTouches = {}
 	disconnectTiltConn()
 	currentTool = nil
+	
+	if dmgConn then
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
+    if healthConn then
+        pcall(function() healthConn:Disconnect() end)
+        healthConn = nil
+    end
+    if currentHighlight then
+        pcall(function() currentHighlight:Destroy() end)
+        currentHighlight = nil
+    end
+    currentTarget = nil
+    preTiltCFrame = nil
 end)
 
 function AimlockModule:SetPlayerAimlock(state)
