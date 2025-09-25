@@ -529,9 +529,6 @@ player.CharacterAdded:Connect(function(c)
 	rightTouches = {}
 	stopTiltSmooth()
 	watchHealth(humanoid)
-	task.delay(2, function()
-    watchDamageCounter()
-	end)
 end)
 
 player.CharacterRemoving:Connect(function()
