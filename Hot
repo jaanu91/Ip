@@ -529,7 +529,6 @@ end)
 player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
-	debugPrint("CharacterAdded", "New character loaded: ".. tostring(c))
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
@@ -541,10 +540,8 @@ player.CharacterAdded:Connect(function(c)
 	task.defer(function()
 		if currentTarget and currentTarget:FindFirstChildOfClass("Humanoid") 
 		   and currentTarget:FindFirstChildOfClass("Humanoid").Health > 0 then
-			-- Same enemy still alive, reapply highlight
 			setAimlockTarget(currentTarget)
 		else
-			-- Otherwise fall back to nearest based on toggle state
 			if AimlockPlayerEnabled then
 				cachedEnemy = getNearestEnemy(500)
 				if cachedEnemy and cachedEnemy.Parent then
@@ -558,11 +555,16 @@ player.CharacterAdded:Connect(function(c)
 				end
 			end
 		end
+		if currentTool and canTilt() then
+			tiltEnabled = true
+            if next(rightTouches) then
+	            startTilt()
+            end
+        end
 	end)
 end)
 
 player.CharacterRemoving:Connect(function()
-	debugPrint("CharacterRemoving", "Character despawned, cleaning tilt state")
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
