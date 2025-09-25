@@ -345,12 +345,15 @@ end)
 -- Touch tracking
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
-	if touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouches[touch] = true
-		if tiltEnabled and canTilt() then
-			startTilt()
-		end
-	end
+    camera = workspace.CurrentCamera
+    if not camera then return end
+
+    if touch.Position.X > camera.ViewportSize.X / 2 then
+        rightTouches[touch] = true
+        if tiltEnabled and canTilt() then
+            startTilt()
+        end
+    end
 end)
 
 UserInputService.TouchEnded:Connect(function(touch)
@@ -371,18 +374,28 @@ end)
 -- =========================
 local function watchDamageCounter()
     if dmgConn then
-	    pcall(function() dmgConn:Disconnect() end)
-	    dmgConn = nil
-	end
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
+
     local ok, dmgTextLabel = pcall(function()
-        return player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("DmgCounter"):WaitForChild("Text")
+        return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
     end)
-    if not ok or not dmgTextLabel then return end
+
+    if not ok or not dmgTextLabel then
+        task.delay(0.5, function()
+            pcall(watchDamageCounter)
+        end)
+        return
+    end
+
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
         if dmgText > 0 and canTilt() and currentHighlight then
             tiltEnabled = true
-            if next(rightTouches) then startTilt() end
+            if next(rightTouches) then
+                startTilt()
+            end
         else
             tiltEnabled = false
             stopTiltSmooth()
@@ -512,12 +525,18 @@ end)
 player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
+	camera = workspace.CurrentCamera
 	vActive = false
 	sharkZActive = false
 	cursedZActive = false
 	tiltEnabled = false
 	rightTouches = {}
-	stopTiltSmooth()
+	disconnectTiltConn()
+	preTiltCFrame = nil
+	if char:FindFirstChildOfClass("Tool") then
+		hookTool(char:FindFirstChildOfClass("Tool"))
+	end
+	watchDamageCounter()
 	watchHealth(humanoid)
 
 	task.defer(function()
