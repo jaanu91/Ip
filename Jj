@@ -21,6 +21,7 @@ local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
 local UPDATE_INTERVAL = 0.3
+local getgenv().WalkSpeedValue = 26
 
 -- =========================
 -- Team Check
@@ -272,6 +273,14 @@ game.Players.PlayerRemoving:Connect(function(p)
 	removeESP(p)
 end)
 
+if getgenv().WalkSpeedValue then
+    local Player = game:service'Players'.LocalPlayer
+    Player.Character.Humanoid:GetPropertyChangedSignal'WalkSpeed':Connect(function()
+        Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+    end)
+    Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+end
+
 -- =========================
 -- State Toggles
 -- =========================
@@ -293,6 +302,10 @@ function ESPModule:SetBuso(state)
     if state then
         pcall(function() CommF:InvokeServer("Buso") end)
     end
+end
+
+function ESPModule:SetSpeedHack(speedfunc)
+	getgenv().WalkSpeedValue = speedfunc
 end
 
 function ESPModule:SetESP(state)
