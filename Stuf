@@ -117,7 +117,7 @@ local function applyFpsBoost()
         elseif v:IsA("Decal") or v:IsA("Texture") then
             v.Transparency = 1
         elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Lifetime = NumberRange.new(0)
+            v.Lifetime = NumberRange.new(0, 0)
         elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
             v.Enabled = false
         end
