@@ -274,11 +274,28 @@ game.Players.PlayerRemoving:Connect(function(p)
 end)
 
 if getgenv().WalkSpeedValue then
-    local Player = game:service'Players'.LocalPlayer
-    Player.Character.Humanoid:GetPropertyChangedSignal'WalkSpeed':Connect(function()
-        Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+    local Player = game:GetService("Players").LocalPlayer
+
+    local function applyWalkSpeed(char)
+        local hum = char:WaitForChild("Humanoid", 5)
+        if not hum then return end
+
+        hum.WalkSpeed = getgenv().WalkSpeedValue
+
+        hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if hum.WalkSpeed ~= getgenv().WalkSpeedValue then
+                hum.WalkSpeed = getgenv().WalkSpeedValue
+            end
+        end)
+    end
+
+    if Player.Character then
+        applyWalkSpeed(Player.Character)
+    end
+
+    Player.CharacterAdded:Connect(function(char)
+        applyWalkSpeed(char)
     end)
-    Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
 end
 
 -- =========================
