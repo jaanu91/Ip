@@ -7,6 +7,8 @@ local RunService = game:GetService("RunService")
 
 local ScreenGui
 local FpsPingLabel
+local FpsBoostEnabled = false
+local savedSettings = {}
 
 local function createGui()
 	if ScreenGui then return end -- Prevent multiple GUIs
@@ -77,6 +79,87 @@ RunService.RenderStepped:Connect(function(deltaTime)
 		fpsColor, fps, pingColor, ping
 	)
 end)
+
+local function applyFpsBoost()
+    local g = game
+    local w = g.Workspace
+    local l = g.Lighting
+    local t = w.Terrain
+
+    if not savedSettings.Terrain then
+        savedSettings.Terrain = {
+            WaterWaveSize = t.WaterWaveSize,
+            WaterWaveSpeed = t.WaterWaveSpeed,
+            WaterReflectance = t.WaterReflectance,
+            WaterTransparency = t.WaterTransparency,
+        }
+        savedSettings.Lighting = {
+            GlobalShadows = l.GlobalShadows,
+            FogEnd = l.FogEnd,
+            Brightness = l.Brightness,
+        }
+        savedSettings.QualityLevel = settings().Rendering.QualityLevel
+    end
+
+    t.WaterWaveSize = 0
+    t.WaterWaveSpeed = 0
+    t.WaterReflectance = 0
+    t.WaterTransparency = 0
+    l.GlobalShadows = false
+    l.FogEnd = 9e9
+    l.Brightness = 0
+    settings().Rendering.QualityLevel = "Level01"
+
+    for _, v in pairs(g:GetDescendants()) do
+        if v:IsA("Part") or v:IsA("MeshPart") then
+            v.Material = Enum.Material.Plastic
+            v.Reflectance = 0
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Lifetime = NumberRange.new(0)
+        elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+            v.Enabled = false
+        end
+    end
+
+    for _, e in pairs(l:GetChildren()) do
+        if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") 
+        or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+            e.Enabled = false
+        end
+    end
+end
+
+local function restoreGraphics()
+    local g = game
+    local w = g.Workspace
+    local l = g.Lighting
+    local t = w.Terrain
+
+    if savedSettings.Terrain then
+        for k, v in pairs(savedSettings.Terrain) do
+            t[k] = v
+        end
+    end
+    if savedSettings.Lighting then
+        for k, v in pairs(savedSettings.Lighting) do
+            l[k] = v
+        end
+    end
+    if savedSettings.QualityLevel then
+        settings().Rendering.QualityLevel = savedSettings.QualityLevel
+    end
+end
+
+function StuffsModule:SetFpsBoost(state)
+    FpsBoostEnabled = state
+    if state then
+        applyFpsBoost()
+    else
+        restoreGraphics()
+    end
+end
 
 function StuffsModule:SetPingsOrFps(state)
 	PingsOrFpsEnabled = state
