@@ -81,14 +81,6 @@ local function disconnectTiltConn()
 	end
 end
 
-local function safeDisconnect(conn)
-    if conn then
-        pcall(function() conn:Disconnect() end)
-        conn = nil
-    end
-    return nil
-end
-
 local function stopTiltSmooth()
 	disconnectTiltConn()
 	if not preTiltCFrame then return end
@@ -381,10 +373,6 @@ end)
 -- Damage Counter Watch
 -- =========================
 local function watchDamageCounter()
-    if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
 
     local ok, dmgTextLabel = pcall(function()
         return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
@@ -397,7 +385,7 @@ local function watchDamageCounter()
         return
     end
 
-    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+    dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
         if dmgText > 0 and canTilt() and currentHighlight then
             tiltEnabled = true
@@ -412,14 +400,10 @@ local function watchDamageCounter()
 end
 
 local function watchHealth(humanoid)
-    if healthConn then
-	    pcall(function() healthConn:Disconnect() end)
-	    healthConn = nil
-	end
-
+    
     lastHealth = humanoid.Health
 
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
+    humanoid.HealthChanged:Connect(function(newHealth)
         if tiltEnabled and next(rightTouches) then
             if newHealth < lastHealth then
                 tiltEnabled = false
@@ -432,19 +416,6 @@ local function watchHealth(humanoid)
 end
 
 local function setAimlockTarget(targetModel)
-    if currentHighlight then
-        currentHighlight:Destroy()
-        currentHighlight = nil
-    end
-
-    if not targetModel then
-        if dmgConn then
-            pcall(function() dmgConn:Disconnect() end)
-            dmgConn = nil
-        end
-        currentTarget = nil
-        return
-    end
     
     local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then
@@ -461,30 +432,6 @@ local function setAimlockTarget(targetModel)
         highlight.Adornee = targetModel
         highlight.Parent = targetModel
         currentHighlight = highlight
-        
-        if dmgConn then
-            pcall(function() dmgConn:Disconnect() end)
-            dmgConn = nil
-        end
-        
-        humanoid.Died:Connect(function()
-            if currentHighlight then
-                currentHighlight:Destroy()
-                currentHighlight = nil
-            end
-            currentTarget = nil
-
-            if dmgConn then
-                pcall(function() dmgConn:Disconnect() end)
-                dmgConn = nil
-            end
-
-            if tiltEnabled then
-                tiltEnabled = false
-                stopTiltSmooth()
-                rightTouches = {}
-            end
-        end)
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -551,13 +498,9 @@ player.CharacterAdded:Connect(function(c)
 	char = c
 	humanoid = char:WaitForChild("Humanoid")
 	camera = workspace.CurrentCamera
-	vActive = false
-	sharkZActive = false
-	cursedZActive = false
-	tiltEnabled = false
+	
 	rightTouches = {}
-	disconnectTiltConn()
-	preTiltCFrame = nil
+	
 	if char:FindFirstChildOfClass("Tool") then
 		hookTool(char:FindFirstChildOfClass("Tool"))
 	end
@@ -592,31 +535,6 @@ player.CharacterAdded:Connect(function(c)
 			end
 		end
 	end)
-end)
-
-player.CharacterRemoving:Connect(function()
-	vActive = false
-	sharkZActive = false
-	cursedZActive = false
-	tiltEnabled = false
-	rightTouches = {}
-	disconnectTiltConn()
-	currentTool = nil
-	
-	if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
-    if healthConn then
-        pcall(function() healthConn:Disconnect() end)
-        healthConn = nil
-    end
-    if currentHighlight then
-        pcall(function() currentHighlight:Destroy() end)
-        currentHighlight = nil
-    end
-    currentTarget = nil
-    preTiltCFrame = nil
 end)
 
 function AimlockModule:SetPlayerAimlock(state)
