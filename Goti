@@ -100,6 +100,18 @@ local function optimizeInstance(v)
 	end
 end
 
+local function optimizeUI(instance)
+    if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
+        instance.ImageTransparency = 0
+        
+    elseif instance:IsA("TextLabel") or instance:IsA("TextButton") then
+        instance.RichText = false -- turn off rich text if not needed
+        instance.TextStrokeTransparency = 1 -- disable stroke
+        instance.TextSize = math.min(instance.TextSize, 14) -- reduce text size slightly
+        instance.Font = Enum.Font.SourceSans -- simpler font uses less GPU
+    end
+end
+
 local function applyFpsBoost()
 	local g = game
 	local w = g.Workspace
@@ -163,11 +175,16 @@ local function applyFpsBoost()
 		optimizeInstance(v)
 	end
 	
+	for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+	    optimizeUI(gui)
+	end
+	
 	if setfpscap then
 		setfpscap(240)
 	end
 
 	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
+	table.insert(connections, LocalPlayer.PlayerGui.DescendantAdded:Connect(optimizeUI))
 end
 
 local function restoreGraphics()
