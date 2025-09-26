@@ -1,0 +1,209 @@
+local StuffsModule = {}
+
+local PingsOrFpsEnabled = false
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local ScreenGui
+local FpsPingLabel
+local FpsBoostEnabled = false
+local InfiniteEnergy = false
+
+local savedSettings = {}
+local connections = {}
+
+local function createGui()
+	if ScreenGui then return end 
+
+	ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "FpsPingGui"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	FpsPingLabel = Instance.new("TextLabel")
+	FpsPingLabel.Name = "FpsPingLabel"
+	FpsPingLabel.Size = UDim2.new(0, 120, 0, 20) -- wider for both values
+	FpsPingLabel.Position = UDim2.new(1, -10, 0, 10) -- top-right corner
+	FpsPingLabel.AnchorPoint = Vector2.new(1, 0) 
+	FpsPingLabel.BackgroundTransparency = 1
+	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	FpsPingLabel.Font = Enum.Font.SourceSansBold
+	FpsPingLabel.TextSize = 18
+	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right
+	FpsPingLabel.RichText = true -- allow color tags
+	FpsPingLabel.Parent = ScreenGui
+end
+
+local lastTime = tick()
+local frameCount = 0
+local fps = 0
+
+RunService.RenderStepped:Connect(function(deltaTime)
+	if not PingsOrFpsEnabled then
+		if ScreenGui then
+			ScreenGui.Enabled = false
+		end
+		return
+	end
+
+	createGui()
+	ScreenGui.Enabled = true
+
+	frameCount = frameCount + 1
+	if tick() - lastTime >= 1 then
+		fps = frameCount
+		frameCount = 0
+		lastTime = tick()
+	end
+
+	local ping = math.floor(LocalPlayer:GetNetworkPing() * 2000)
+
+	local fpsColor
+	if fps >= 50 then
+		fpsColor = "00FF00" -- Green
+	elseif fps >= 30 then
+		fpsColor = "FFA500" -- Orange
+	else
+		fpsColor = "FF0000" -- Red
+	end
+
+	local pingColor
+	if ping <= 80 then
+		pingColor = "00FF00" -- Green
+	elseif ping <= 150 then
+		pingColor = "FFFF00" -- Yellow
+	else
+		pingColor = "FF0000" -- Red
+	end
+
+	FpsPingLabel.Text = string.format(
+		'<font color="#%s">FPS: %d</font>  |  <font color="#%s">Ping: %dms</font>',
+		fpsColor, fps, pingColor, ping
+	)
+end)
+
+local function optimizeInstance(v)
+	if v:IsA("Part") or v:IsA("MeshPart") then
+		v.Material = Enum.Material.Plastic
+		v.Reflectance = 0
+	elseif v:IsA("Decal") or v:IsA("Texture") then
+		v.Transparency = 1
+	elseif v:IsA("ParticleEmitter") then
+		v.Lifetime = NumberRange.new(0, 0)
+	elseif v:IsA("Trail") then
+		v.Lifetime = 0
+	elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+		v.Enabled = false
+	end
+end
+
+local function applyFpsBoost()
+	local g = game
+	local w = g.Workspace
+	local l = g.Lighting
+	local t = w.Terrain
+
+	if not savedSettings.Terrain then
+		savedSettings.Terrain = {
+			WaterWaveSize = t.WaterWaveSize,
+			WaterWaveSpeed = t.WaterWaveSpeed,
+			WaterReflectance = t.WaterReflectance,
+			WaterTransparency = t.WaterTransparency,
+		}
+		savedSettings.Lighting = {
+			GlobalShadows = l.GlobalShadows,
+			FogEnd = l.FogEnd,
+			Brightness = l.Brightness,
+		}
+		savedSettings.QualityLevel = settings().Rendering.QualityLevel
+	end
+
+	t.WaterWaveSize = 0
+	t.WaterWaveSpeed = 0
+	t.WaterReflectance = 0
+	t.WaterTransparency = 1
+	l.GlobalShadows = false
+	l.FogEnd = 9e9
+	l.Brightness = 1
+	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+	for _, e in pairs(l:GetChildren()) do
+		if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") 
+		or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+			e.Enabled = false
+		end
+	end
+
+	for _, v in pairs(g:GetDescendants()) do
+		optimizeInstance(v)
+	end
+
+	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
+end
+
+local function restoreGraphics()
+	local g = game
+	local w = g.Workspace
+	local l = g.Lighting
+	local t = w.Terrain
+
+	for _, conn in ipairs(connections) do
+		if conn.Connected then conn:Disconnect() end
+	end
+	connections = {}
+
+	if savedSettings.Terrain then
+		for k, v in pairs(savedSettings.Terrain) do
+			t[k] = v
+		end
+	end
+	if savedSettings.Lighting then
+		for k, v in pairs(savedSettings.Lighting) do
+			l[k] = v
+		end
+	end
+	if savedSettings.QualityLevel then
+		settings().Rendering.QualityLevel = savedSettings.QualityLevel
+	end
+end
+
+local function infinitestam()
+    local energy = LocalPlayer.Character:WaitForChild("Energy")
+    energy.Changed:Connect(function()
+        if InfiniteEnergy then
+            energy.Value = energy.MaxValue or 100
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    infinitestam()
+end)
+
+if LocalPlayer.Character then
+    infinitestam()
+end
+
+function StuffsModule:SetFpsBoost(state)
+    FpsBoostEnabled = state
+    if state then
+        applyFpsBoost()
+    else
+        restoreGraphics()
+    end
+end
+
+function StuffsModule:SetINFEnergy(state)
+    InfiniteEnergy = state
+end
+
+function StuffsModule:SetPingsOrFps(state)
+	PingsOrFpsEnabled = state
+	if ScreenGui then
+		ScreenGui.Enabled = state
+	end
+end
+
+return StuffsModule
