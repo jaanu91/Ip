@@ -162,6 +162,10 @@ local function applyFpsBoost()
 	for _, v in pairs(g:GetDescendants()) do
 		optimizeInstance(v)
 	end
+	
+	if setfpscap then
+		setfpscap(240)
+	end
 
 	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
 end
