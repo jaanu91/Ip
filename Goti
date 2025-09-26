@@ -10,7 +10,7 @@ local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
-local _G.WalkWater = false
+local WalkWaterEnabled = false
 
 local savedSettings = {}
 local connections = {}
@@ -202,8 +202,8 @@ function StuffsModule:SetINFEnergy(state)
 end
 
 function StuffsModule:SetWalkWater(state)
-    _G.WalkWater = state
-    if state then
+    WalkWaterEnabled = state
+    if WalkWaterEnabled then
         waterPart.Size = Vector3.new(1000,110,1000)
     else
         waterPart.Size = Vector3.new(1000,80,1000)
