@@ -4,6 +4,7 @@ local PingsOrFpsEnabled = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("WaterBase-Plane")
 
 local ScreenGui
 local FpsPingLabel
@@ -187,18 +188,6 @@ if LocalPlayer.Character then
     infinitestam()
 end
 
-spawn(function()
-    while task.wait() do
-        pcall(function()
-            if _G.WalkWater then
-                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000,112,1000)
-            else
-                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000,80,1000)
-            end
-        end)
-    end
-end)
-
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
@@ -214,6 +203,11 @@ end
 
 function StuffsModule:SetWalkWater(state)
     _G.WalkWater = state
+    if state then
+        waterPart.Size = Vector3.new(1000,110,1000)
+    else
+        waterPart.Size = Vector3.new(1000,80,1000)
+    end
 end
 
 function StuffsModule:SetPingsOrFps(state)
