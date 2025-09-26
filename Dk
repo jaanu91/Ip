@@ -26,6 +26,14 @@ local MiniNpcState = nil
 local MiniPlayerCreated = false
 local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
+local characterConnections = {}
+
+local function clearConnections()
+	for _, conn in ipairs(characterConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	characterConnections = {}
+end
 
 -- =========================
 -- Enemies Finder
@@ -235,35 +243,19 @@ end
 -- Tool equip / unequip 
 -- =========================
 local function hookTool(tool)
-	currentTool = tool
-	tool.AncestryChanged:Connect(function(_, parent)
-		if not parent then
-			currentTool = nil
-			vActive = false
-			sharkZActive = false
-			cursedZActive = false
-			tiltEnabled = false
-			stopTiltSmooth()
-		end
-	end)
+    currentTool = tool
+    local ancConn = tool.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            currentTool = nil
+            vActive = false
+            sharkZActive = false
+            cursedZActive = false
+            tiltEnabled = false
+            stopTiltSmooth()
+        end
+    end)
+    table.insert(characterConnections, ancConn)
 end
-
-char.ChildAdded:Connect(function(child)
-	if child:IsA("Tool") then
-		hookTool(child)
-	end
-end)
-
-char.ChildRemoved:Connect(function(child)
-	if child == currentTool then
-		currentTool = nil
-		vActive = false
-		sharkZActive = false
-		cursedZActive = false
-		tiltEnabled = false
-		stopTiltSmooth()
-	end
-end)
 
 -- =========================
 -- Tilt trigger condition
@@ -409,13 +401,15 @@ local function watchDamageCounter()
             stopTiltSmooth()
         end
     end)
+
+    table.insert(characterConnections, dmgConn)
 end
 
 local function watchHealth(humanoid)
     if healthConn then
-	    pcall(function() healthConn:Disconnect() end)
-	    healthConn = nil
-	end
+        pcall(function() healthConn:Disconnect() end)
+        healthConn = nil
+    end
 
     lastHealth = humanoid.Health
 
@@ -429,6 +423,8 @@ local function watchHealth(humanoid)
         end
         lastHealth = newHealth
     end)
+
+    table.insert(characterConnections, healthConn)
 end
 
 local function setAimlockTarget(targetModel)
@@ -445,7 +441,7 @@ local function setAimlockTarget(targetModel)
         currentTarget = nil
         return
     end
-    
+
     local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then
         currentTarget = nil
@@ -461,13 +457,13 @@ local function setAimlockTarget(targetModel)
         highlight.Adornee = targetModel
         highlight.Parent = targetModel
         currentHighlight = highlight
-        
+
         if dmgConn then
             pcall(function() dmgConn:Disconnect() end)
             dmgConn = nil
         end
-        
-        humanoid.Died:Connect(function()
+
+        local diedConn = humanoid.Died:Connect(function()
             if currentHighlight then
                 currentHighlight:Destroy()
                 currentHighlight = nil
@@ -485,6 +481,7 @@ local function setAimlockTarget(targetModel)
                 rightTouches = {}
             end
         end)
+        table.insert(characterConnections, diedConn)
 
         if currentTarget ~= targetModel then
             watchDamageCounter()
@@ -547,78 +544,56 @@ end)
 -- =========================
 -- lifecycle
 -- =========================
-player.CharacterAdded:Connect(function(c)
-	char = c
-	humanoid = char:WaitForChild("Humanoid")
-	camera = workspace.CurrentCamera
-	vActive = false
-	sharkZActive = false
-	cursedZActive = false
-	tiltEnabled = false
-	rightTouches = {}
-	disconnectTiltConn()
-	preTiltCFrame = nil
-	if char:FindFirstChildOfClass("Tool") then
-		hookTool(char:FindFirstChildOfClass("Tool"))
-	end
-	if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-    if healthConn then pcall(function() healthConn:Disconnect() end) healthConn = nil end
-    
-	watchDamageCounter()
-	watchHealth(humanoid)
+local function onCharacterAdded(newChar)
+    clearConnections()
 
-	task.defer(function()
-		if currentTarget and currentTarget:FindFirstChildOfClass("Humanoid") 
-		   and currentTarget:FindFirstChildOfClass("Humanoid").Health > 0 then
-			setAimlockTarget(currentTarget)
-		else
-			if AimlockPlayerEnabled then
-				cachedEnemy = getNearestEnemy(500)
-				if cachedEnemy and cachedEnemy.Parent then
-					setAimlockTarget(cachedEnemy.Parent)
-				end
-			end
-			if AimlockNpcEnabled then
-				cachedBoss = getNearestBoss(500)
-				if cachedBoss and cachedBoss.Parent then
-					setAimlockTarget(cachedBoss.Parent)
-				end
-			end
-		end
-		if currentTool and canTilt() then
-			tiltEnabled = true
-            if next(rightTouches) then
-				startTilt()
-			end
-		end
-	end)
-end)
+    char = newChar
 
-player.CharacterRemoving:Connect(function()
-	vActive = false
-	sharkZActive = false
-	cursedZActive = false
-	tiltEnabled = false
-	rightTouches = {}
-	disconnectTiltConn()
-	currentTool = nil
-	
-	if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
-    if healthConn then
-        pcall(function() healthConn:Disconnect() end)
-        healthConn = nil
-    end
+    camera = workspace.CurrentCamera
+    cachedBoss = nil
+    currentTarget = nil
     if currentHighlight then
-        pcall(function() currentHighlight:Destroy() end)
+        currentHighlight:Destroy()
         currentHighlight = nil
     end
-    currentTarget = nil
-    preTiltCFrame = nil
-end)
 
+    local humanoid = char:WaitForChild("Humanoid")
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            hookTool(child)
+        end
+    end))
+
+    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
+        if child == currentTool then
+            currentTool = nil
+            vActive = false
+            sharkZActive = false
+            cursedZActive = false
+            tiltEnabled = false
+            stopTiltSmooth()
+        end
+    end))
+
+    watchHealth(humanoid)
+
+    tiltEnabled = false
+    vActive, sharkZActive, cursedZActive = false, false, false
+    rightTouches = {}
+    stopTiltSmooth()
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+	onCharacterAdded(player.Character)
+end
+
+-- =========================
+-- State
+-- =========================
 function AimlockModule:SetPlayerAimlock(state)
     AimlockPlayerEnabled = state
 end
