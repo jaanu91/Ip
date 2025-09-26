@@ -117,6 +117,8 @@ local function applyFpsBoost()
 			GlobalShadows = l.GlobalShadows,
 			FogEnd = l.FogEnd,
 			Brightness = l.Brightness,
+			EnvironmentSpecularScale =  l.EnvironmentSpecularScale,
+			EnvironmentDiffuseScale =  l.EnvironmentDiffuseScale,
 		}
 		savedSettings.QualityLevel = settings().Rendering.QualityLevel
 	end
@@ -128,6 +130,8 @@ local function applyFpsBoost()
 	l.GlobalShadows = false
 	l.FogEnd = 9e9
 	l.Brightness = 1
+	l.EnvironmentSpecularScale = 0
+	l.EnvironmentDiffuseScale = 0
 	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 
 	for _, e in pairs(l:GetChildren()) do
@@ -135,6 +139,24 @@ local function applyFpsBoost()
 		or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
 			e.Enabled = false
 		end
+	end
+	
+	for _, v in pairs(Lighting:GetChildren()) do
+	    if v:IsA("Sky") then
+	        v:Destroy()
+	    end
+	end
+	
+	for _, v in pairs(Lighting:GetChildren()) do
+	    if v:IsA("PostEffect") then
+	        v.Enabled = false
+	    end
+	end
+	
+	for _, obj in pairs(workspace:GetDescendants()) do
+	    if obj:IsA("Part") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
+	        obj.CastShadow = false
+	    end
 	end
 
 	for _, v in pairs(g:GetDescendants()) do
