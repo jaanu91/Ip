@@ -4,10 +4,14 @@ local PingsOrFpsEnabled = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("WaterBase-Plane")
 
 local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
+local InfiniteEnergy = false
+local WalkWaterEnabled = false
+
 local savedSettings = {}
 local connections = {}
 
@@ -166,12 +170,43 @@ local function restoreGraphics()
 	end
 end
 
+local function infinitestam()
+    local energy = LocalPlayer.Character:WaitForChild("Energy")
+    energy.Changed:Connect(function()
+        if InfiniteEnergy then
+            energy.Value = energy.MaxValue or 100
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    infinitestam()
+end)
+
+if LocalPlayer.Character then
+    infinitestam()
+end
+
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
         applyFpsBoost()
     else
         restoreGraphics()
+    end
+end
+
+function StuffsModule:SetINFEnergy(state)
+    InfiniteEnergy = state
+end
+
+function StuffsModule:SetWalkWater(state)
+    WalkWaterEnabled = state
+    if WalkWaterEnabled then
+        waterPart.Size = Vector3.new(1000,110,1000)
+    else
+        waterPart.Size = Vector3.new(1000,80,1000)
     end
 end
 
