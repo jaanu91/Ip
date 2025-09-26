@@ -9,6 +9,7 @@ local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
+local _G.WalkWater = false
 
 local savedSettings = {}
 local connections = {}
@@ -186,6 +187,18 @@ if LocalPlayer.Character then
     infinitestam()
 end
 
+spawn(function()
+    while task.wait() do
+        pcall(function()
+            if _G.WalkWater then
+                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000,112,1000)
+            else
+                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000,80,1000)
+            end
+        end)
+    end
+end)
+
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
@@ -197,6 +210,10 @@ end
 
 function StuffsModule:SetINFEnergy(state)
     InfiniteEnergy = state
+end
+
+function StuffsModule:SetWalkWater(state)
+    _G.WalkWater = state
 end
 
 function StuffsModule:SetPingsOrFps(state)
