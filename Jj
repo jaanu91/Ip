@@ -328,6 +328,7 @@ function ESPModule:SetESP(state)
             v:Destroy()
         end
         ESPs = {}
+        
         for _, conns in pairs(connections) do
             for _, conn in pairs(conns) do
                 conn:Disconnect()
