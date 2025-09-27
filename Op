@@ -200,6 +200,7 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+-- safe namecall hook for silent aim with Dough-Dough + "V" check
 spawn(function()
     local success, gg = pcall(function() return getrawmetatable(game) end)
     if not success or not gg then return end
@@ -207,23 +208,41 @@ spawn(function()
     if not old then return end
 
     setreadonly(gg, false)
-    gg.__namecall = newcclosure(function(self, ...)
+    gg.__namecall = newcclosure(function(...)
         local method = getnamecallmethod()
         local args = {...}
 
-        -- Check tool and "V" skill condition
-        local char = player.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        local tool = humanoid and char:FindFirstChildOfClass("Tool")
-        local doughEquipped = tool and tool.Name == "Dough-Dough"
-        local isVSkill = tostring(args[1]) == "V"
-
-        -- If using V skill and Dough-Dough equipped → skip Silent Aim
-        if doughEquipped and isVSkill then
-            return old(self, ...)
+        -- only intercept FireServer calls (cheap early-exit)
+        if method ~= "FireServer" then
+            return old(...)
         end
 
-        -- Silent Aim redirect
+        -- args[1] should be the remote; check safely
+        local remote = args[1]
+        if typeof(remote) ~= "Instance" or not remote:IsA("RemoteEvent") then
+            return old(...)
+        end
+
+        -- cheap scan: is any argument the exact string "V"?
+        local hasV = false
+        for i = 1, #args do
+            if typeof(args[i]) == "string" and args[i] == "V" then
+                hasV = true
+                break
+            end
+        end
+
+        -- check equipped tool (minimal)
+        local char = player and player.Character
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        local doughEquipped = tool and tool.Name == "Dough-Dough"
+
+        -- if using V and Dough-Dough equipped -> bypass silent aim, call original unchanged
+        if hasV and doughEquipped then
+            return old(table.unpack(args))
+        end
+
+        -- build target position (use your existing target vars)
         local targetPos = nil
         if SilentAimPlayersEnabled and PlayersPosition then
             targetPos = PlayersPosition
@@ -231,16 +250,17 @@ spawn(function()
             targetPos = NPCPosition
         end
 
-        if targetPos and tostring(method) == "FireServer" then
-            if tostring(args[1]) == "RemoteEvent" then
-                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                    args[2] = targetPos
-                    return old(self, unpack(args))
-                end
+        -- only modify args[2] when targetPos exists and args[2] is not a boolean-like string
+        if targetPos and args[2] ~= nil then
+            -- ensure args[2] is not a literal boolean string (as your previous check suggested)
+            if not (typeof(args[2]) == "string" and (args[2] == "true" or args[2] == "false")) then
+                -- replace position arg with our targetPos
+                args[2] = targetPos
+                return old(table.unpack(args))
             end
         end
 
-        return old(self, ...)
+        return old(table.unpack(args))
     end)
     setreadonly(gg, true)
 end)
