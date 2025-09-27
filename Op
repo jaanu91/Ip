@@ -200,69 +200,39 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- safe namecall hook for silent aim with Dough-Dough + "V" check
 spawn(function()
-    local success, gg = pcall(function() return getrawmetatable(game) end)
-    if not success or not gg then return end
-    local old = gg.__namecall
-    if not old then return end
+	local success, gg = pcall(function() return getrawmetatable(game) end)
+	if not success or not gg then return end
+	local old = gg.__namecall
+	if not old then return end
 
-    setreadonly(gg, false)
-    gg.__namecall = newcclosure(function(...)
-        local method = getnamecallmethod()
-        local args = {...}
+	setreadonly(gg, false)
+	gg.__namecall = newcclosure(function(...)
+		local method = getnamecallmethod()
+		local args = {...}
 
-        -- only intercept FireServer calls (cheap early-exit)
-        if method ~= "FireServer" then
-            return old(...)
-        end
+		local targetPos = nil
+		if SilentAimPlayersEnabled and PlayersPosition then
+			targetPos = PlayersPosition
+		elseif SilentAimNPCsEnabled and NPCPosition then
+			targetPos = NPCPosition
+		end
 
-        -- args[1] should be the remote; check safely
-        local remote = args[1]
-        if typeof(remote) ~= "Instance" or not remote:IsA("RemoteEvent") then
-            return old(...)
-        end
-
-        -- cheap scan: is any argument the exact string "V"?
-        local hasV = false
-        for i = 1, #args do
-            if typeof(args[i]) == "string" and args[i] == "V" then
-                hasV = true
-                break
-            end
-        end
-
-        -- check equipped tool (minimal)
-        local char = player and player.Character
-        local tool = char and char:FindFirstChildOfClass("Tool")
-        local doughEquipped = tool and tool.Name == "Dough-Dough"
-
-        -- if using V and Dough-Dough equipped -> bypass silent aim, call original unchanged
-        if hasV and doughEquipped then
-            return old(table.unpack(args))
-        end
-
-        -- build target position (use your existing target vars)
-        local targetPos = nil
-        if SilentAimPlayersEnabled and PlayersPosition then
-            targetPos = PlayersPosition
-        elseif SilentAimNPCsEnabled and NPCPosition then
-            targetPos = NPCPosition
-        end
-
-        -- only modify args[2] when targetPos exists and args[2] is not a boolean-like string
-        if targetPos and args[2] ~= nil then
-            -- ensure args[2] is not a literal boolean string (as your previous check suggested)
-            if not (typeof(args[2]) == "string" and (args[2] == "true" or args[2] == "false")) then
-                -- replace position arg with our targetPos
-                args[2] = targetPos
-                return old(table.unpack(args))
-            end
-        end
-
-        return old(table.unpack(args))
-    end)
-    setreadonly(gg, true)
+		if targetPos and tostring(method) == "FireServer" then
+			if tostring(args[1]) == "RemoteEvent" then
+				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+					if type(args[2]) == "vector" then
+						args[2] = targetPos
+					else
+						args[2] = CFrame.new(targetPos)
+					end
+					return old(unpack(args))
+				end
+			end
+		end
+		return old(...)
+	end)
+	setreadonly(gg, true)
 end)
 
 function SilentAimModule:SetPlayerSilentAim(state)
