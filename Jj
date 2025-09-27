@@ -239,6 +239,11 @@ local function setupPlayerESP(targetPlayer)
 		task.wait(0.5) 
 		if not ESPEnabled then return end
 		createESP(targetPlayer)
+		for plr, billboard in pairs(ESPs) do
+			if plr and plr.Parent then
+				updateESP(plr, billboard)
+			end
+		end
 	end
 
 	if targetPlayer.Character then
