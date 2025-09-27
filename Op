@@ -201,34 +201,48 @@ RunService.Heartbeat:Connect(function()
 end)
 
 spawn(function()
-	local success, gg = pcall(function() return getrawmetatable(game) end)
-	if not success or not gg then return end
-	local old = gg.__namecall
-	if not old then return end
+    local success, gg = pcall(function() return getrawmetatable(game) end)
+    if not success or not gg then return end
+    local old = gg.__namecall
+    if not old then return end
 
-	setreadonly(gg, false)
-	gg.__namecall = newcclosure(function(...)
-		local method = getnamecallmethod()
-		local args = {...}
+    setreadonly(gg, false)
+    gg.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-		local targetPos = nil
-		if SilentAimPlayersEnabled and PlayersPosition then
-			targetPos = PlayersPosition
-		elseif SilentAimNPCsEnabled and NPCPosition then
-			targetPos = NPCPosition
-		end
+        -- Check tool and "V" skill condition
+        local char = player.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        local tool = humanoid and char:FindFirstChildOfClass("Tool")
+        local doughEquipped = tool and tool.Name == "Dough-Dough"
+        local isVSkill = tostring(args[1]) == "V"
 
-		if targetPos and tostring(method) == "FireServer" then
-			if tostring(args[1]) == "RemoteEvent" then
-				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-					args[2] = targetPos
-					return old(unpack(args))
-				end
-			end
-		end
-		return old(...)
-	end)
-	setreadonly(gg, true)
+        -- If using V skill and Dough-Dough equipped → skip Silent Aim
+        if doughEquipped and isVSkill then
+            return old(self, ...)
+        end
+
+        -- Silent Aim redirect
+        local targetPos = nil
+        if SilentAimPlayersEnabled and PlayersPosition then
+            targetPos = PlayersPosition
+        elseif SilentAimNPCsEnabled and NPCPosition then
+            targetPos = NPCPosition
+        end
+
+        if targetPos and tostring(method) == "FireServer" then
+            if tostring(args[1]) == "RemoteEvent" then
+                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                    args[2] = targetPos
+                    return old(self, unpack(args))
+                end
+            end
+        end
+
+        return old(self, ...)
+    end)
+    setreadonly(gg, true)
 end)
 
 function SilentAimModule:SetPlayerSilentAim(state)
