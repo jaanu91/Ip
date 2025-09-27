@@ -1,0 +1,177 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/land9678/Sapi-Hub-V1/refs/heads/main/KavoUI.txt"))()
+local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Dk"))()
+local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Gk"))()
+local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Bg"))()
+local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Stuf"))()
+local UserInputService = game:GetService("UserInputService")
+
+local toggleGui = Instance.new("ScreenGui")
+toggleGui.Name = "ToggleGui"
+toggleGui.Parent = game.CoreGui
+
+local toggleButton = Instance.new("ImageButton")
+toggleButton.Name = "SHV1"
+toggleButton.Size = UDim2.new(0, 40, 0, 40)
+toggleButton.Position = UDim2.new(0, 5, 0, 10)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.BackgroundTransparency = 0.2
+toggleButton.BorderSizePixel = 0
+toggleButton.ZIndex = 9999
+toggleButton.Image = "rbxassetid://76926193047725"
+toggleButton.Parent = toggleGui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
+
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	toggleButton.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end
+
+toggleButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = toggleButton.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+toggleButton.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
+
+local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", "DarkTheme")
+
+local Tab = Window:NewTab("❖・Aimbot")
+local Section = Tab:NewSection("☘・Settings")
+
+Section:NewToggle("・Aimlock Players", "Lock onto nearest player", function(state)
+    AimlockModule:SetPlayerAimlock(state)
+end)
+
+Section:NewToggle("・Aimlock Mini Toggle Players", "Lock onto nearest player", function(state)
+    AimlockModule:SetMiniTogglePlayerAimlock(state)
+end)
+
+Section:NewToggle("・Aimlock NPC", "Lock onto nearest NPC/Boss", function(state)
+    AimlockModule:SetNpcAimlock(state)
+end)
+
+Section:NewToggle("・Aimlock Mini Toggle NPC", "Lock onto nearest NPC/Boss", function(state)
+    AimlockModule:SetMiniToggleNpcAimlock(state)
+end)
+
+Section:NewToggle("・Prediction", "Predict enemy movement", function(state)
+    AimlockModule:SetPrediction(state)
+end)
+
+Section:NewDropdown("・Prediction Amount | Default 0.1s", "Select max Prediction for Aimlock", {"0.2", "0.3", "0.4"}, function(selected)
+    local num = tonumber(selected)
+    if num then
+        AimlockModule:SetPredictionTime(num)
+    end
+end)
+
+local Tab = Window:NewTab("⛩・Silent Aimbot")
+local Section = Tab:NewSection("⚘・Settings")
+
+Section:NewToggle("・SilentAim Players", "Lock onto nearest player", function(state)
+    SilentAimModule:SetPlayerSilentAim(state)
+end)
+
+Section:NewToggle("・SilentAim Npcs", "Lock onto nearest npc", function(state)
+    SilentAimModule:SetNPCSilentAim(state)
+end)
+
+Section:NewToggle("・SilentAim Prediction", "Prediction on target", function(state)
+    SilentAimModule:SetPrediction(state)
+end)
+
+Section:NewDropdown("・Prediction Future | Default 0.1s", "Select max Prediction for Silent Aim", {"0.2", "0.3", "0.4"}, function(selected)
+    local num = tonumber(selected)
+    if num then
+        SilentAimModule:SetPredictionAmount(num)
+    end
+end)
+
+Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance for aimbot", {"200", "400", "600"}, function(selected)
+    local num = tonumber(selected)
+    if num then
+        SilentAimModule:SetDistanceLimit(num)
+    end
+end)
+
+local Tab = Window:NewTab("✿・Features")
+local Section = Tab:NewSection("⚜・Settings")
+
+Section:NewToggle("・ESP Players", "Toggle Player ESP", function(state)
+    ESPModule:SetESP(state)
+end)
+
+Section:NewToggle("・V3 Skill", "Auto activate V3 ability", function(state)
+    ESPModule:SetV3(state)
+end)
+
+Section:NewToggle("・Bunny hop", "Toggle Bunnyhop", function(state)
+    ESPModule:SetBunnyhop(state)
+end)
+
+Section:NewToggle("・Aura Skill", "Auto activate Buso", function(state)
+    ESPModule:SetBuso(state)
+end)
+
+Section:NewToggle("・Fps Or Pings", "Display Ping or Fps", function(state)
+    StuffsModule:SetPingsOrFps(state)
+end)
+
+Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
+  getgenv().WalkSpeedValue = speedfunc
+    if getgenv().WalkSpeedValue then
+        local Player = game:service'Players'.LocalPlayer
+        Player.Character.Humanoid:GetPropertyChangedSignal'WalkSpeed':Connect(function()
+            Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+        end)
+        Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+    end
+end)
+
+Section:NewToggle("・Fps Boost", "Increase Fps", function(state)
+    StuffsModule:SetFpsBoost(state)
+end)
+
+Section:NewToggle("・INF Energy", "Max Energy", function(state)
+    StuffsModule:SetINFEnergy(state)
+end)
+
+Section:NewToggle("・Walk on Water", "Travel in Water", function(state)
+    StuffsModule:SetWalkWater(state)
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    Library:ToggleUI()
+end)
