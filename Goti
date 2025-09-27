@@ -10,6 +10,7 @@ local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
+local InfiniteStun = false
 local WalkWaterEnabled = false
 
 local savedSettings = {}
@@ -180,7 +181,7 @@ local function applyFpsBoost()
 	end
 	
 	if setfpscap then
-		setfpscap(240)
+		setfpscap(60)
 	end
 
 	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
@@ -222,13 +223,24 @@ local function infinitestam()
     end)
 end
 
+local function infinitestun()
+    local energy = LocalPlayer.Character:WaitForChild("Stun")
+    energy.Changed:Connect(function()
+        if InfiniteStun then
+            energy.Value = energy.MaxValue or 100
+        end
+    end)
+end
+
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     infinitestam()
+    infinitestun()
 end)
 
 if LocalPlayer.Character then
     infinitestam()
+    infinitestun()
 end
 
 function StuffsModule:SetFpsBoost(state)
@@ -242,6 +254,10 @@ end
 
 function StuffsModule:SetINFEnergy(state)
     InfiniteEnergy = state
+end
+
+function StuffsModule:SetINFStun(state)
+    InfiniteStun = state
 end
 
 function StuffsModule:SetWalkWater(state)
