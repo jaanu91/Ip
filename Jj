@@ -241,7 +241,7 @@ local function setupPlayerESP(targetPlayer)
     end
     connections[targetPlayer] = {}
 
-    local function onCharAdded(newChar)
+    local charAddedConn = targetPlayer.CharacterAdded:Connect(function(newChar)
         task.wait(0.5)
         removeESP(targetPlayer)
         createESP(targetPlayer)
@@ -251,16 +251,31 @@ local function setupPlayerESP(targetPlayer)
             local diedConn
             diedConn = humanoid.Died:Connect(function()
                 removeESP(targetPlayer)
+                if connections[targetPlayer] then
+                    connections[targetPlayer].Died = nil
+                end
             end)
-            table.insert(connections[targetPlayer], diedConn)
+            connections[targetPlayer].Died = diedConn
         end
-    end
-
-    local charAddedConn = targetPlayer.CharacterAdded:Connect(onCharAdded)
+    end)
     table.insert(connections[targetPlayer], charAddedConn)
 
     if targetPlayer.Character then
-        onCharAdded(targetPlayer.Character)
+        task.wait(0.5)
+        removeESP(targetPlayer)
+        createESP(targetPlayer)
+
+        local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            local diedConn
+            diedConn = humanoid.Died:Connect(function()
+                removeESP(targetPlayer)
+                if connections[targetPlayer] then
+                    connections[targetPlayer].Died = nil
+                end
+            end)
+            connections[targetPlayer].Died = diedConn
+        end
     end
 end
 
@@ -352,6 +367,13 @@ local function onCharacterAdded(newChar)
     end
     if BusoEnabled then
         pcall(function() CommF:InvokeServer("Buso") end)
+    end
+    if ESPEnabled then
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= player then
+                setupPlayerESP(p)
+            end
+        end
     end
 end
 
