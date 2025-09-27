@@ -16,11 +16,9 @@ local BusoEnabled = false
 local v3LoopRunning = false
 
 local currentTool = nil
-local connections = {}
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
-local UPDATE_INTERVAL = 0.3
 
 -- =========================
 -- Team Check
@@ -238,7 +236,7 @@ local function setupPlayerESP(targetPlayer)
 	if ESPs[targetPlayer] then return end
 
 	local function onChar(char)
-		task.wait(1) 
+		task.wait(0.5) 
 		if not ESPEnabled then return end
 		createESP(targetPlayer)
 	end
@@ -332,13 +330,6 @@ local function onCharacterAdded(newChar)
     end
     if BusoEnabled then
         pcall(function() CommF:InvokeServer("Buso") end)
-    end
-    if ESPEnabled then
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= player then
-                setupPlayerESP(p)
-            end
-        end
     end
 end
 
