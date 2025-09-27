@@ -234,63 +234,47 @@ local function updateESP(targetPlayer, billboard)
 end
 
 local function setupPlayerESP(targetPlayer)
-    if connections[targetPlayer] then
-        for _, conn in pairs(connections[targetPlayer]) do
-            conn:Disconnect()
-        end
-    end
-    connections[targetPlayer] = {}
+	if targetPlayer == player then return end
+	if ESPs[targetPlayer] then return end
 
-    local function onCharAdded(newChar)
-        task.wait(0.5)
-        removeESP(targetPlayer)
-        createESP(targetPlayer)
-
-        local humanoid = newChar:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            local diedConn
-            diedConn = humanoid.Died:Connect(function()
-                removeESP(targetPlayer)
-            end)
-            table.insert(connections[targetPlayer], diedConn)
-        end
-    end
-
-    local charAddedConn = targetPlayer.CharacterAdded:Connect(onCharAdded)
-    table.insert(connections[targetPlayer], charAddedConn)
-
-    if targetPlayer.Character then
-        onCharAdded(targetPlayer.Character)
-    end
-end
-
-local function removeESP(player)
-	if ESPs[player] then
-		ESPs[player]:Destroy()
-		ESPs[player] = nil
+	local function onChar(char)
+		task.wait(1) 
+		if not ESPEnabled then return end
+		createESP(targetPlayer)
 	end
+
+	if targetPlayer.Character then
+		onChar(targetPlayer.Character)
+	end
+	targetPlayer.CharacterAdded:Connect(onChar)
 end
 
-task.spawn(function()
-	while true do
-		if ESPEnabled then
-			for plr, billboard in pairs(ESPs) do
+local function removeAllESP()
+	for _, billboard in pairs(ESPs) do
+		if billboard then billboard:Destroy() end
+	end
+	table.clear(ESPs)
+end
+
+local hbConn
+local function startESPUpdater()
+	if hbConn then return end
+	hbConn = RunService.Heartbeat:Connect(function()
+		if not ESPEnabled then return end
+		for plr, billboard in pairs(ESPs) do
+			if plr and plr.Parent then
 				updateESP(plr, billboard)
 			end
 		end
-		task.wait(UPDATE_INTERVAL)
-	end
-end)
+	end)
+end
 
-game.Players.PlayerAdded:Connect(function(p)
-	if ESPEnabled then
-		setupPlayerESP(p)
+local function stopESPUpdater()
+	if hbConn then
+		hbConn:Disconnect()
+		hbConn = nil
 	end
-end)
-
-game.Players.PlayerRemoving:Connect(function(p)
-	removeESP(p)
-end)
+end
 
 -- =========================
 -- State Toggles
@@ -316,26 +300,21 @@ function ESPModule:SetBuso(state)
 end
 
 function ESPModule:SetESP(state)
-    ESPEnabled = state
-    if state then
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= player then
-                setupPlayerESP(p)
-            end
-        end
-    else
-        for _, v in pairs(ESPs) do
-            v:Destroy()
-        end
-        ESPs = {}
-        
-        for _, conns in pairs(connections) do
-            for _, conn in pairs(conns) do
-                conn:Disconnect()
-            end
-        end
-        connections = {}
-    end
+	ESPEnabled = state
+	if state then
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= player then
+				setupPlayerESP(p)
+			end
+		end
+		Players.PlayerAdded:Connect(function(p)
+			setupPlayerESP(p)
+		end)
+		startESPUpdater()
+	else
+		stopESPUpdater()
+		removeAllESP()
+	end
 end
 
 -- =========================
