@@ -312,6 +312,10 @@ function StuffsModule:SetHopServer(state)
     Hop()
 end
 
+function StuffsModule:SetRejoinServer(state)
+    game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+end
+
 function StuffsModule:SetWalkWater(state)
     WalkWaterEnabled = state
     if WalkWaterEnabled then
