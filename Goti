@@ -296,9 +296,7 @@ function Hop()
     Teleport()
 end
 
-_G.FastAttack = false
-
-if _G.FastAttack then
+do
     local _ENV = (getgenv or getrenv or getfenv)()
 
     local function SafeWaitForChild(parent, childName)
