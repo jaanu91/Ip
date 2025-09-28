@@ -10,6 +10,7 @@ local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
+local MobileFastAttack = false
 local WalkWaterEnabled = false
 
 local savedSettings = {}
@@ -295,6 +296,30 @@ function Hop()
     Teleport()
 end
 
+spawn(function()
+    while task.wait() do
+        if MobileFastAttack then
+            local CameraShakerR = require(game.ReplicatedStorage.Util.CameraShaker)
+            CameraShakerR:Stop()
+            pcall(function()
+                local CombatFrameworkLib = getupvalues(require(game:GetService("Players").LocalPlayer.PlayerScripts.PlayerModule.ControlModule))
+                local CmrFwLib = CombatFrameworkLib[2]
+                local activeController = CmrFwLib.activeController
+                
+                activeController.timeToNextAttack = 0
+                activeController.attacking = false
+                activeController.blocking = false
+                activeController.timeToNextBlock = 0
+                activeController.increment = 0
+                activeController.hitboxMagnitude = 100
+                activeController.focusStart = 0
+                activeController.humanoid.AutoRotate = 0
+                activeController.animator.anims.basic[1]:Play(0.01,0.01,0.01)
+            end)
+        end
+    end
+end)
+
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
@@ -314,6 +339,10 @@ end
 
 function StuffsModule:SetRejoinServer(state)
     game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+end
+
+function StuffsModule:SetFastAttack(state)
+    MobileFastAttack = state
 end
 
 function StuffsModule:SetWalkWater(state)
