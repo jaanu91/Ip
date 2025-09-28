@@ -10,6 +10,7 @@ local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
+local FastAttackEnabled = false
 local WalkWaterEnabled = false
 
 local savedSettings = {}
@@ -100,6 +101,18 @@ local function optimizeInstance(v)
 	end
 end
 
+local function optimizeUI(instance)
+    if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
+        instance.ImageTransparency = 0
+        
+    elseif instance:IsA("TextLabel") or instance:IsA("TextButton") then
+        instance.RichText = false -- turn off rich text if not needed
+        instance.TextStrokeTransparency = 1 -- disable stroke
+        instance.TextSize = math.min(instance.TextSize, 14) -- reduce text size slightly
+        instance.Font = Enum.Font.SourceSans -- simpler font uses less GPU
+    end
+end
+
 local function applyFpsBoost()
 	local g = game
 	local w = g.Workspace
@@ -117,6 +130,8 @@ local function applyFpsBoost()
 			GlobalShadows = l.GlobalShadows,
 			FogEnd = l.FogEnd,
 			Brightness = l.Brightness,
+			EnvironmentSpecularScale =  l.EnvironmentSpecularScale,
+			EnvironmentDiffuseScale =  l.EnvironmentDiffuseScale,
 		}
 		savedSettings.QualityLevel = settings().Rendering.QualityLevel
 	end
@@ -128,6 +143,8 @@ local function applyFpsBoost()
 	l.GlobalShadows = false
 	l.FogEnd = 9e9
 	l.Brightness = 1
+	l.EnvironmentSpecularScale = 0
+	l.EnvironmentDiffuseScale = 0
 	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 
 	for _, e in pairs(l:GetChildren()) do
@@ -136,12 +153,39 @@ local function applyFpsBoost()
 			e.Enabled = false
 		end
 	end
+	
+	for _, v in pairs(Lighting:GetChildren()) do
+	    if v:IsA("Sky") then
+	        v:Destroy()
+	    end
+	end
+	
+	for _, v in pairs(Lighting:GetChildren()) do
+	    if v:IsA("PostEffect") then
+	        v.Enabled = false
+	    end
+	end
+	
+	for _, obj in pairs(workspace:GetDescendants()) do
+	    if obj:IsA("Part") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
+	        obj.CastShadow = false
+	    end
+	end
 
 	for _, v in pairs(g:GetDescendants()) do
 		optimizeInstance(v)
 	end
+	
+	for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+	    optimizeUI(gui)
+	end
+	
+	if setfpscap then
+		setfpscap(60)
+	end
 
 	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
+	table.insert(connections, LocalPlayer.PlayerGui.DescendantAdded:Connect(optimizeUI))
 end
 
 local function restoreGraphics()
@@ -188,6 +232,211 @@ if LocalPlayer.Character then
     infinitestam()
 end
 
+function Hop()
+    local PlaceID = game.PlaceId
+    local AllIDs = {}
+    local foundAnything = ""
+    local actualHour = os.date("!*t").hour
+    local Deleted = false
+    function TPReturner()
+        local Site;
+        if foundAnything == "" then
+            Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+        else
+            Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+        end
+        local ID = ""
+        if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+            foundAnything = Site.nextPageCursor
+        end
+        local num = 0;
+        for i,v in pairs(Site.data) do
+            local Possible = true
+            ID = tostring(v.id)
+            if tonumber(v.maxPlayers) > tonumber(v.playing) then
+                for _,Existing in pairs(AllIDs) do
+                    if num ~= 0 then
+                        if ID == tostring(Existing) then
+                            Possible = false
+                        end
+                    else
+                        if tonumber(actualHour) ~= tonumber(Existing) then
+                            local delFile = pcall(function()
+                                -- delfile("NotSameServers.json")
+                                AllIDs = {}
+                                table.insert(AllIDs, actualHour)
+                            end)
+                        end
+                    end
+                    num = num + 1
+                end
+                if Possible == true then
+                    table.insert(AllIDs, ID)
+                    wait(.1)
+                    pcall(function()
+                        -- writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+                        wait()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+                    end)
+                    wait(.1)
+                end
+            end
+        end
+    end
+    function Teleport() 
+        while wait(.1) do
+            pcall(function()
+                TPReturner()
+                if foundAnything ~= "" then
+                    TPReturner()
+                end
+            end)
+        end
+    end
+    Teleport()
+end
+
+do
+    local _ENV = (getgenv or getrenv or getfenv)()
+
+    local function SafeWaitForChild(parent, childName)
+        local success, result = pcall(function()
+            return parent:WaitForChild(childName)
+        end)
+        if not success or not result then
+            warn("noooooo: " .. childName)
+        end
+        return result
+    end
+
+    local function WaitChilds(path, ...)
+        local last = path
+        for _, child in {...} do
+            last = last:FindFirstChild(child) or SafeWaitForChild(last, child)
+            if not last then break end
+        end
+        return last
+    end
+
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    local CollectionService = game:GetService("CollectionService")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local TeleportService = game:GetService("TeleportService")
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local Player = Players.LocalPlayer
+
+    if not Player then
+        warn("Không tìm thấy người chơi cục bộ.")
+        return
+    end
+
+    local Remotes = SafeWaitForChild(ReplicatedStorage, "Remotes")
+    if not Remotes then return end
+
+    local Validator = SafeWaitForChild(Remotes, "Validator")
+    local CommF = SafeWaitForChild(Remotes, "CommF_")
+    local CommE = SafeWaitForChild(Remotes, "CommE")
+
+    local ChestModels = SafeWaitForChild(workspace, "ChestModels")
+    local WorldOrigin = SafeWaitForChild(workspace, "_WorldOrigin")
+    local Characters = SafeWaitForChild(workspace, "Characters")
+    local Enemies = SafeWaitForChild(workspace, "Enemies")
+    local Map = SafeWaitForChild(workspace, "Map")
+
+    local EnemySpawns = SafeWaitForChild(WorldOrigin, "EnemySpawns")
+    local Locations = SafeWaitForChild(WorldOrigin, "Locations")
+
+    local RenderStepped = RunService.RenderStepped
+    local Heartbeat = RunService.Heartbeat
+    local Stepped = RunService.Stepped
+
+    local Modules = SafeWaitForChild(ReplicatedStorage, "Modules")
+    local Net = SafeWaitForChild(Modules, "Net")
+
+    local sethiddenproperty = sethiddenproperty or function(...) return ... end
+    local setupvalue = setupvalue or (debug and debug.setupvalue)
+    local getupvalue = getupvalue or (debug and debug.getupvalue)
+
+    local Settings = {
+        AutoClick = true,
+        ClickDelay = 0,
+    }
+
+    local Module = {}
+
+    Module.FastAttack = (function()
+        if _ENV.rz_FastAttack then
+            return _ENV.rz_FastAttack
+        end
+
+        local FastAttack = {
+            Distance = 100,
+            attackMobs = true,
+            attackPlayers = true,
+            Equipped = nil
+        }
+
+        local RegisterAttack = SafeWaitForChild(Net, "RE/RegisterAttack")
+        local RegisterHit = SafeWaitForChild(Net, "RE/RegisterHit")
+
+        local function IsAlive(character)
+        return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
+        end
+
+        local function ProcessEnemies(OthersEnemies, Folder)
+            local BasePart = nil
+            for _, Enemy in Folder:GetChildren() do
+                local Head = Enemy:FindFirstChild("Head")
+                if Head and IsAlive(Enemy) and Player:DistanceFromCharacter(Head.Position) < FastAttack.Distance then
+                    if Enemy ~= Player.Character then
+                        table.insert(OthersEnemies, { Enemy, Head })
+                        BasePart = Head
+                    end
+                end
+            end
+            return BasePart
+        end
+
+        function FastAttack:Attack(BasePart, OthersEnemies)
+            if not BasePart or #OthersEnemies == 0 then return end
+            RegisterAttack:FireServer(Settings.ClickDelay or 0)
+            RegisterHit:FireServer(BasePart, OthersEnemies)
+        end
+
+        function FastAttack:AttackNearest()
+            local OthersEnemies = {}
+            local Part1 = ProcessEnemies(OthersEnemies, Enemies)
+            local Part2 = ProcessEnemies(OthersEnemies, Characters)
+            if #OthersEnemies > 0 then
+                self:Attack(Part1 or Part2, OthersEnemies)
+            else
+                task.wait(0)
+            end
+        end
+
+        function FastAttack:BladeHits()
+            local Equipped = IsAlive(Player.Character) and Player.Character:FindFirstChildOfClass("Tool")
+            if Equipped and Equipped.ToolTip ~= "Gun" then
+                self:AttackNearest()
+            else
+                task.wait(0)
+            end
+        end
+
+        task.spawn(function()
+            while task.wait(Settings.ClickDelay) do
+                if Settings.AutoClick and FastAttackEnabled then
+                    FastAttack:BladeHits()
+                end
+            end
+        end)
+
+        _ENV.rz_FastAttack = FastAttack
+        return FastAttack
+    end)()
+end
+
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
@@ -199,6 +448,18 @@ end
 
 function StuffsModule:SetINFEnergy(state)
     InfiniteEnergy = state
+end
+
+function StuffsModule:SetHopServer(state)
+    Hop()
+end
+
+function StuffsModule:SetRejoinServer(state)
+    game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+end
+
+function StuffsModule:SetFastAttack(state)
+    FastAttackEnabled = state
 end
 
 function StuffsModule:SetWalkWater(state)
