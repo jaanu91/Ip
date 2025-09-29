@@ -1,19 +1,23 @@
+-- ================= VSkillModule =================
 local VSkillModule = {}
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local Cooldown = false
-local SilentDisableTime = 3
+local SilentDisableTime = 3 -- seconds
 
 function VSkillModule:CheckVSkillUsage(method, args, SilentAimModule)
-    if method == "InvokeServer" and args and args[1] == "V" then
+    -- Make sure we're catching InvokeServer
+    if tostring(method) == "InvokeServer" and args and args[1] == "V" then
         local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
         if tool and tool.Name == "Dough-Dough" and not Cooldown then
             Cooldown = true
 
+            -- disable silent aim
             SilentAimModule:SetPlayerSilentAim(false)
             SilentAimModule:SetNPCSilentAim(false)
 
+            -- re-enable after delay
             task.delay(SilentDisableTime, function()
                 SilentAimModule:SetPlayerSilentAim(true)
                 SilentAimModule:SetNPCSilentAim(true)
