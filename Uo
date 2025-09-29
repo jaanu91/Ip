@@ -1,6 +1,8 @@
 -- ================= VSkillModule =================
 local VSkillModule = {}
 
+local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Op"))()
+
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
