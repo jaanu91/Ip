@@ -2,11 +2,6 @@ local SilentAimModule = {}
 
 local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
 
-Playersaimbot = nil
-PlayersPosition = nil
-NPCaimbot = nil
-NPCPosition = nil
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -17,6 +12,13 @@ local camera = workspace.CurrentCamera
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
+
+Playersaimbot = nil
+PlayersPosition = nil
+NPCaimbot = nil
+NPCPosition = nil
+local currentHighlight = nil
+local currentTargetType = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -129,32 +131,35 @@ local function getClosestNPC(lpHRP)
 	return closest
 end
 
-local function applyHighlight(targetModel)
-	if not targetModel then return end
-	if currentHighlight and currentHighlight.Adornee == targetModel then return end
+local function applyHighlight(targetModel, targetType)
+    if not targetModel then return end
+    if currentHighlight and currentHighlight.Adornee == targetModel then return end
 
-	if currentHighlight then
-		currentHighlight:Destroy()
-		currentHighlight = nil
-	end
+    if currentHighlight then  
+        currentHighlight:Destroy()  
+        currentHighlight = nil  
+        currentTargetType = nil  
+    end  
 
-	local hl = Instance.new("Highlight")
-	hl.FillColor = Color3.fromRGB(255, 255, 0)
-	hl.OutlineColor = Color3.fromRGB(255, 255, 0)
-	hl.FillTransparency = 0.5
-	hl.OutlineTransparency = 0
-	hl.Adornee = targetModel
-	hl.Parent = targetModel
-	currentHighlight = hl
-	
-	VSkillModule:CheckVSkillUsage(SilentAimModule)
+    local hl = Instance.new("Highlight")  
+    hl.FillColor = Color3.fromRGB(255, 255, 0)  
+    hl.OutlineColor = Color3.fromRGB(255, 255, 0)  
+    hl.FillTransparency = 0.5  
+    hl.OutlineTransparency = 0  
+    hl.Adornee = targetModel  
+    hl.Parent = targetModel  
+    currentHighlight = hl  
+    currentTargetType = targetType
+
+    VSkillModule:CheckVSkillUsage(SilentAimModule)
 end
 
 local function clearHighlight()
-	if currentHighlight then
-		currentHighlight:Destroy()
-		currentHighlight = nil
-	end
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+        currentTargetType = nil
+    end
 end
 
 RunService.Heartbeat:Connect(function()
@@ -165,41 +170,39 @@ RunService.Heartbeat:Connect(function()
 
     local targetModel = nil
 
-    if SilentAimPlayersEnabled then
-        local closestPl = getClosestPlayer(lpHRP)
-        if closestPl then
-            Playersaimbot = closestPl.Name
-            local hrp = getHRP(closestPl.Character)
-            PlayersPosition = getPredictedPosition(hrp)
-            targetModel = closestPl.Character
-        else
-            Playersaimbot, PlayersPosition = nil, nil
-        end
-    else
-        Playersaimbot, PlayersPosition = nil, nil
-    end
+    if SilentAimPlayersEnabled then  
+	    local closestPl = getClosestPlayer(lpHRP)  
+	    if closestPl then  
+	        Playersaimbot = closestPl.Name  
+	        local hrp = getHRP(closestPl.Character)  
+	        PlayersPosition = getPredictedPosition(hrp)  
+	        targetModel = closestPl.Character  
+	        applyHighlight(targetModel, "Player")  
+	    else  
+	        Playersaimbot, PlayersPosition = nil, nil  
+	    end  
+	elseif currentTargetType == "Player" then
+	    Playersaimbot, PlayersPosition = nil, nil  
+	    clearHighlight()
+	end  
 
-    if SilentAimNPCsEnabled then
-        local closestNPC = getClosestNPC(lpHRP)
-        if closestNPC then
-            NPCaimbot = closestNPC.Name
-            local hrp = getHRP(closestNPC)
-            NPCPosition = getPredictedPosition(hrp)
-            if not targetModel then
-                targetModel = closestNPC
-            end
-        else
-            NPCaimbot, NPCPosition = nil, nil
-        end
-    else
-        NPCaimbot, NPCPosition = nil, nil
-    end
-
-    if targetModel then
-        applyHighlight(targetModel)
-    else
-        clearHighlight()
-    end
+	if SilentAimNPCsEnabled then  
+	    local closestNPC = getClosestNPC(lpHRP)  
+	    if closestNPC then  
+	        NPCaimbot = closestNPC.Name  
+	        local hrp = getHRP(closestNPC)  
+	        NPCPosition = getPredictedPosition(hrp)  
+	        if not targetModel then  
+	            targetModel = closestNPC  
+	            applyHighlight(targetModel, "NPC")  
+	        end  
+	    else  
+	        NPCaimbot, NPCPosition = nil, nil  
+	    end  
+	elseif currentTargetType == "NPC" then
+	    NPCaimbot, NPCPosition = nil, nil  
+	    clearHighlight()
+	end
 end)
 
 spawn(function()
