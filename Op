@@ -11,7 +11,9 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local camera = workspace.CurrentCamera
+local Debris = game:GetService("Debris")
 
+local silentAimPaused = false
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
@@ -200,40 +202,64 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-spawn(function()
-	local success, gg = pcall(function() return getrawmetatable(game) end)
-	if not success or not gg then return end
-	local old = gg.__namecall
-	if not old then return end
+-- Utility to pause silent aim
+local function pauseSilentAimFor(seconds)
+    if silentAimPaused then return end -- already paused
+    silentAimPaused = true
 
-	setreadonly(gg, false)
-	gg.__namecall = newcclosure(function(...)
-		local method = getnamecallmethod()
-		local args = {...}
+    local prevPlayerState = SilentAimPlayersEnabled
+    local prevNPCState = SilentAimNPCsEnabled
 
-		local targetPos = nil
-		if SilentAimPlayersEnabled and PlayersPosition then
-			targetPos = PlayersPosition
-		elseif SilentAimNPCsEnabled and NPCPosition then
-			targetPos = NPCPosition
-		end
+    SilentAimPlayersEnabled = false
+    SilentAimNPCsEnabled = false
 
-		if targetPos and tostring(method) == "FireServer" then
-			if tostring(args[1]) == "RemoteEvent" then
-				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-					if type(args[2]) == "vector" then
-						args[2] = targetPos
-					else
-						args[2] = CFrame.new(targetPos)
-					end
-					return old(unpack(args))
-				end
-			end
-		end
-		return old(...)
-	end)
-	setreadonly(gg, true)
+    task.delay(seconds, function()
+        -- restore if toggle was ON before pause
+        if prevPlayerState then SilentAimPlayersEnabled = true end
+        if prevNPCState then SilentAimNPCsEnabled = true end
+        silentAimPaused = false
+    end)
+end
+
+-- // Hook into your skill V usage
+setreadonly(gg, false)
+local old = gg.__namecall
+gg.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    -- Detect V skill usage
+    if method == "InvokeServer" and args[1] == "V" then
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool and tool.Name == "Dough-Dough" then
+            pauseSilentAimFor(3)
+        end
+    end
+
+    -- existing silent aim logic
+    local targetPos = nil
+    if SilentAimPlayersEnabled and PlayersPosition then
+        targetPos = PlayersPosition
+    elseif SilentAimNPCsEnabled and NPCPosition then
+        targetPos = NPCPosition
+    end
+
+    if targetPos and tostring(method) == "FireServer" then
+        if tostring(args[1]) == "RemoteEvent" then
+            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                if typeof(args[2]) == "Vector3" then
+                    args[2] = targetPos
+                else
+                    args[2] = CFrame.new(targetPos)
+                end
+                return old(self, unpack(args))
+            end
+        end
+    end
+
+    return old(self, ...)
 end)
+setreadonly(gg, true)
 
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
