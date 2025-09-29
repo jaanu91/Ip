@@ -6,21 +6,15 @@ local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
 local currentTool
-local vActive = false
-local sharkZActive = false
+local vActive, sharkZActive = false, false
 local dmgConn
 local characterConnections = {}
-local rightTouches = {}
+local rightTouchActive = false
 local SilentAimModuleRef = nil
-local stopEnabled = false
 
-local function clearConnections()
-	for _, conn in ipairs(characterConnections) do
-		pcall(function() conn:Disconnect() end)
-	end
-	characterConnections = {}
-end
-
+-- =========================
+-- Silent Aimbot Control
+-- =========================
 local function DisableSilentAimbot()
     if SilentAimModuleRef then
         SilentAimModuleRef:SetPlayerSilentAim(false)
@@ -28,54 +22,57 @@ local function DisableSilentAimbot()
     end
 end
 
-local function AbleSilentAimbot()
+local function EnableSilentAimbot()
     if SilentAimModuleRef then
         SilentAimModuleRef:SetPlayerSilentAim(true)
         SilentAimModuleRef:SetNPCSilentAim(true)
     end
 end
 
+-- =========================
+-- Tool Watcher
+-- =========================
 local function hookTool(tool)
     currentTool = tool
-    local ancConn = tool.AncestryChanged:Connect(function(_, parent)
+    table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
         if not parent then
             currentTool = nil
-            vActive = false
-            sharkZActive = false
-            stopEnabled = false
-            AbleSilentAimbot()
+            vActive, sharkZActive = false, false
+            rightTouchActive = false
+            EnableSilentAimbot()
         end
-    end)
-    table.insert(characterConnections, ancConn)
+    end))
 end
 
-local function canStop()
-	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
-	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
+local function isValidStopCondition()
+    return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
+        or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
 end
 
+-- =========================
+-- Touch Control
+-- =========================
 UserInputService.TouchStarted:Connect(function(touch)
-    camera = workspace.CurrentCamera
+    local camera = workspace.CurrentCamera
     if not camera then return end
-
+    
     if touch.Position.X > camera.ViewportSize.X / 2 then
-        rightTouches[touch] = true
-        if stopEnabled and canStop() then
+        rightTouchActive = true
+        if isValidStopCondition() then
             DisableSilentAimbot()
         end
     end
 end)
 
 UserInputService.TouchEnded:Connect(function(touch)
-	if rightTouches[touch] then
-		rightTouches[touch] = nil
-		if not next(rightTouches) then
-			AbleSilentAimbot()
-			stopEnabled = false
-			vActive = false
-			sharkZActive = false
-		end
-	end
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    
+    if touch.Position.X > camera.ViewportSize.X / 2 then
+        rightTouchActive = false
+        EnableSilentAimbot()
+        vActive, sharkZActive = false, false
+    end
 end)
 
 -- =========================
@@ -83,131 +80,89 @@ end)
 -- =========================
 local function watchDamageCounter()
     if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
+        dmgConn:Disconnect()
         dmgConn = nil
     end
 
-    local ok, dmgTextLabel = pcall(function()
-        return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
-    end)
-
-    if not ok or not dmgTextLabel then
-        task.delay(0.5, function()
-            pcall(watchDamageCounter)
-        end)
-        return
-    end
+    local dmgTextLabel = player:WaitForChild("PlayerGui")
+        :WaitForChild("Main", 2)
+        :WaitForChild("DmgCounter", 2)
+        :WaitForChild("Text", 2)
 
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
-        if dmgText > 0 and canStop() then
-            stopEnabled = true
-            if next(rightTouches) then
-                DisableSilentAimbot()
-            end
-        else
-            stopEnabled = false
-            AbleSilentAimbot()
+        if dmgText > 0 and isValidStopCondition() and rightTouchActive then
+            DisableSilentAimbot()
+        elseif not rightTouchActive then
+            EnableSilentAimbot()
         end
     end)
 
     table.insert(characterConnections, dmgConn)
 end
 
+-- =========================
+-- Skill Detection
+-- =========================
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
-
+    
     if (method == "InvokeServer" or method == "FireServer") then
         local a1 = args[1]
 
-        if typeof(a1) == "string" and a1:upper() == "V" then
-            if currentTool and currentTool.Name == "Dough-Dough" then
+        if typeof(a1) == "string" then
+            if a1:upper() == "V" and currentTool and currentTool.Name == "Dough-Dough" then
                 vActive = true
-                local stamp = os.clock()
-                task.delay(2, function()
-                    if os.clock() - stamp >= 2 then
-                        vActive = false
-                        if stopEnabled and next(rightTouches) then
-                            stopEnabled = false
-                            AbleSilentAimbot()
-                            rightTouches = {}
-                        end
-                    end
-                end)
+                task.delay(2, function() vActive = false end)
+            elseif a1:upper() == "Z" and currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                task.delay(2, function() sharkZActive = false end)
             end
         end
-
-        if typeof(a1) == "string" and a1:upper() == "Z" then
-            if currentTool and currentTool.Name == "Shark Anchor" then
-                sharkZActive = true
-                local stamp = os.clock()
-                task.delay(2, function()
-                    if os.clock() - stamp >= 2 then
-                        sharkZActive = false
-                        if stopEnabled and next(rightTouches) then
-                            stopEnabled = false
-                            AbleSilentAimbot()
-                            rightTouches = {}
-                        end
-                    end
-                end)
-            end
-        end   
     end
     return old(self, ...)
 end)
 
-local function onCharacterAdded(newChar)
-    clearConnections()
+-- =========================
+-- Character Handling
+-- =========================
+local function onCharacterAdded(char)
+    for _, conn in ipairs(characterConnections) do
+        conn:Disconnect()
+    end
+    characterConnections = {}
 
-    char = newChar
-
-    camera = workspace.CurrentCamera
-    currentTarget = nil
-
-    local humanoid = char:WaitForChild("Humanoid")
-    local hrp = char:WaitForChild("HumanoidRootPart")
+    vActive, sharkZActive = false, false
+    rightTouchActive = false
+    EnableSilentAimbot()
 
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then
-            hookTool(child)
-        end
+        if child:IsA("Tool") then hookTool(child) end
     end))
 
     table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
         if child == currentTool then
             currentTool = nil
-            vActive = false
-            sharkZActive = false
-            stopEnabled = false
-            AbleSilentAimbot()
+            vActive, sharkZActive = false, false
+            rightTouchActive = false
+            EnableSilentAimbot()
         end
     end))
 
-
-    stopEnabled = false
-    vActive, sharkZActive = false, false
-    rightTouches = {}
-    AbleSilentAimbot()
+    watchDamageCounter()
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then onCharacterAdded(player.Character) end
 
-if player.Character then
-	onCharacterAdded(player.Character)
-end
-
+-- =========================
+-- External Entry
+-- =========================
 function VSkillModule:CheckVSkillUsage(SilentAimModule)
     SilentAimModuleRef = SilentAimModule
-    
-	if watchDamageCounter() then
-        DisableSilentAimbot()
-    else
-        AbleSilentAimbot()
-		stopEnabled = false
-    end
+    watchDamageCounter()
 end
 
 return VSkillModule
