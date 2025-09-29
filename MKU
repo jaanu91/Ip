@@ -140,6 +140,18 @@ end)
 local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
+Section:NewButton("Join Discord", "Get Link Discord server", function()
+	local link = "https://discord.gg/rUenZDHS"
+    if setclipboard then
+        setclipboard(link)
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Sapi Hub",
+            Text = "Copied Discord Link!",
+            Duration = 5
+        })
+    end
+end)
+
 Section:NewToggle("・ESP Players", "Toggle Player ESP", function(state)
     ESPModule:SetESP(state)
 end)
