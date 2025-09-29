@@ -3,6 +3,7 @@ local VSkillModule = {}
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
 local Cooldown = false
 local SilentDisableTime = 3 
 local stopEnabled = false
