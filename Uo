@@ -1,0 +1,24 @@
+local VSkillModule = {}
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local Cooldown = false
+local SilentDisableTime = 3
+
+function VSkillModule:CheckVSkillUsage(args)
+  if method == "InvokeServer" then
+    if args and args[1] == "V" then
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool and tool.Name == "Dough-Dough" and not Cooldown then
+            Cooldown = true
+            return true
+        end
+    end
+    return false
+end
+
+function VSkillModule:ResetCooldown()
+    Cooldown = false
+end
+
+return VSkillModule
