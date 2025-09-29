@@ -70,13 +70,13 @@ local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", "DarkTheme")
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Added AntiAfk ✔")
 Section:NewLabel("• Added Fast Attack ✔")
 Section:NewLabel("• Added Server hop or Rejoin ✔")
 Section:NewLabel("• Fixed in Blox Fruits Event ✔")
 Section:NewLabel("• Fixed Team check in Aimlock ✔")
 Section:NewLabel("• Fixed Esp ✔")
 Section:NewLabel("• Added Walk on Water ✔")
-Section:NewLabel("• Added INF Energy ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -205,6 +205,10 @@ end)
 
 Section:NewToggle("・Fast Attack", "Fast Attack", function(state)
     StuffsModule:SetFastAttack(state)
+end)
+
+Section:NewToggle("・AntiAfk", "AntiAfk only on before you off", function(state)
+    ESPModule:SetAntiAfk(state)
 end)
 
 toggleButton.MouseButton1Click:Connect(function()
