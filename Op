@@ -11,15 +11,16 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local camera = workspace.CurrentCamera
-local Debris = game:GetService("Debris")
 
-local silentAimPaused = false
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local PredictionEnabled = false
+local SilentAimToggle = true
 
 local PredictionAmount = 0.1
 local maxRange = 1000
+local Cooldown = false -- Debounce flag for stopping aimbot
+local SilentDisableTime = 3 -- seconds
 
 local function getHRP(model)
 	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
@@ -202,69 +203,83 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Utility to pause silent aim
-local function pauseSilentAimFor(seconds)
-    if silentAimPaused then return end -- already paused
-    silentAimPaused = true
+spawn(function()
+	local success, gg = pcall(function() return getrawmetatable(game) end)
+	if not success or not gg then return end
+	local old = gg.__namecall
+	if not old then return end
 
-    local prevPlayerState = SilentAimPlayersEnabled
-    local prevNPCState = SilentAimNPCsEnabled
+	setreadonly(gg, false)
+	gg.__namecall = newcclosure(function(...)
+		local method = getnamecallmethod()
+		local args = {...}
 
-    SilentAimPlayersEnabled = false
-    SilentAimNPCsEnabled = false
+		local targetPos = nil
+		if SilentAimPlayersEnabled and PlayersPosition then
+			targetPos = PlayersPosition
+		elseif SilentAimNPCsEnabled and NPCPosition then
+			targetPos = NPCPosition
+		end
 
-    task.delay(seconds, function()
-        -- restore if toggle was ON before pause
-        if prevPlayerState then SilentAimPlayersEnabled = true end
-        if prevNPCState then SilentAimNPCsEnabled = true end
-        silentAimPaused = false
-    end)
-end
+		if targetPos and tostring(method) == "FireServer" then
+			if tostring(args[1]) == "RemoteEvent" then
+				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+					if type(args[2]) == "vector" then
+						args[2] = targetPos
+					else
+						args[2] = CFrame.new(targetPos)
+					end
+					return old(unpack(args))
+				end
+			end
+		end
+		return old(...)
+	end)
+	setreadonly(gg, true)
+end)
 
--- // Hook into your skill V usage
-local old = gg.__namecall
-gg.__namecall = newcclosure(function(self, ...)
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+
+mt.__namecall = newcclosure(function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
-    -- Detect V skill usage
-    if method == "InvokeServer" and args[1] == "V" then
+    -- Check if user used "V" skill
+    if method == "InvokeServer" and args and args[1] == "V" then
+        -- Check tool equipped
         local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-        if tool and tool.Name == "Dough-Dough" then
-            pauseSilentAimFor(3)
-        end
-    end
+        if tool and tool.Name == "Dough-Dough" and not Cooldown then
+            Cooldown = true
+            -- Temporarily disable Silent Aim
+            SilentAimPlayersEnabled = false
+            SilentAimNPCsEnabled = false
 
-    -- existing silent aim logic
-    local targetPos = nil
-    if SilentAimPlayersEnabled and PlayersPosition then
-        targetPos = PlayersPosition
-    elseif SilentAimNPCsEnabled and NPCPosition then
-        targetPos = NPCPosition
-    end
-
-    if targetPos and tostring(method) == "FireServer" then
-        if tostring(args[1]) == "RemoteEvent" then
-            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                if typeof(args[2]) == "Vector3" then
-                    args[2] = targetPos
-                else
-                    args[2] = CFrame.new(targetPos)
+            task.delay(SilentDisableTime, function()
+                -- Re-enable Silent Aim if toggled
+                if SilentAimToggle then
+                    SilentAimPlayersEnabled = true
+                    SilentAimNPCsEnabled = true
                 end
-                return old(self, unpack(args))
-            end
+                Cooldown = false
+            end)
         end
     end
 
     return old(self, ...)
 end)
 
+setreadonly(mt, true)
+
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
+	SilentAimToggle = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
 	SilentAimNPCsEnabled = state
+	SilentAimToggle = state
 end
 
 function SilentAimModule:SetDistanceLimit(num)
