@@ -24,8 +24,7 @@ end
 
 local function EnableSilentAimbot()
     if SilentAimModuleRef then
-        SilentAimModuleRef:SetPlayerSilentAim(true)
-        SilentAimModuleRef:SetNPCSilentAim(true)
+        SilentAimModuleRef:RestoreUserSettings()
     end
 end
 
