@@ -17,14 +17,13 @@ local SilentAimModuleRef = nil
 -- =========================
 local function DisableSilentAimbot()
     if SilentAimModuleRef then
-        SilentAimModuleRef:SetPlayerSilentAim(false)
-        SilentAimModuleRef:SetNPCSilentAim(false)
+        SilentAimModuleRef:Pause()
     end
 end
 
 local function EnableSilentAimbot()
     if SilentAimModuleRef then
-        SilentAimModuleRef:RestoreUserSettings()
+        SilentAimModuleRef:Restore()
     end
 end
 
