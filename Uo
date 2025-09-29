@@ -34,4 +34,49 @@ function VSkillModule:ResetCooldown()
     Cooldown = false
 end
 
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if (method == "InvokeServer" or method == "FireServer") then
+        local a1 = args[1]
+
+        if typeof(a1) == "string" and a1:upper() == "V" then
+            if currentTool and currentTool.Name == "Dough-Dough" then
+                vActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        vActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                local stamp = os.clock()
+                task.delay(2, function()
+                    if os.clock() - stamp >= 2 then
+                        sharkZActive = false
+                        if tiltEnabled and next(rightTouches) then
+                            tiltEnabled = false
+                            stopTiltSmooth()
+                            rightTouches = {}
+                        end
+                    end
+                end)
+            end
+        end   
+    end
+    return old(self, ...)
+end)
+
 return VSkillModule
