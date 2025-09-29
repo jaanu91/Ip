@@ -1,9 +1,6 @@
 local SilentAimModule = {}
 
-Playersaimbot = nil
-PlayersPosition = nil
-NPCaimbot = nil
-NPCPosition = nil
+local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -14,7 +11,16 @@ local camera = workspace.CurrentCamera
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
+local UserWantsPlayerAim = false
+local UserWantsNPCAim = false
 local PredictionEnabled = false
+
+Playersaimbot = nil
+PlayersPosition = nil
+NPCaimbot = nil
+NPCPosition = nil
+local currentHighlight = nil
+local currentTargetType = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -87,11 +93,13 @@ local function isEnemy(targetPlayer)
 end
 
 local function getClosestPlayer(lpHRP)
+	if not lpHRP then return nil end
+	
 	local closest = nil
 	local closestDist = math.huge
 	for _, pl in ipairs(Players:GetPlayers()) do
 		if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
-			local hum = pl.Character:FindFirstChildOfClass("Humanoid")
+			local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
 			local hrp = getHRP(pl.Character)
 			if hum and hum.Health > 0 and hrp then
 				local dist = (hrp.Position - lpHRP.Position).Magnitude
@@ -106,97 +114,100 @@ local function getClosestPlayer(lpHRP)
 end
 
 local function getClosestNPC(lpHRP)
-	local enemiesFolder = workspace:FindFirstChild("Enemies")
-	if not enemiesFolder then return nil end
+    if not lpHRP then return nil end
 
-	local closest = nil
-	local closestDist = math.huge
-	for _, npc in ipairs(enemiesFolder:GetChildren()) do
-		if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
-			local hum = npc:FindFirstChild("Humanoid")
-			local hrp = getHRP(npc)
-			if hum and hum.Health > 0 and hrp then
-				local dist = (hrp.Position - lpHRP.Position).Magnitude
-				if dist <= maxRange and dist < closestDist then
-					closestDist = dist
-					closest = npc
-				end
-			end
-		end
-	end
-	return closest
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if not enemiesFolder then return nil end
+
+    local closest = nil
+    local closestDist = math.huge
+    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+        if npc:IsA("Model") then
+            local hum = npc:FindFirstChildWhichIsA("Humanoid")
+            local hrp = getHRP(npc)
+            if hum and hum.Health > 0 and hrp then
+                local dist = (hrp.Position - lpHRP.Position).Magnitude
+                if dist <= maxRange and dist < closestDist then
+                    closestDist = dist
+                    closest = npc
+                end
+            end
+        end
+    end
+    return closest
 end
 
-local function applyHighlight(targetModel)
-	if not targetModel then return end
-	if currentHighlight and currentHighlight.Adornee == targetModel then return end
+local function applyHighlight(targetModel, targetType)
+    if not targetModel then return end
+    if currentHighlight and currentHighlight.Adornee == targetModel then return end
 
-	if currentHighlight then
-		currentHighlight:Destroy()
-		currentHighlight = nil
-	end
+    if currentHighlight then  
+        currentHighlight:Destroy()  
+        currentHighlight = nil  
+        currentTargetType = nil  
+    end  
 
-	local hl = Instance.new("Highlight")
-	hl.FillColor = Color3.fromRGB(255, 255, 0)
-	hl.OutlineColor = Color3.fromRGB(255, 255, 0)
-	hl.FillTransparency = 0.5
-	hl.OutlineTransparency = 0
-	hl.Adornee = targetModel
-	hl.Parent = targetModel
-	currentHighlight = hl
+    local hl = Instance.new("Highlight")  
+    hl.FillColor = Color3.fromRGB(255, 255, 0)  
+    hl.OutlineColor = Color3.fromRGB(255, 255, 0)  
+    hl.FillTransparency = 0.5  
+    hl.OutlineTransparency = 0  
+    hl.Adornee = targetModel  
+    hl.Parent = targetModel  
+    currentHighlight = hl  
+    currentTargetType = targetType
+
+    VSkillModule:CheckVSkillUsage(SilentAimModule)
 end
 
 local function clearHighlight()
-	if currentHighlight then
-		currentHighlight:Destroy()
-		currentHighlight = nil
-	end
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+        currentTargetType = nil
+    end
 end
 
 RunService.Heartbeat:Connect(function()
-	local lpChar = player.Character
-	if not lpChar then return end
-	local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
-	if not lpHRP then return end
+    local lpChar = player.Character
+    if not lpChar then return end
+    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+    if not lpHRP then return end
 
-	local targetModel = nil
+    local targetModel = nil
 
-	if SilentAimPlayersEnabled then
-		local closestPl = getClosestPlayer(lpHRP)
-		if closestPl then
-			Playersaimbot = closestPl.Name
-			local hrp = getHRP(closestPl.Character)
-			PlayersPosition = getPredictedPosition(hrp)
-			targetModel = closestPl.Character
-		else
-			Playersaimbot, PlayersPosition = nil, nil
-		end
-	else
-		Playersaimbot, PlayersPosition = nil, nil
-	end
+    if SilentAimPlayersEnabled then  
+	    local closestPl = getClosestPlayer(lpHRP)  
+	    if closestPl then  
+	        Playersaimbot = closestPl.Name  
+	        local hrp = getHRP(closestPl.Character)  
+	        PlayersPosition = getPredictedPosition(hrp)  
+	        targetModel = closestPl.Character  
+	        applyHighlight(targetModel, "Player")  
+	    else  
+	        Playersaimbot, PlayersPosition = nil, nil  
+	    end  
+	elseif currentTargetType == "Player" then
+	    Playersaimbot, PlayersPosition = nil, nil  
+	    clearHighlight()
+	end  
 
-	if SilentAimNPCsEnabled and not targetModel then
-		local closestNPC = getClosestNPC(lpHRP)
-		if closestNPC then
-			NPCaimbot = closestNPC.Name
-			local hrp = getHRP(closestNPC)
-			NPCPosition = getPredictedPosition(hrp)
-			targetModel = closestNPC
-		else
-			NPCaimbot, NPCPosition = nil, nil
-		end
-	else
-		NPCaimbot, NPCPosition = nil, nil
-	end
-
-	if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-		if targetModel then
-			applyHighlight(targetModel)
-		else
-			clearHighlight()
-		end
-	else
-		clearHighlight()
+	if SilentAimNPCsEnabled then  
+	    local closestNPC = getClosestNPC(lpHRP)  
+	    if closestNPC then  
+	        NPCaimbot = closestNPC.Name  
+	        local hrp = getHRP(closestNPC)  
+	        NPCPosition = getPredictedPosition(hrp)  
+	        if not targetModel then  
+	            targetModel = closestNPC  
+	            applyHighlight(targetModel, "NPC")  
+	        end  
+	    else  
+	        NPCaimbot, NPCPosition = nil, nil  
+	    end  
+	elseif currentTargetType == "NPC" then
+	    NPCaimbot, NPCPosition = nil, nil  
+	    clearHighlight()
 	end
 end)
 
@@ -221,7 +232,11 @@ spawn(function()
 		if targetPos and tostring(method) == "FireServer" then
 			if tostring(args[1]) == "RemoteEvent" then
 				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-					args[2] = targetPos
+					if type(args[2]) == "vector" then
+						args[2] = targetPos
+					else
+						args[2] = CFrame.new(targetPos)
+					end
 					return old(unpack(args))
 				end
 			end
@@ -232,11 +247,31 @@ spawn(function()
 end)
 
 function SilentAimModule:SetPlayerSilentAim(state)
+	UserWantsPlayerAim = state
 	SilentAimPlayersEnabled = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
+	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
+end
+
+function SilentAimModule:Pause()
+    SilentAimPlayersEnabled = false
+    SilentAimNPCsEnabled = false
+end
+
+function SilentAimModule:Restore()
+    SilentAimPlayersEnabled = UserWantsPlayerAim
+    SilentAimNPCsEnabled = UserWantsNPCAim
+end
+
+function SilentAimModule:IsPlayerAimEnabled()
+    return SilentAimPlayersEnabled
+end
+
+function SilentAimModule:IsNPCAimEnabled()
+    return SilentAimNPCsEnabled
 end
 
 function SilentAimModule:SetDistanceLimit(num)
