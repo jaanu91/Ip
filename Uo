@@ -4,34 +4,101 @@ local VSkillModule = {}
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local Cooldown = false
-local SilentDisableTime = 3 -- seconds
+local SilentDisableTime = 3 
+local stopEnabled = false
 
-function VSkillModule:CheckVSkillUsage(method, args, SilentAimModule)
-    -- Make sure we're catching InvokeServer
-    if tostring(method) == "InvokeServer" and args and args[1] == "V" then
-        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-        if tool and tool.Name == "Dough-Dough" and not Cooldown then
-            Cooldown = true
+function VSkillModule:CheckVSkillUsage(SilentAimModule)
+    
+	if watchDamageCounter() and not Cooldown then
+	    Cooldown = true
+        DisableSilentAimbot()
 
-            -- disable silent aim
-            SilentAimModule:SetPlayerSilentAim(false)
-            SilentAimModule:SetNPCSilentAim(false)
-
-            -- re-enable after delay
-            task.delay(SilentDisableTime, function()
-                SilentAimModule:SetPlayerSilentAim(true)
-                SilentAimModule:SetNPCSilentAim(true)
-                VSkillModule:ResetCooldown()
-            end)
-
-            return true
-        end
+        task.delay(SilentDisableTime, function()
+            AbleSilentAimbot()
+            VSkillModule:ResetCooldown()
+        end)
     end
-    return false
 end
 
 function VSkillModule:ResetCooldown()
     Cooldown = false
+end
+
+local function DisableSilentAimbot()
+	SilentAimModule:SetPlayerSilentAim(false)
+	SilentAimModule:SetNPCSilentAim(false)
+end
+
+local function AbleSilentAimbot()
+	SilentAimModule:SetPlayerSilentAim(false)
+	SilentAimModule:SetNPCSilentAim(false)
+end
+
+local function canStop()
+	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
+	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
+end
+
+UserInputService.TouchStarted:Connect(function(touch)
+    camera = workspace.CurrentCamera
+    if not camera then return end
+
+    if touch.Position.X > camera.ViewportSize.X / 2 then
+        rightTouches[touch] = true
+        if stopEnabled and canStop() then
+            DisableSilentAimbot()
+        end
+    end
+end)
+
+UserInputService.TouchEnded:Connect(function(touch)
+	if rightTouches[touch] then
+		rightTouches[touch] = nil
+		if not next(rightTouches) then
+			Cooldown = false
+			AbleSilentAimbot()
+			stopEnabled = false
+			vActive = false
+			sharkZActive = false
+		end
+	end
+end)
+
+-- =========================
+-- Damage Counter Watch
+-- =========================
+local function watchDamageCounter()
+    if dmgConn then
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
+
+    local ok, dmgTextLabel = pcall(function()
+        return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
+    end)
+
+    if not ok or not dmgTextLabel then
+        task.delay(0.5, function()
+            pcall(watchDamageCounter)
+        end)
+        return
+    end
+
+    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+        local dmgText = tonumber(dmgTextLabel.Text) or 0
+        if dmgText > 0 and canStop() and currentHighlight then
+            stopEnabled = true
+            if next(rightTouches) then
+                DisableSilentAimbot()
+            end
+        else
+            stopEnabled = false
+            Cooldown = false
+            AbleSilentAimbot()
+        end
+    end)
+
+    table.insert(characterConnections, dmgConn)
 end
 
 local old
@@ -49,9 +116,10 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 task.delay(2, function()
                     if os.clock() - stamp >= 2 then
                         vActive = false
-                        if tiltEnabled and next(rightTouches) then
-                            tiltEnabled = false
-                            stopTiltSmooth()
+                        if stopEnabled and next(rightTouches) then
+                            stopEnabled = false
+                            Cooldown = false
+                            AbleSilentAimbot()
                             rightTouches = {}
                         end
                     end
@@ -66,9 +134,10 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 task.delay(2, function()
                     if os.clock() - stamp >= 2 then
                         sharkZActive = false
-                        if tiltEnabled and next(rightTouches) then
-                            tiltEnabled = false
-                            stopTiltSmooth()
+                        if stopEnabled and next(rightTouches) then
+                            stopEnabled = false
+                            Cooldown = false
+                            AbleSilentAimbot()
                             rightTouches = {}
                         end
                     end
