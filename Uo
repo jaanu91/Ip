@@ -5,12 +5,21 @@ local player = Players.LocalPlayer
 local Cooldown = false
 local SilentDisableTime = 3
 
-function VSkillModule:CheckVSkillUsage(args)
-  if method == "InvokeServer" then
-    if args and args[1] == "V" then
+function VSkillModule:CheckVSkillUsage(method, args, SilentAimModule)
+    if method == "InvokeServer" and args and args[1] == "V" then
         local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
         if tool and tool.Name == "Dough-Dough" and not Cooldown then
             Cooldown = true
+
+            SilentAimModule:SetPlayerSilentAim(false)
+            SilentAimModule:SetNPCSilentAim(false)
+
+            task.delay(SilentDisableTime, function()
+                SilentAimModule:SetPlayerSilentAim(true)
+                SilentAimModule:SetNPCSilentAim(true)
+                VSkillModule:ResetCooldown()
+            end)
+
             return true
         end
     end
