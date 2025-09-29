@@ -222,9 +222,9 @@ local function pauseSilentAimFor(seconds)
 end
 
 -- // Hook into your skill V usage
-setreadonly(gg, false)
 local old = gg.__namecall
 gg.__namecall = newcclosure(function(self, ...)
+	setreadonly(gg, false)
     local method = getnamecallmethod()
     local args = {...}
 
@@ -258,8 +258,8 @@ gg.__namecall = newcclosure(function(self, ...)
     end
 
     return old(self, ...)
+    setreadonly(gg, true)
 end)
-setreadonly(gg, true)
 
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
