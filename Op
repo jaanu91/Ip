@@ -158,50 +158,48 @@ local function clearHighlight()
 end
 
 RunService.Heartbeat:Connect(function()
-	local lpChar = player.Character
-	if not lpChar then return end
-	local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
-	if not lpHRP then return end
+    local lpChar = player.Character
+    if not lpChar then return end
+    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+    if not lpHRP then return end
 
-	local targetModel = nil
+    local targetModel = nil
 
-	if SilentAimPlayersEnabled then
-		local closestPl = getClosestPlayer(lpHRP)
-		if closestPl then
-			Playersaimbot = closestPl.Name
-			local hrp = getHRP(closestPl.Character)
-			PlayersPosition = getPredictedPosition(hrp)
-			targetModel = closestPl.Character
-		else
-			Playersaimbot, PlayersPosition = nil, nil
-		end
-	else
-		Playersaimbot, PlayersPosition = nil, nil
-	end
+    if SilentAimPlayersEnabled then
+        local closestPl = getClosestPlayer(lpHRP)
+        if closestPl then
+            Playersaimbot = closestPl.Name
+            local hrp = getHRP(closestPl.Character)
+            PlayersPosition = getPredictedPosition(hrp)
+            targetModel = closestPl.Character
+        else
+            Playersaimbot, PlayersPosition = nil, nil
+        end
+    else
+        Playersaimbot, PlayersPosition = nil, nil
+    end
 
-	if SilentAimNPCsEnabled and not targetModel then
-		local closestNPC = getClosestNPC(lpHRP)
-		if closestNPC then
-			NPCaimbot = closestNPC.Name
-			local hrp = getHRP(closestNPC)
-			NPCPosition = getPredictedPosition(hrp)
-			targetModel = closestNPC
-		else
-			NPCaimbot, NPCPosition = nil, nil
-		end
-	else
-		NPCaimbot, NPCPosition = nil, nil
-	end
+    if SilentAimNPCsEnabled then
+        local closestNPC = getClosestNPC(lpHRP)
+        if closestNPC then
+            NPCaimbot = closestNPC.Name
+            local hrp = getHRP(closestNPC)
+            NPCPosition = getPredictedPosition(hrp)
+            if not targetModel then
+                targetModel = closestNPC
+            end
+        else
+            NPCaimbot, NPCPosition = nil, nil
+        end
+    else
+        NPCaimbot, NPCPosition = nil, nil
+    end
 
-	if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-		if targetModel then
-			applyHighlight(targetModel)
-		else
-			clearHighlight()
-		end
-	else
-		clearHighlight()
-	end
+    if targetModel then
+        applyHighlight(targetModel)
+    else
+        clearHighlight()
+    end
 end)
 
 spawn(function()
@@ -238,8 +236,6 @@ spawn(function()
 	end)
 	setreadonly(gg, true)
 end)
-
-
 
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
