@@ -5,9 +5,9 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
-local currentTool
+local currentTool = nil
 local vActive, sharkZActive = false, false
-local dmgConn
+local dmgConn = nil
 local characterConnections = {}
 local rightTouchActive = false
 local SilentAimModuleRef = nil
