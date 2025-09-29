@@ -93,6 +93,8 @@ local function isEnemy(targetPlayer)
 end
 
 local function getClosestPlayer(lpHRP)
+	if not lpHRP then return nil end
+	
 	local closest = nil
 	local closestDist = math.huge
 	for _, pl in ipairs(Players:GetPlayers()) do
@@ -112,6 +114,8 @@ local function getClosestPlayer(lpHRP)
 end
 
 local function getClosestNPC(lpHRP)
+	if not lpHRP then return nil end
+	
 	local enemiesFolder = workspace:FindFirstChild("Enemies")
 	if not enemiesFolder then return nil end
 
