@@ -146,6 +146,8 @@ local function applyHighlight(targetModel)
 	hl.Adornee = targetModel
 	hl.Parent = targetModel
 	currentHighlight = hl
+	
+	VSkillModule:CheckVSkillUsage(SilentAimModule)
 end
 
 local function clearHighlight()
@@ -212,8 +214,6 @@ spawn(function()
 	gg.__namecall = newcclosure(function(...)
 		local method = getnamecallmethod()
 		local args = {...}
-		
-		VSkillModule:CheckVSkillUsage(method, args, SilentAimModule)
 
 		local targetPos = nil
 		if SilentAimPlayersEnabled and PlayersPosition then
