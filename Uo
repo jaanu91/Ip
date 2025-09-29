@@ -24,20 +24,6 @@ local function clearConnections()
 	characterConnections = {}
 end
 
-function VSkillModule:CheckVSkillUsage(SilentAimModule)
-    SilentAimModuleRef = SilentAimModule
-    
-	if watchDamageCounter() and not Cooldown then
-	    Cooldown = true
-        DisableSilentAimbot()
-
-        task.delay(SilentDisableTime, function()
-            AbleSilentAimbot()
-            VSkillModule:ResetCooldown()
-        end)
-    end
-end
-
 function VSkillModule:ResetCooldown()
     Cooldown = false
 end
@@ -222,6 +208,20 @@ player.CharacterAdded:Connect(onCharacterAdded)
 
 if player.Character then
 	onCharacterAdded(player.Character)
+end
+
+function VSkillModule:CheckVSkillUsage(SilentAimModule)
+    SilentAimModuleRef = SilentAimModule
+    
+	if watchDamageCounter() and not Cooldown then
+	    Cooldown = true
+        DisableSilentAimbot()
+
+        task.delay(SilentDisableTime, function()
+            AbleSilentAimbot()
+            VSkillModule:ResetCooldown()
+        end)
+    end
 end
 
 return VSkillModule
