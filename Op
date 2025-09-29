@@ -99,7 +99,7 @@ local function getClosestPlayer(lpHRP)
 	local closestDist = math.huge
 	for _, pl in ipairs(Players:GetPlayers()) do
 		if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
-			local hum = pl.Character:FindFirstChildOfClass("Humanoid")
+			local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
 			local hrp = getHRP(pl.Character)
 			if hum and hum.Health > 0 and hrp then
 				local dist = (hrp.Position - lpHRP.Position).Magnitude
@@ -114,27 +114,27 @@ local function getClosestPlayer(lpHRP)
 end
 
 local function getClosestNPC(lpHRP)
-	if not lpHRP then return nil end
-	
-	local enemiesFolder = workspace:FindFirstChild("Enemies")
-	if not enemiesFolder then return nil end
+    if not lpHRP then return nil end
 
-	local closest = nil
-	local closestDist = math.huge
-	for _, npc in ipairs(enemiesFolder:GetChildren()) do
-		if npc:IsA("Model") and npc:FindFirstChild("Humanoid") then
-			local hum = npc:FindFirstChild("Humanoid")
-			local hrp = getHRP(npc)
-			if hum and hum.Health > 0 and hrp then
-				local dist = (hrp.Position - lpHRP.Position).Magnitude
-				if dist <= maxRange and dist < closestDist then
-					closestDist = dist
-					closest = npc
-				end
-			end
-		end
-	end
-	return closest
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if not enemiesFolder then return nil end
+
+    local closest = nil
+    local closestDist = math.huge
+    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+        if npc:IsA("Model") then
+            local hum = npc:FindFirstChildWhichIsA("Humanoid")
+            local hrp = getHRP(npc)
+            if hum and hum.Health > 0 and hrp then
+                local dist = (hrp.Position - lpHRP.Position).Magnitude
+                if dist <= maxRange and dist < closestDist then
+                    closestDist = dist
+                    closest = npc
+                end
+            end
+        end
+    end
+    return closest
 end
 
 local function applyHighlight(targetModel, targetType)
