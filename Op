@@ -252,9 +252,22 @@ function SilentAimModule:SetNPCSilentAim(state)
 	SilentAimNPCsEnabled = state
 end
 
-function SilentAimModule:RestoreUserSettings()
+function SilentAimModule:Pause()
+    SilentAimPlayersEnabled = false
+    SilentAimNPCsEnabled = false
+end
+
+function SilentAimModule:Restore()
     SilentAimPlayersEnabled = UserWantsPlayerAim
     SilentAimNPCsEnabled = UserWantsNPCAim
+end
+
+function SilentAimModule:IsPlayerAimEnabled()
+    return SilentAimPlayersEnabled
+end
+
+function SilentAimModule:IsNPCAimEnabled()
+    return SilentAimNPCsEnabled
 end
 
 function SilentAimModule:SetDistanceLimit(num)
