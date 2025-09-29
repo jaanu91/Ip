@@ -11,6 +11,8 @@ local camera = workspace.CurrentCamera
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
+local UserWantsPlayerAim = false
+local UserWantsNPCAim = false
 local PredictionEnabled = false
 
 Playersaimbot = nil
@@ -241,11 +243,18 @@ spawn(function()
 end)
 
 function SilentAimModule:SetPlayerSilentAim(state)
+	UserWantsPlayerAim = state
 	SilentAimPlayersEnabled = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
+	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
+end
+
+function SilentAimModule:RestoreUserSettings()
+    SilentAimPlayersEnabled = UserWantsPlayerAim
+    SilentAimNPCsEnabled = UserWantsNPCAim
 end
 
 function SilentAimModule:SetDistanceLimit(num)
