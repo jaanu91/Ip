@@ -11,6 +11,7 @@ local sharkZActive = false
 local dmgConn
 local characterConnections = {}
 local rightTouches = {}
+local SilentAimModuleRef = nil
 
 local Cooldown = false
 local SilentDisableTime = 3 
@@ -24,13 +25,14 @@ local function clearConnections()
 end
 
 function VSkillModule:CheckVSkillUsage(SilentAimModule)
+    SilentAimModuleRef = SilentAimModule
     
 	if watchDamageCounter() and not Cooldown then
 	    Cooldown = true
-        DisableSilentAimbot(SilentAimModule)
+        DisableSilentAimbot()
 
         task.delay(SilentDisableTime, function()
-            AbleSilentAimbot(SilentAimModule)
+            AbleSilentAimbot()
             VSkillModule:ResetCooldown()
         end)
     end
@@ -40,14 +42,18 @@ function VSkillModule:ResetCooldown()
     Cooldown = false
 end
 
-local function DisableSilentAimbot(SilentAimModule)
-    SilentAimModule:SetPlayerSilentAim(false)
-    SilentAimModule:SetNPCSilentAim(false)
+local function DisableSilentAimbot()
+    if SilentAimModuleRef then
+        SilentAimModuleRef:SetPlayerSilentAim(false)
+        SilentAimModuleRef:SetNPCSilentAim(false)
+    end
 end
 
-local function AbleSilentAimbot(SilentAimModule)
-    SilentAimModule:SetPlayerSilentAim(true)
-    SilentAimModule:SetNPCSilentAim(true)
+local function AbleSilentAimbot()
+    if SilentAimModuleRef then
+        SilentAimModuleRef:SetPlayerSilentAim(true)
+        SilentAimModuleRef:SetNPCSilentAim(true)
+    end
 end
 
 local function hookTool(tool)
@@ -58,7 +64,7 @@ local function hookTool(tool)
             vActive = false
             sharkZActive = false
             stopEnabled = false
-            AbleSilentAimbot(SilentAimModule)
+            AbleSilentAimbot()
         end
     end)
     table.insert(characterConnections, ancConn)
@@ -76,7 +82,7 @@ UserInputService.TouchStarted:Connect(function(touch)
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouches[touch] = true
         if stopEnabled and canStop() then
-            DisableSilentAimbot(SilentAimModule)
+            DisableSilentAimbot()
         end
     end
 end)
@@ -86,7 +92,7 @@ UserInputService.TouchEnded:Connect(function(touch)
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
 			Cooldown = false
-			AbleSilentAimbot(SilentAimModule)
+			AbleSilentAimbot()
 			stopEnabled = false
 			vActive = false
 			sharkZActive = false
@@ -119,12 +125,12 @@ local function watchDamageCounter()
         if dmgText > 0 and canStop() then
             stopEnabled = true
             if next(rightTouches) then
-                DisableSilentAimbot(SilentAimModule)
+                DisableSilentAimbot()
             end
         else
             stopEnabled = false
             Cooldown = false
-            AbleSilentAimbot(SilentAimModule)
+            AbleSilentAimbot()
         end
     end)
 
@@ -149,7 +155,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                         if stopEnabled and next(rightTouches) then
                             stopEnabled = false
                             Cooldown = false
-                            AbleSilentAimbot(SilentAimModule)
+                            AbleSilentAimbot()
                             rightTouches = {}
                         end
                     end
@@ -167,7 +173,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                         if stopEnabled and next(rightTouches) then
                             stopEnabled = false
                             Cooldown = false
-                            AbleSilentAimbot(SilentAimModule)
+                            AbleSilentAimbot()
                             rightTouches = {}
                         end
                     end
@@ -201,7 +207,7 @@ local function onCharacterAdded(newChar)
             vActive = false
             sharkZActive = false
             stopEnabled = false
-            AbleSilentAimbot(SilentAimModule)
+            AbleSilentAimbot()
         end
     end))
 
@@ -209,7 +215,7 @@ local function onCharacterAdded(newChar)
     stopEnabled = false
     vActive, sharkZActive = false, false
     rightTouches = {}
-    AbleSilentAimbot(SilentAimModule)
+    AbleSilentAimbot()
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
