@@ -12,6 +12,13 @@ local characterConnections = {}
 local rightTouchActive = false
 local SilentAimModuleRef = nil
 
+local function clearConnections()
+	for _, conn in ipairs(characterConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	characterConnections = {}
+end
+
 -- =========================
 -- Silent Aimbot Control
 -- =========================
@@ -110,13 +117,21 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
     if (method == "InvokeServer" or method == "FireServer") then
         local a1 = args[1]
 
-        if typeof(a1) == "string" then
-            if a1:upper() == "V" and currentTool and currentTool.Name == "Dough-Dough" then
+        if typeof(a1) == "string" and a1:upper() == "V" then
+            if currentTool and currentTool.Name == "Dough-Dough" then
                 vActive = true
-                task.delay(2, function() vActive = false end)
-            elseif a1:upper() == "Z" and currentTool and currentTool.Name == "Shark Anchor" then
+                task.delay(2, function()
+	                vActive = false
+				end)
+            end
+        end
+
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Shark Anchor" then
                 sharkZActive = true
-                task.delay(2, function() sharkZActive = false end)
+                task.delay(2, function()
+                    sharkZActive = false
+                end)
             end
         end
     end
@@ -127,10 +142,10 @@ end)
 -- Character Handling
 -- =========================
 local function onCharacterAdded(char)
-    for _, conn in ipairs(characterConnections) do
-        conn:Disconnect()
-    end
-    characterConnections = {}
+    clearConnections()
+    
+    local humanoid = char:WaitForChild("Humanoid")
+    local hrp = char:WaitForChild("HumanoidRootPart")
 
     vActive, sharkZActive = false, false
     rightTouchActive = false
