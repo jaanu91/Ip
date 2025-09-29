@@ -242,7 +242,6 @@ local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
-
     if method == "InvokeServer" and args and args[1] == "V" then
         local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
         if tool and tool.Name == "Dough-Dough" and not Cooldown then
@@ -259,7 +258,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
             end)
         end
     end
-
     return old(self, ...)
 end)
 
