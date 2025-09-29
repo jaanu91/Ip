@@ -238,26 +238,19 @@ spawn(function()
 	setreadonly(gg, true)
 end)
 
-local mt = getrawmetatable(game)
-local old = mt.__namecall
-setreadonly(mt, false)
-
-mt.__namecall = newcclosure(function(self, ...)
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
-    -- Check if user used "V" skill
     if method == "InvokeServer" and args and args[1] == "V" then
-        -- Check tool equipped
         local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
         if tool and tool.Name == "Dough-Dough" and not Cooldown then
             Cooldown = true
-            -- Temporarily disable Silent Aim
             SilentAimPlayersEnabled = false
             SilentAimNPCsEnabled = false
 
             task.delay(SilentDisableTime, function()
-                -- Re-enable Silent Aim if toggled
                 if SilentAimToggle then
                     SilentAimPlayersEnabled = true
                     SilentAimNPCsEnabled = true
@@ -269,8 +262,6 @@ mt.__namecall = newcclosure(function(self, ...)
 
     return old(self, ...)
 end)
-
-setreadonly(mt, true)
 
 function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
