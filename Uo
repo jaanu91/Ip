@@ -8,7 +8,6 @@ local UserInputService = game:GetService("UserInputService")
 local currentTool
 local vActive = false
 local sharkZActive = false
-local currentHighlight
 local dmgConn
 local characterConnections = {}
 local rightTouches = {}
@@ -17,14 +16,21 @@ local Cooldown = false
 local SilentDisableTime = 3 
 local stopEnabled = false
 
+local function clearConnections()
+	for _, conn in ipairs(characterConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	characterConnections = {}
+end
+
 function VSkillModule:CheckVSkillUsage(SilentAimModule)
     
 	if watchDamageCounter() and not Cooldown then
 	    Cooldown = true
-        DisableSilentAimbot()
+        DisableSilentAimbot(SilentAimModule)
 
         task.delay(SilentDisableTime, function()
-            AbleSilentAimbot()
+            AbleSilentAimbot(SilentAimModule)
             VSkillModule:ResetCooldown()
         end)
     end
@@ -34,14 +40,28 @@ function VSkillModule:ResetCooldown()
     Cooldown = false
 end
 
-local function DisableSilentAimbot()
-	SilentAimModule:SetPlayerSilentAim(false)
-	SilentAimModule:SetNPCSilentAim(false)
+local function DisableSilentAimbot(SilentAimModule)
+    SilentAimModule:SetPlayerSilentAim(false)
+    SilentAimModule:SetNPCSilentAim(false)
 end
 
-local function AbleSilentAimbot()
-	SilentAimModule:SetPlayerSilentAim(false)
-	SilentAimModule:SetNPCSilentAim(false)
+local function AbleSilentAimbot(SilentAimModule)
+    SilentAimModule:SetPlayerSilentAim(true)
+    SilentAimModule:SetNPCSilentAim(true)
+end
+
+local function hookTool(tool)
+    currentTool = tool
+    local ancConn = tool.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            currentTool = nil
+            vActive = false
+            sharkZActive = false
+            stopEnabled = false
+            AbleSilentAimbot(SilentAimModule)
+        end
+    end)
+    table.insert(characterConnections, ancConn)
 end
 
 local function canStop()
@@ -56,7 +76,7 @@ UserInputService.TouchStarted:Connect(function(touch)
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouches[touch] = true
         if stopEnabled and canStop() then
-            DisableSilentAimbot()
+            DisableSilentAimbot(SilentAimModule)
         end
     end
 end)
@@ -66,7 +86,7 @@ UserInputService.TouchEnded:Connect(function(touch)
 		rightTouches[touch] = nil
 		if not next(rightTouches) then
 			Cooldown = false
-			AbleSilentAimbot()
+			AbleSilentAimbot(SilentAimModule)
 			stopEnabled = false
 			vActive = false
 			sharkZActive = false
@@ -96,15 +116,15 @@ local function watchDamageCounter()
 
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
-        if dmgText > 0 and canStop() and currentHighlight then
+        if dmgText > 0 and canStop() then
             stopEnabled = true
             if next(rightTouches) then
-                DisableSilentAimbot()
+                DisableSilentAimbot(SilentAimModule)
             end
         else
             stopEnabled = false
             Cooldown = false
-            AbleSilentAimbot()
+            AbleSilentAimbot(SilentAimModule)
         end
     end)
 
@@ -129,7 +149,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                         if stopEnabled and next(rightTouches) then
                             stopEnabled = false
                             Cooldown = false
-                            AbleSilentAimbot()
+                            AbleSilentAimbot(SilentAimModule)
                             rightTouches = {}
                         end
                     end
@@ -147,7 +167,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                         if stopEnabled and next(rightTouches) then
                             stopEnabled = false
                             Cooldown = false
-                            AbleSilentAimbot()
+                            AbleSilentAimbot(SilentAimModule)
                             rightTouches = {}
                         end
                     end
@@ -157,5 +177,45 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
     end
     return old(self, ...)
 end)
+
+local function onCharacterAdded(newChar)
+    clearConnections()
+
+    char = newChar
+
+    camera = workspace.CurrentCamera
+    currentTarget = nil
+
+    local humanoid = char:WaitForChild("Humanoid")
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            hookTool(child)
+        end
+    end))
+
+    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
+        if child == currentTool then
+            currentTool = nil
+            vActive = false
+            sharkZActive = false
+            stopEnabled = false
+            AbleSilentAimbot(SilentAimModule)
+        end
+    end))
+
+
+    stopEnabled = false
+    vActive, sharkZActive = false, false
+    rightTouches = {}
+    AbleSilentAimbot(SilentAimModule)
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+	onCharacterAdded(player.Character)
+end
 
 return VSkillModule
