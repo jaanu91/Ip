@@ -14,6 +14,7 @@ local BunnyHopEnabled = false
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
+local antiAfkEnabled = false
 
 local currentTool = nil
 local ESPs = {}
@@ -244,6 +245,28 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+do
+	local player = game:GetService("Players").LocalPlayer
+	local vu = game:GetService("VirtualUser")
+	local vim = game:GetService("VirtualInputManager")
+	
+	if antiAfkEnabled then
+		player.Idled:Connect(function()
+			pcall(function()
+		        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		        task.wait(1)
+		        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		    end)
+
+		    pcall(function()
+		        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
+		        task.wait(0.8)
+		        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
+		    end)
+		end)
+	end
+end
+
 -- =========================
 -- State Toggles
 -- =========================
@@ -258,6 +281,10 @@ end
 
 function ESPModule:SetBunnyhop(state)
     BunnyHopEnabled = state
+end
+
+function ESPModule:SetAntiAfk(state)
+    antiAfkEnabled = state
 end
 
 function ESPModule:SetBuso(state)
