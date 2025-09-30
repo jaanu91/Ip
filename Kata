@@ -118,23 +118,12 @@ end)
 -- Damage Counter Watch (robust, idempotent)
 local function findDmgLabel(gui)
     -- try common patterns; many DmgCounter GUIs use a TextLabel named like "Dmg" or a Frame with a TextLabel
-    local dmgCounter = gui:FindFirstChild("DmgCounter") or gui:FindFirstChildWhichIsA("Frame") and gui:FindFirstChildWhichIsA("Frame")
-    if dmgCounter and dmgCounter:IsA("GuiObject") then
+    local dmgCounter = gui:FindFirstChild("DmgCounter")
+    if dmgCounter then
         -- find a child which is a TextLabel/TextBox and has the Text property
-        local found = dmgCounter:FindFirstChildWhichIsA("TextLabel") or dmgCounter:FindFirstChildWhichIsA("TextBox")
+        local found = dmgCounter:FindFirstChildWhichIsA("TextLabel") 
         if found then return dmgCounter, found end
     end
-    -- fallback: try search for any TextLabel anywhere under gui.Main
-    for _, obj in ipairs(gui:GetDescendants()) do
-        if obj:IsA("TextLabel") or obj:IsA("TextBox") then
-            -- heuristic: name contains "Dmg" or "Damage" or parent named "DmgCounter"
-            local n = obj.Name:lower()
-            if n:find("dmg") or n:find("damage") or obj.Parent and obj.Parent.Name == "DmgCounter" then
-                return obj.Parent or gui, obj
-            end
-        end
-    end
-    return nil, nil
 end
 
 local function watchDamageCounter()
