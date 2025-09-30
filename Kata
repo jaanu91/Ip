@@ -1,47 +1,71 @@
--- ================= VSkillModule =================
+-- VSkillModule (cleaned)
 local VSkillModule = {}
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
+local task = task
 
 local currentTool = nil
 local lastTool = nil
 local sharkZActive, vActive, cursedZActive = false, false, false
+
+-- single references for connections so we can avoid duplicates
 local dmgConn = nil
+local guiChildAddedConn = nil
+local dmgChildAddedConn = nil
+
+-- store all character-related connections so we can disconnect them on respawn
 local characterConnections = {}
 local rightTouchActive = false
 local SilentAimModuleRef = nil
 
 local function clearConnections()
-	for _, conn in ipairs(characterConnections) do
-		pcall(function() conn:Disconnect() end)
-	end
-	characterConnections = {}
+    -- disconnect stored characterConnections
+    for _, conn in ipairs(characterConnections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    characterConnections = {}
+
+    -- also clear GUI fallback connections if any (they are character-scoped)
+    if guiChildAddedConn then
+        pcall(function() guiChildAddedConn:Disconnect() end)
+        guiChildAddedConn = nil
+    end
+    if dmgChildAddedConn then
+        pcall(function() dmgChildAddedConn:Disconnect() end)
+        dmgChildAddedConn = nil
+    end
+
+    if dmgConn then
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
 end
 
--- =========================
 -- Silent Aimbot Control
--- =========================
 local function DisableSilentAimbot()
-    if SilentAimModuleRef then
-        SilentAimModuleRef:Pause()
+    if SilentAimModuleRef and SilentAimModuleRef.Pause then
+        pcall(function() SilentAimModuleRef:Pause() end)
     end
 end
 
 local function EnableSilentAimbot()
-    if SilentAimModuleRef then
-        SilentAimModuleRef:Restore()
+    if SilentAimModuleRef and SilentAimModuleRef.Restore then
+        pcall(function() SilentAimModuleRef:Restore() end)
     end
 end
 
--- =========================
--- Tool Watcher
--- =========================
+-- Tool watcher
 local function hookTool(tool)
+    if not tool or not tool:IsA("Tool") then return end
     currentTool = tool
     lastTool = tool.Name
-    table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
+
+    -- avoid attaching ancestry listener multiple times to the same tool:
+    -- store the connection on the tool instance (weak) to check later
+    if tool:FindFirstChild("__VSkillAncestryConn") then return end
+    local conn = tool.AncestryChanged:Connect(function(_, parent)
         if not parent then
             currentTool = nil
             lastTool = nil
@@ -49,7 +73,14 @@ local function hookTool(tool)
             rightTouchActive = false
             EnableSilentAimbot()
         end
-    end))
+    end)
+
+    -- protect by parenting a container to mark we've connected (won't persist across resets)
+    local marker = Instance.new("BoolValue")
+    marker.Name = "__VSkillAncestryConn"
+    marker.Parent = tool
+    -- disconnect marker when connection is cleared (cleanup)
+    table.insert(characterConnections, conn)
 end
 
 local function isValidStopCondition()
@@ -58,13 +89,12 @@ local function isValidStopCondition()
         or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
 end
 
--- =========================
--- Touch Control
--- =========================
+-- Touch Control (single persistent listeners)
 UserInputService.TouchStarted:Connect(function(touch)
     local camera = workspace.CurrentCamera
     if not camera then return end
-    
+    if not touch or not touch.Position then return end
+
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = true
         if isValidStopCondition() then
@@ -76,7 +106,8 @@ end)
 UserInputService.TouchEnded:Connect(function(touch)
     local camera = workspace.CurrentCamera
     if not camera then return end
-    
+    if not touch or not touch.Position then return end
+
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = false
         EnableSilentAimbot()
@@ -84,109 +115,142 @@ UserInputService.TouchEnded:Connect(function(touch)
     end
 end)
 
--- =========================
--- Damage Counter Watch
--- =========================
+-- Damage Counter Watch (robust, idempotent)
+local function findDmgLabel(gui)
+    -- try common patterns; many DmgCounter GUIs use a TextLabel named like "Dmg" or a Frame with a TextLabel
+    local dmgCounter = gui:FindFirstChild("DmgCounter") or gui:FindFirstChildWhichIsA("Frame") and gui:FindFirstChildWhichIsA("Frame")
+    if dmgCounter and dmgCounter:IsA("GuiObject") then
+        -- find a child which is a TextLabel/TextBox and has the Text property
+        local found = dmgCounter:FindFirstChildWhichIsA("TextLabel") or dmgCounter:FindFirstChildWhichIsA("TextBox")
+        if found then return dmgCounter, found end
+    end
+    -- fallback: try search for any TextLabel anywhere under gui.Main
+    for _, obj in ipairs(gui:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextBox") then
+            -- heuristic: name contains "Dmg" or "Damage" or parent named "DmgCounter"
+            local n = obj.Name:lower()
+            if n:find("dmg") or n:find("damage") or obj.Parent and obj.Parent.Name == "DmgCounter" then
+                return obj.Parent or gui, obj
+            end
+        end
+    end
+    return nil, nil
+end
+
 local function watchDamageCounter()
+    -- ensure we don't create duplicate watchers: if dmgConn exists, reuse it
     if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
+        return -- already watching
     end
 
-    local gui = player:WaitForChild("PlayerGui"):WaitForChild("Main", 5)
-    if not gui then return end
-
-    local dmgCounter = gui:FindFirstChild("DmgCounter")
-    if not dmgCounter then
-        table.insert(characterConnections, gui.ChildAdded:Connect(function(child)
-            if child.Name == "DmgCounter" then
-                watchDamageCounter()
+    local success, gui = pcall(function()
+        return player:WaitForChild("PlayerGui"):WaitForChild("Main", 5)
+    end)
+    if not success or not gui then
+        -- Listen once for Main to appear (only if we haven't already)
+        if not guiChildAddedConn then
+            local pg = player:FindFirstChild("PlayerGui")
+            if pg then
+                guiChildAddedConn = pg.ChildAdded:Connect(function(child)
+                    if child.Name == "Main" then
+                        -- schedule re-check
+                        pcall(watchDamageCounter)
+                    end
+                end)
+                table.insert(characterConnections, guiChildAddedConn)
             end
-        end))
+        end
         return
     end
 
-    local dmgTextLabel = dmgCounter:FindFirstChild("Text")
-    if not dmgTextLabel then
-        table.insert(characterConnections, dmgCounter.ChildAdded:Connect(function(child)
-            if child.Name == "Text" then
-                watchDamageCounter()
-            end
-        end))
+    -- attempt to find dmgCounter & label
+    local dmgCounter, dmgLabel = findDmgLabel(gui)
+    if not dmgCounter or not dmgLabel then
+        -- if dmgCounter or label missing, attach a ChildAdded listener once so we won't add multiple duplicates
+        if not guiChildAddedConn then
+            guiChildAddedConn = gui.ChildAdded:Connect(function(child)
+                if child.Name == "DmgCounter" then
+                    pcall(watchDamageCounter)
+                end
+            end)
+            table.insert(characterConnections, guiChildAddedConn)
+        end
+        -- also try to listen for the label under any existing DmgCounter frame
+        if dmgCounter and not dmgChildAddedConn then
+            dmgChildAddedConn = dmgCounter.ChildAdded:Connect(function(child)
+                if child:IsA("TextLabel") or child:IsA("TextBox") then
+                    pcall(watchDamageCounter)
+                end
+            end)
+            table.insert(characterConnections, dmgChildAddedConn)
+        end
         return
     end
 
-    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-        local dmgText = tonumber(dmgTextLabel.Text) or 0
+    -- Now connect to the Text property's change once (single connection)
+    dmgConn = dmgLabel:GetPropertyChangedSignal("Text"):Connect(function()
+        local dmgText = tonumber(dmgLabel.Text) or 0
         if dmgText > 0 and isValidStopCondition() and rightTouchActive then
             DisableSilentAimbot()
         elseif not rightTouchActive then
             EnableSilentAimbot()
         end
     end)
-
     table.insert(characterConnections, dmgConn)
 end
 
--- =========================
--- Skill Detection
--- =========================
+-- Skill Detection: single global hook (avoid installing twice)
 if not getgenv().VSkillHooked then
     getgenv().VSkillHooked = true
-    local old
-	old = hookmetamethod(game, "__namecall", function(self, ...)
-	    local method = getnamecallmethod()
-	    local args = {...}
-    
-	    if (method == "InvokeServer" or method == "FireServer") then
-	        local a1 = args[1]
+    local oldNh = hookmetamethod and hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-	        if typeof(a1) == "string" and a1:upper() == "Z" then
-	            if currentTool and currentTool.Name == "Shark Anchor" then
-	                sharkZActive = true
-	                task.delay(2, function()
-	                    sharkZActive = false
-	                end)
-	            end
-	        end
-        
-	        if typeof(a1) == "string" and a1:upper() == "V" then
-	            if lastTool == "Dough-Dough" then
-	                vActive = true
-	                task.delay(2, function()
-		                vActive = false
-					end)
-	            end
-	        end
-        
-	        if typeof(a1) == "string" and a1:upper() == "Z" then
-	            if currentTool and currentTool.Name == "Cursed Dual Katana" then
-	                cursedZActive = true
-	                task.delay(2, function()
-	                    cursedZActive = false
-	                end)
-	            end
-	        end
-	    end
-	    return old(self, ...)
-	end)
+        if (method == "InvokeServer" or method == "FireServer") then
+            local a1 = args[1]
+            if typeof(a1) == "string" and a1:upper() == "Z" then
+                if currentTool and currentTool.Name == "Shark Anchor" then
+                    sharkZActive = true
+                    task.delay(2, function() sharkZActive = false end)
+                end
+                if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                    cursedZActive = true
+                    task.delay(2, function() cursedZActive = false end)
+                end
+            elseif typeof(a1) == "string" and a1:upper() == "V" then
+                if lastTool == "Dough-Dough" then
+                    vActive = true
+                    task.delay(2, function() vActive = false end)
+                end
+            end
+        end
+        return oldNh(self, ...)
+    end)
 end
 
--- =========================
--- Character Handling
--- =========================
+-- Character handling
 local function onCharacterAdded(char)
     clearConnections()
-    
+
     sharkZActive, vActive, cursedZActive = false, false, false
     rightTouchActive = false
     EnableSilentAimbot()
 
-    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then hookTool(child) end
-    end))
+    -- hook existing tools if present
+    for _, child in ipairs(char:GetChildren()) do
+        if child:IsA("Tool") then
+            hookTool(child)
+        end
+    end
 
-    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
+    -- tools added later
+    local toolAddedConn = char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then hookTool(child) end
+    end)
+    table.insert(characterConnections, toolAddedConn)
+
+    -- tools removed
+    local toolRemovedConn = char.ChildRemoved:Connect(function(child)
         if child == currentTool and lastTool then
             currentTool = nil
             lastTool = nil
@@ -194,20 +258,22 @@ local function onCharacterAdded(char)
             rightTouchActive = false
             EnableSilentAimbot()
         end
-    end))
+    end)
+    table.insert(characterConnections, toolRemovedConn)
 
+    -- start watching damage counter (idempotent)
     watchDamageCounter()
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then onCharacterAdded(player.Character) end
 
--- =========================
 -- External Entry
--- =========================
 function VSkillModule:CheckVSkillUsage(SilentAimModule)
+    -- only store reference; don't re-run watchDamageCounter unconditionally (it is idempotent)
     SilentAimModuleRef = SilentAimModule
-    watchDamageCounter()
+    -- ensure watch started once
+    pcall(watchDamageCounter)
 end
 
 return VSkillModule
