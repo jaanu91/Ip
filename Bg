@@ -1,6 +1,6 @@
 local SilentAimModule = {}
 
-local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
+local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Kata"))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -15,10 +15,10 @@ local UserWantsPlayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
 
-Playersaimbot = nil
-PlayersPosition = nil
-NPCaimbot = nil
-NPCPosition = nil
+local Playersaimbot = nil
+local PlayersPosition = nil
+local NPCaimbot = nil
+local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 
@@ -232,7 +232,7 @@ spawn(function()
 		if targetPos and tostring(method) == "FireServer" then
 			if tostring(args[1]) == "RemoteEvent" then
 				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-					if type(args[2]) == "vector" then
+					if typeof(args[2]) == "Vector3" then
 						args[2] = targetPos
 					else
 						args[2] = CFrame.new(targetPos)
