@@ -89,14 +89,32 @@ end)
 -- =========================
 local function watchDamageCounter()
     if dmgConn then
-        dmgConn:Disconnect()
+        pcall(function() dmgConn:Disconnect() end)
         dmgConn = nil
     end
 
-    local dmgTextLabel = player:WaitForChild("PlayerGui")
-        :WaitForChild("Main", 2)
-        :WaitForChild("DmgCounter", 2)
-        :WaitForChild("Text", 2)
+    local gui = player:WaitForChild("PlayerGui"):WaitForChild("Main", 5)
+    if not gui then return end
+
+    local dmgCounter = gui:FindFirstChild("DmgCounter")
+    if not dmgCounter then
+        table.insert(characterConnections, gui.ChildAdded:Connect(function(child)
+            if child.Name == "DmgCounter" then
+                watchDamageCounter()
+            end
+        end))
+        return
+    end
+
+    local dmgTextLabel = dmgCounter:FindFirstChild("Text")
+    if not dmgTextLabel then
+        table.insert(characterConnections, dmgCounter.ChildAdded:Connect(function(child)
+            if child.Name == "Text" then
+                watchDamageCounter()
+            end
+        end))
+        return
+    end
 
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
         local dmgText = tonumber(dmgTextLabel.Text) or 0
