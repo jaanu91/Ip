@@ -6,7 +6,8 @@ local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
 local currentTool = nil
-local vActive, sharkZActive = false, false
+local lastTool = nil
+local vActive, sharkZActive, cursedZActive = false, false, false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchActive = false
@@ -39,10 +40,12 @@ end
 -- =========================
 local function hookTool(tool)
     currentTool = tool
+    lastTool = tool.Name
     table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
         if not parent then
             currentTool = nil
-            vActive, sharkZActive = false, false
+            lastTool = nil
+            vActive, sharkZActive, cursedZActive = false, false, false
             rightTouchActive = false
             EnableSilentAimbot()
         end
@@ -50,8 +53,9 @@ local function hookTool(tool)
 end
 
 local function isValidStopCondition()
-    return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
+    return (lastTool == "Dough-Dough" and vActive)
         or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
+        or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
 end
 
 -- =========================
@@ -76,7 +80,7 @@ UserInputService.TouchEnded:Connect(function(touch)
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = false
         EnableSilentAimbot()
-        vActive, sharkZActive = false, false
+        vActive, sharkZActive, cursedZActive = false, false, false
     end
 end)
 
@@ -118,7 +122,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
         local a1 = args[1]
 
         if typeof(a1) == "string" and a1:upper() == "V" then
-            if currentTool and currentTool.Name == "Dough-Dough" then
+            if lastTool == "Dough-Dough" then
                 vActive = true
                 task.delay(2, function()
 	                vActive = false
@@ -131,6 +135,15 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 sharkZActive = true
                 task.delay(2, function()
                     sharkZActive = false
+                end)
+            end
+        end
+        
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                task.delay(2, function()
+                    cursedZActive = false
                 end)
             end
         end
@@ -147,7 +160,7 @@ local function onCharacterAdded(char)
     local humanoid = char:WaitForChild("Humanoid")
     local hrp = char:WaitForChild("HumanoidRootPart")
 
-    vActive, sharkZActive = false, false
+    vActive, sharkZActive, cursedZActive = false, false, false
     rightTouchActive = false
     EnableSilentAimbot()
 
@@ -156,9 +169,10 @@ local function onCharacterAdded(char)
     end))
 
     table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
-        if child == currentTool then
+        if child == currentTool and lastTool then
             currentTool = nil
-            vActive, sharkZActive = false, false
+            lastTool = nil
+            vActive, sharkZActive, cursedZActive = false, false, false
             rightTouchActive = false
             EnableSilentAimbot()
         end
