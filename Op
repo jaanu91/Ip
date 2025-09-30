@@ -157,9 +157,7 @@ local function applyHighlight(targetModel, targetType)
     currentHighlight = hl  
     currentTargetType = targetType
 
-    pcall(function()
-		 VSkillModule:CheckVSkillUsage(SilentAimModule) 
-	end)
+    pcall(function() VSkillModule:CheckVSkillUsage(SilentAimModule) end)
 end
 
 local function clearHighlight()
