@@ -4,6 +4,10 @@ local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaa
 local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Bg"))()
 local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Stuf"))()
 local UserInputService = game:GetService("UserInputService")
+local SETTINGS_FILE = "SapiHub_Settings.json"
+local HttpService = game:GetService("HttpService")
+
+local Settings = {}
 
 local toggleGui = Instance.new("ScreenGui")
 toggleGui.Name = "ToggleGui"
@@ -65,68 +69,106 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
+local function LoadSettings()
+    if isfile and isfile(SETTINGS_FILE) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(SETTINGS_FILE))
+        end)
+        if success and data then
+            Settings = data
+        else
+            Settings = {}
+        end
+    else
+        Settings = {}
+    end
+end
+
+local function SaveSettings()
+    if writefile then
+        writefile(SETTINGS_FILE, HttpService:JSONEncode(Settings))
+    end
+end
+
+local function ResetSettings()
+    if delfile and isfile and isfile(SETTINGS_FILE) then
+        delfile(SETTINGS_FILE)
+    end
+    Settings = {}
+end
+
 local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", "DarkTheme")
 
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Added Added AutoSave or Reset Settings ✔")
 Section:NewLabel("• Added AntiAfk ✔")
 Section:NewLabel("• Added Fast Attack ✔")
 Section:NewLabel("• Added Server hop or Rejoin ✔")
 Section:NewLabel("• Fixed in Blox Fruits Event ✔")
 Section:NewLabel("• Fixed Team check in Aimlock ✔")
 Section:NewLabel("• Fixed Esp ✔")
-Section:NewLabel("• Added Walk on Water ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
 
-Section:NewToggle("・Aimlock Players", "Lock onto nearest player", function(state)
+local AimlockPlayersToggle = Section:NewToggle("・Aimlock Players", "Lock onto nearest player", function(state)
     AimlockModule:SetPlayerAimlock(state)
+    Settings["AimlockPlayers"] = state
 end)
 
-Section:NewToggle("・Aimlock Mini Toggle Players", "Lock onto nearest player", function(state)
+local AimlockPlayersMiniTogglePlayersToggle = Section:NewToggle("・Aimlock Mini Toggle Players", "Lock onto nearest player", function(state)
     AimlockModule:SetMiniTogglePlayerAimlock(state)
+    Settings["AimlockPlayersMiniTogglePlayers"] = state
 end)
 
-Section:NewToggle("・Aimlock NPC", "Lock onto nearest NPC/Boss", function(state)
+local AimlockNPCToggle = Section:NewToggle("・Aimlock NPC", "Lock onto nearest NPC/Boss", function(state)
     AimlockModule:SetNpcAimlock(state)
+    Settings["AimlockNPC"] = state
 end)
 
-Section:NewToggle("・Aimlock Mini Toggle NPC", "Lock onto nearest NPC/Boss", function(state)
+local AimlockPlayersMiniToggleNPCToggle = Section:NewToggle("・Aimlock Mini Toggle NPC", "Lock onto nearest NPC/Boss", function(state)
     AimlockModule:SetMiniToggleNpcAimlock(state)
+    Settings["AimlockPlayersMiniToggleNPC"] = state
 end)
 
-Section:NewToggle("・Prediction", "Predict enemy movement", function(state)
+local PredictionToggle = Section:NewToggle("・Prediction", "Predict enemy movement", function(state)
     AimlockModule:SetPrediction(state)
+    Settings["Prediction"] = state
 end)
 
 Section:NewDropdown("・Prediction Amount | Default 0.1s", "Select max Prediction for Aimlock", {"0.2", "0.3", "0.4"}, function(selected)
     local num = tonumber(selected)
     if num then
         AimlockModule:SetPredictionTime(num)
+        Settings["PredictionAmount"] = num
     end
 end)
 
 local Tab = Window:NewTab("⛩・Silent Aimbot")
 local Section = Tab:NewSection("⚓・Settings")
 
-Section:NewToggle("・SilentAim Players", "Lock onto nearest player", function(state)
+local SilentAimPlayersToggle = Section:NewToggle("・SilentAim Players", "Lock onto nearest player", function(state)
     SilentAimModule:SetPlayerSilentAim(state)
+    Settings["SilentAimPlayers"] = state
 end)
 
-Section:NewToggle("・SilentAim Npcs", "Lock onto nearest npc", function(state)
+local SilentAimNPCToggle = Section:NewToggle("・SilentAim Npcs", "Lock onto nearest npc", function(state)
     SilentAimModule:SetNPCSilentAim(state)
+    Settings["SilentAimNPC"] = state
 end)
 
-Section:NewToggle("・SilentAim Prediction", "Prediction on target", function(state)
+local SilentAimPedictionToggle = Section:NewToggle("・SilentAim Prediction", "Prediction on target", function(state)
     SilentAimModule:SetPrediction(state)
+    Settings["SilentAimPediction"] = state
 end)
 
 Section:NewDropdown("・Prediction Future | Default 0.1s", "Select max Prediction for Silent Aim", {"0.2", "0.3", "0.4"}, function(selected)
     local num = tonumber(selected)
     if num then
         SilentAimModule:SetPredictionAmount(num)
+        Settings["SilentAimPredictionFuture"] = num
     end
 end)
 
@@ -134,6 +176,7 @@ Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance fo
     local num = tonumber(selected)
     if num then
         SilentAimModule:SetDistanceLimit(num)
+        Settings["SilentAimDistanceLimit"] = num
     end
 end)
 
@@ -152,24 +195,29 @@ Section:NewButton("Join Discord", "Get Link Discord server", function()
     end
 end)
 
-Section:NewToggle("・ESP Players", "Toggle Player ESP", function(state)
+local ESPPlayersToggle = Section:NewToggle("・ESP Players", "Toggle Player ESP", function(state)
     ESPModule:SetESP(state)
+    Settings["ESPPlayers"] = state
 end)
 
-Section:NewToggle("・V3 Skill", "Auto activate V3 ability", function(state)
+local VSkillToggle = Section:NewToggle("・V3 Skill", "Auto activate V3 ability", function(state)
     ESPModule:SetV3(state)
+    Settings["VSkill"] = state
 end)
 
-Section:NewToggle("・Bunny hop", "Toggle Bunnyhop", function(state)
+local BunnyHopToggle = Section:NewToggle("・Bunny hop", "Toggle Bunnyhop", function(state)
     ESPModule:SetBunnyhop(state)
+    Settings["BunnyHop"] = state
 end)
 
-Section:NewToggle("・Aura Skill", "Auto activate Buso", function(state)
+local AuraSkillToggle = Section:NewToggle("・Aura Skill", "Auto activate Buso", function(state)
     ESPModule:SetBuso(state)
+    Settings["AuraSkill"] = state
 end)
 
-Section:NewToggle("・Fps Or Pings", "Display Ping or Fps", function(state)
+local FpsOrPingsToggle = Section:NewToggle("・Fps Or Pings", "Display Ping or Fps", function(state)
     StuffsModule:SetPingsOrFps(state)
+    Settings["FpsOrPings"] = state
 end)
 
 Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
@@ -178,21 +226,56 @@ Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
         local Player = game:service'Players'.LocalPlayer
         Player.Character.Humanoid:GetPropertyChangedSignal'WalkSpeed':Connect(function()
             Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+            Settings["SpeedHack"] = getgenv().WalkSpeedValue
         end)
         Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
     end
 end)
 
-Section:NewToggle("・Fps Boost", "Increase Fps", function(state)
+local FpsBoostToggle = Section:NewToggle("・Fps Boost", "Increase Fps", function(state)
     StuffsModule:SetFpsBoost(state)
+    Settings["FpsBoost"] = state
 end)
 
-Section:NewToggle("・INF Energy", "Max Energy", function(state)
+local INFEnergyToggle = Section:NewToggle("・INF Energy", "Max Energy", function(state)
     StuffsModule:SetINFEnergy(state)
+    Settings["INFEnergy"] = state
 end)
 
-Section:NewToggle("・Walk on Water", "Travel in Water", function(state)
+local WalkonWaterToggle = Section:NewToggle("・Walk on Water", "Travel in Water", function(state)
     StuffsModule:SetWalkWater(state)
+    Settings["WalkonWater"] = state
+end)
+
+local FastAttackToggle = Section:NewToggle("・Fast Attack", "Fast Attack", function(state)
+    StuffsModule:SetFastAttack(state)
+    Settings["FastAttack"] = state
+end)
+
+local AntiAFKToggle = Section:NewToggle("・AntiAfk", "AntiAfk only on before you off", function(state)
+    ESPModule:SetAntiAfk(state)
+    Settings["AntiAFK"] = state
+end)
+
+local Tab = Window:NewTab("⚙・Settings Manager")
+local Section = Tab:NewSection("💾・Settings")
+
+Section:NewButton("Save Current Settings", "Save all current settings", function()
+    SaveSettings()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Sapi Hub",
+        Text = "Settings Saved!",
+        Duration = 4
+    })
+end)
+
+Section:NewButton("Reset Settings", "Clear saved settings", function()
+    ResetSettings()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Sapi Hub",
+        Text = "Settings Reset!",
+        Duration = 4
+    })
 end)
 
 Section:NewButton("Hop Server", "New server", function()
@@ -203,13 +286,120 @@ Section:NewButton("Rejoin Server", "Rejoin your server", function()
     StuffsModule:SetRejoinServer()
 end)
 
-Section:NewToggle("・Fast Attack", "Fast Attack", function(state)
-    StuffsModule:SetFastAttack(state)
-end)
+LoadSettings()
+if Settings["AimlockPlayers"] ~= nil then
+    AimlockModule:SetPlayerAimlock(Settings["AimlockPlayers"])
+    AimlockPlayersToggle:UpdateToggle(nil, Settings["AimlockPlayers"])
+end
 
-Section:NewToggle("・AntiAfk", "AntiAfk only on before you off", function(state)
-    ESPModule:SetAntiAfk(state)
-end)
+if Settings["AimlockPlayersMiniTogglePlayers"] ~= nil then
+    AimlockModule:SetMiniTogglePlayerAimlock(Settings["AimlockPlayersMiniTogglePlayers"])
+    AimlockPlayersMiniTogglePlayersToggle:UpdateToggle(nil, Settings["AimlockPlayersMiniTogglePlayers"])
+end
+
+if Settings["AimlockNPC"] ~= nil then
+    AimlockModule:SetNpcAimlock(Settings["AimlockNPC"])
+    AimlockNPCToggle:UpdateToggle(nil, Settings["AimlockNPC"])
+end
+
+if Settings["AimlockPlayersMiniToggleNPC"] ~= nil then
+    AimlockModule:SetMiniToggleNpcAimlock(Settings["AimlockPlayersMiniToggleNPC"])
+    AimlockPlayersMiniToggleNPCToggle:UpdateToggle(nil, Settings["AimlockPlayersMiniToggleNPC"])
+end
+
+if Settings["Prediction"] ~= nil then
+    AimlockModule:SetPrediction(Settings["Prediction"])
+    PredictionToggle:UpdateToggle(nil, Settings["Prediction"])
+end
+
+if Settings["SilentAimPlayers"] ~= nil then
+    SilentAimModule:SetPlayerSilentAim(Settings["SilentAimPlayers"])
+    SilentAimPlayersToggle:UpdateToggle(nil, Settings["SilentAimPlayers"])
+end
+
+if Settings["SilentAimNPC"] ~= nil then
+    SilentAimModule:SetNPCSilentAim(Settings["SilentAimNPC"])
+    SilentAimNPCToggle:UpdateToggle(nil, Settings["SilentAimNPC"])
+end
+
+if Settings["SilentAimPediction"] ~= nil then
+    SilentAimModule:SetPrediction(Settings["SilentAimPediction"])
+    SilentAimPedictionToggle:UpdateToggle(nil, Settings["SilentAimPediction"])
+end
+
+if Settings["ESPPlayers"] ~= nil then
+    ESPModule:SetESP(Settings["ESPPlayers"])
+    ESPPlayersToggle:UpdateToggle(nil, Settings["ESPPlayers"])
+end
+
+if Settings["VSkill"] ~= nil then
+    ESPModule:SetV3(Settings["VSkill"])
+    VSkillToggle:UpdateToggle(nil, Settings["VSkill"])
+end
+
+if Settings["BunnyHop"] ~= nil then
+    ESPModule:SetBunnyhop(Settings["BunnyHop"])
+    BunnyHopToggle:UpdateToggle(nil, Settings["BunnyHop"])
+end
+
+if Settings["AuraSkill"] ~= nil then
+    ESPModule:SetBuso(Settings["AuraSkill"])
+    AuraSkillToggle:UpdateToggle(nil, Settings["AuraSkill"])
+end
+
+if Settings["FpsOrPings"] ~= nil then
+    StuffsModule:SetPingsOrFps(Settings["FpsOrPings"])
+    FpsOrPingsToggle:UpdateToggle(nil, Settings["FpsOrPings"])
+end
+
+if Settings["FpsBoost"] ~= nil then
+    StuffsModule:SetFpsBoost(Settings["FpsBoost"])
+    FpsBoostToggle:UpdateToggle(nil, Settings["FpsBoost"])
+end
+
+if Settings["INFEnergy"] ~= nil then
+    StuffsModule:SetINFEnergy(Settings["INFEnergy"])
+    INFEnergyToggle:UpdateToggle(nil, Settings["INFEnergy"])
+end
+
+if Settings["FastAttack"] ~= nil then
+    StuffsModule:SetFastAttack(Settings["FastAttack"])
+    FastAttackToggle:UpdateToggle(nil, Settings["FastAttack"])
+end
+
+if Settings["WalkonWater"] ~= nil then
+    StuffsModule:SetWalkWater(Settings["WalkonWater"])
+    WalkonWaterToggle:UpdateToggle(nil, Settings["WalkonWater"])
+end
+
+if Settings["AntiAFK"] ~= nil then
+    ESPModule:SetAntiAfk(Settings["AntiAFK"])
+    AntiAFKToggle:UpdateToggle(nil, Settings["AntiAFK"])
+end
+
+if Settings["PredictionAmount"] then
+    AimlockModule:SetPredictionTime(Settings["PredictionAmount"])
+end
+
+if Settings["SilentAimPredictionFuture"] then
+    SilentAimModule:SetPredictionAmount(Settings["SilentAimPredictionFuture"])
+end
+
+if Settings["SilentAimDistanceLimit"] then
+    SilentAimModule:SetDistanceLimit(Settings["SilentAimDistanceLimit"])
+end
+
+if Settings["SpeedHack"] then
+    local Player = game:service'Players'.LocalPlayer
+    local Humanoid = Player.Character and Player.Character:FindFirstChild("Humanoid")
+    if Humanoid then
+        getgenv().WalkSpeedValue = Settings["SpeedHack"]
+        Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+        Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+        end)
+    end
+end
 
 toggleButton.MouseButton1Click:Connect(function()
     Library:ToggleUI()
