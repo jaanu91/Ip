@@ -102,7 +102,7 @@ local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", "DarkTheme")
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Added Added AutoSave or Reset Settings ✔")
+Section:NewLabel("• Added AutoSave or Reset Settings ✔")
 Section:NewLabel("• Added AntiAfk ✔")
 Section:NewLabel("• Added Fast Attack ✔")
 Section:NewLabel("• Added Server hop or Rejoin ✔")
