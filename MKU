@@ -3,9 +3,11 @@ local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com
 local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Gk"))()
 local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Bg"))()
 local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Stuf"))()
+local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local SETTINGS_FILE = "SapiHub_Settings.json"
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
 
 local Settings = {}
 
@@ -97,18 +99,84 @@ local function ResetSettings()
     Settings = {}
 end
 
-local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", "DarkTheme")
+local currentTheme = {
+    SchemeColor = Color3.fromRGB(64, 64, 64),
+        Background = Color3.fromRGB(0, 0, 0),
+        Header = Color3.fromRGB(0, 0, 0),
+        TextColor = Color3.fromRGB(255,255,255),
+        ElementColor = Color3.fromRGB(20, 20, 20)
+}
+
+local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", currentTheme)
+
+local function updateSchemeColorTheme(newColor)
+    currentTheme.SchemeColor = newColor
+    local h, s, v = newColor:ToHSV()
+    currentTheme.Header = Color3.fromHSV(h, s * 0.6, v * 0.3)
+    currentTheme.ElementColor = Color3.fromHSV(h, s * 0.4, v * 0.2)
+
+    Library:ChangeColor(currentTheme)
+end
+
+local function updateBackgroundTheme(newColor)
+    currentTheme.Background = newColor
+    Library:ChangeColor(currentTheme)
+end
+
+local function updateTextColorTheme(newColor)
+    currentTheme.TextColor = newColor
+    Library:ChangeColor(currentTheme)
+end
+
+local themes = {
+    Red = Color3.fromRGB(220, 59, 48),
+    Green = Color3.fromRGB(48, 209, 88),
+    Purple = Color3.fromRGB(175, 82, 222),
+    Orange = Color3.fromRGB(255, 149, 0),
+    Pink = Color3.fromRGB(220, 105, 180),
+    Yellow = Color3.fromRGB(220, 204, 0),
+    Cyan = Color3.fromRGB(0, 220, 220),
+    Dark = Color3.fromRGB(100, 100, 100),
+    White = Color3.fromRGB(220, 220, 220),
+    Teal = Color3.fromRGB(64, 224, 208),
+    Lime = Color3.fromRGB(191, 220, 0),
+    Indigo = Color3.fromRGB(75, 0, 130)
+}
+
+local backgroundthemes = {
+    Blood = Color3.fromRGB(150, 40, 40),    
+    Grape = Color3.fromRGB(120, 80, 140),    
+    Ocean = Color3.fromRGB(70, 100, 160),    
+    Synapse = Color3.fromRGB(90, 100, 90),    
+    Pink = Color3.fromRGB(200, 100, 150),     
+    Midnight = Color3.fromRGB(60, 80, 110),   
+    Sentinel = Color3.fromRGB(80, 80, 80),    
+    Dark = Color3.fromRGB(60, 60, 60),        
+    Light = Color3.fromRGB(200, 200, 200),    
+    Serpent = Color3.fromRGB(70, 90, 90),     
+}
+
+local themeNames = {}
+local themeBackgroundNames = {}
+
+for name, _ in pairs(themes) do
+    table.insert(themeNames, name)
+end
+
+for name, _ in pairs(backgroundthemes) do
+    table.insert(themeBackgroundNames, name)
+end
 
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Added Fruits Notify still working on this ✔")
+Section:NewLabel("• Added Themes ✔")
+Section:NewLabel("• Added JumpPower ✔")
 Section:NewLabel("• Added AutoSave or Reset Settings ✔")
 Section:NewLabel("• Added AntiAfk ✔")
 Section:NewLabel("• Added Fast Attack ✔")
 Section:NewLabel("• Added Server hop or Rejoin ✔")
-Section:NewLabel("• Fixed in Blox Fruits Event ✔")
-Section:NewLabel("• Fixed Team check in Aimlock ✔")
-Section:NewLabel("• Fixed Esp ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -257,6 +325,13 @@ local AntiAFKToggle = Section:NewToggle("・AntiAfk", "AntiAfk only on before yo
     Settings["AntiAFK"] = state
 end)
 
+Section:NewTextBox("Jump Power", "JumpValue", function(jumpfunc)
+  getgenv().JumpValue = jumpfunc
+    if getgenv().JumpValue then
+        game:GetService("Players").LocalPlayer.Character.Humanoid.JumpPower = getgenv().JumpValue
+    end
+end)
+
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -284,6 +359,30 @@ end)
 
 Section:NewButton("Rejoin Server", "Rejoin your server", function()
     StuffsModule:SetRejoinServer()
+end)
+
+Section:NewDropdown("Select Theme", "Choose a color theme", themeNames, function(selected)
+    local newColor = themes[selected]
+    if newColor then
+        updateSchemeColorTheme(newColor)
+        Settings["Theme"] = selected
+    end
+end)
+
+Section:NewDropdown("Select Background Theme", "Choose a color background", themeBackgroundNames, function(selected)
+    local newColor = backgroundthemes[selected]
+    if newColor then
+        updateBackgroundTheme(newColor)
+        Settings["Background"] = selected
+    end
+end)
+
+Section:NewDropdown("Select TextColor", "Choose a textcolor", themeNames, function(selected)
+    local newColor = themes[selected]
+    if newColor then
+        updateTextColorTheme(newColor)
+        Settings["TextColor"] = selected
+    end
 end)
 
 LoadSettings()
@@ -389,6 +488,27 @@ if Settings["SilentAimDistanceLimit"] then
     SilentAimModule:SetDistanceLimit(Settings["SilentAimDistanceLimit"])
 end
 
+if Settings["Theme"] then
+    local newColor = themes[Settings["Theme"]]
+    if newColor then
+        updateSchemeColorTheme(newColor)
+    end
+end
+
+if Settings["TextColor"] then
+    local newColor = themes[Settings["TextColor"]]
+    if newColor then
+        updateTextColorTheme(newColor)
+    end
+end
+
+if Settings["Background"] then
+    local newColor = themes[Settings["Background"]]
+    if newColor then
+        updateBackgroundTheme(newColor)
+    end
+end
+
 if Settings["SpeedHack"] then
     local Player = game:service'Players'.LocalPlayer
     local Humanoid = Player.Character and Player.Character:FindFirstChild("Humanoid")
@@ -398,6 +518,96 @@ if Settings["SpeedHack"] then
         Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
             Humanoid.WalkSpeed = getgenv().WalkSpeedValue
         end)
+    end
+end
+
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1423244037879500820/lVUOGobehC6j-mT2IJAuDF8qAkeaWEViPMHa5gFvXDPHIicGj-9UqSUv2sFQtx-EwSrF"
+
+local HttpService = game:GetService("HttpService")
+local FruitsToCheck = {
+    "Bomb Fruit",
+    "Eagle Fruit",
+    "Diamond Fruit",
+    "Spike Fruit",
+    "Rubber Fruit",
+    "Light Fruit",
+    "Smoke Fruit",
+    "Flame Fruit",
+    "Spring Fruit"
+}
+
+local SeaNames = {
+    [2753915549] = "Sea 1",
+    [4442272183] = "Sea 2",
+    [7449423635] = "Sea 3"
+}
+
+local function get_request()
+    return (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
+end
+
+local function send_webhook(content)
+    local req = get_request()
+    local payload = HttpService:JSONEncode({content = content})
+
+    if req then
+        req({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = payload
+        })
+    else
+        warn("[Webhook] No supported HTTP request function found on this executor")
+    end
+
+    warn("[Webhook Debug] Would send:", content)
+end
+
+local function check_fruits()
+    local found = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Tool") then
+            for _, fruitName in ipairs(FruitsToCheck) do
+                if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+				    table.insert(found, fruitName)
+				end
+            end
+        end
+    end
+    return found
+end
+
+workspace.ChildAdded:Connect(function(obj)
+    for _, fruitName in ipairs(FruitsToCheck) do
+        if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+            local jobId = tostring(game.JobId)
+            local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
+
+            local msg = string.format(
+                "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```",
+                obj.Name,
+                seaName,
+                jobId
+            )
+            send_webhook(msg)
+        end
+    end
+end)
+
+local initialFound = check_fruits()
+if #initialFound > 0 then
+    local jobId = tostring(game.JobId)
+    local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
+
+    for _, fruitName in ipairs(initialFound) do
+        local msg = string.format(
+            "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```",
+            fruitName,
+            seaName,
+            jobId
+        )
+        send_webhook(msg)
     end
 end
 
