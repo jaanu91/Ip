@@ -39,6 +39,24 @@ UiSettingsModule.backgroundThemes = {
     Serpent = Color3.fromRGB(70, 90, 90)
 }
 
+function UiSettingsModule:updateSchemeColor(newColor, Library)
+    self.currentTheme.SchemeColor = newColor
+    local h, s, v = newColor:ToHSV()
+    self.currentTheme.Header = Color3.fromHSV(h, s * 0.6, v * 0.3)
+    self.currentTheme.ElementColor = Color3.fromHSV(h, s * 0.4, v * 0.2)
+    Library:ChangeColor(self.currentTheme)
+end
+
+function UiSettingsModule:updateBackgroundColor(newColor, Library)
+    self.currentTheme.Background = newColor
+    Library:ChangeColor(self.currentTheme)
+end
+
+function UiSettingsModule:updateTextColor(newColor, Library)
+    self.currentTheme.TextColor = newColor
+    Library:ChangeColor(self.currentTheme)
+end
+
 function UiSettingsModule:getThemeNames()
     local names = {}
     for name, _ in pairs(self.themes) do
