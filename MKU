@@ -252,7 +252,7 @@ local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
 Section:NewButton("Join Discord", "Get Link Discord server", function()
-	local link = "https://discord.gg/rUenZDHS"
+	local link = "https://discord.gg/m9MKNjDS"
     if setclipboard then
         setclipboard(link)
         game:GetService("StarterGui"):SetCore("SendNotification", {
