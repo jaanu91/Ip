@@ -335,6 +335,12 @@ end)
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
+Section:NewTextBox("Paste Job Id Here", "Paste JobId and press Enter", function(jobid)
+    if jobid and jobid ~= "" then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobid, Players.LocalPlayer)
+    end
+end)
+
 Section:NewButton("Save Current Settings", "Save all current settings", function()
     SaveSettings()
     game:GetService("StarterGui"):SetCore("SendNotification", {
