@@ -593,11 +593,7 @@ local function send_webhook(content)
             Headers = {["Content-Type"] = "application/json"},
             Body = payload
         })
-    else
-        warn("[Webhook] No supported HTTP request function found on this executor")
     end
-
-    warn("[Webhook Debug] Would send:", content)
 end
 
 local function check_fruits()
@@ -626,6 +622,9 @@ workspace.ChildAdded:Connect(function(obj)
                 seaName,
                 jobId
             )
+            
+            msg = msg .. string.format("\n📱 Mobile Copy JobId: `%s`", jobId)
+            
             send_webhook(msg)
         end
     end
@@ -643,6 +642,9 @@ if #initialFound > 0 then
             seaName,
             jobId
         )
+        
+        msg = msg .. string.format("\n📱 Mobile Copy JobId: `%s`", jobId)
+        
         send_webhook(msg)
     end
 end
