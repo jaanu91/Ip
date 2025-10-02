@@ -529,47 +529,14 @@ end
 
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1423244037879500820/lVUOGobehC6j-mT2IJAuDF8qAkeaWEViPMHa5gFvXDPHIicGj-9UqSUv2sFQtx-EwSrF"
 
-local HttpService = game:GetService("HttpService")
 local FruitsToCheck = {
-    "Bomb Fruit",
-    "Eagle Fruit",
-    "Blade Fruit",
-    "Diamond Fruit",
-    "Spike Fruit",
-    "Rubber Fruit",
-    "Light Fruit",
-    "Smoke Fruit",
-    "Flame Fruit",
-    "Spring Fruit",
-    "Falcon Fruit",
-    "Ice Fruit",
-    "Sand Fruit",
-    "Dark Fruit",
-    "Ghost Fruit",
-    "Creation Fruit",
-    "Magma Fruit",
-    "Quake Fruit",
-    "Buddha Fruit",
-    "Love Fruit",
-    "Spider Fruit",
-    "Sound Fruit",
-    "Phoenix Fruit",
-    "Portal Fruit",
-    "Pain Fruit",
-    "Blizzard Fruit",
-    "Gravity Fruit",
-    "Mammoth Fruit",
-    "T-Rex Fruit",
-    "Yeti Fruit",
-    "Dough Fruit",
-    "Shadow Fruit",
-    "Venom Fruit",
-    "Control Fruit",
-    "Gas Fruit",
-    "Spirit Fruit",
-    "Dragon Fruit",
-    "Leopard Fruit",
-    "Kitsune Fruit"
+    "Bomb Fruit","Eagle Fruit","Blade Fruit","Diamond Fruit","Spike Fruit","Rubber Fruit",
+    "Light Fruit","Smoke Fruit","Flame Fruit","Spring Fruit","Falcon Fruit","Ice Fruit",
+    "Sand Fruit","Dark Fruit","Ghost Fruit","Creation Fruit","Magma Fruit","Quake Fruit",
+    "Buddha Fruit","Love Fruit","Spider Fruit","Sound Fruit","Phoenix Fruit","Portal Fruit",
+    "Pain Fruit","Blizzard Fruit","Gravity Fruit","Mammoth Fruit","T-Rex Fruit","Yeti Fruit",
+    "Dough Fruit","Shadow Fruit","Venom Fruit","Control Fruit","Gas Fruit","Spirit Fruit",
+    "Dragon Fruit","Leopard Fruit","Kitsune Fruit"
 }
 
 local SeaNames = {
@@ -584,70 +551,79 @@ end
 
 local function send_webhook(content)
     local req = get_request()
-    local payload = HttpService:JSONEncode({content = content})
+    if not req then return end
 
-    if req then
-        req({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = payload
-        })
+    local payload = HttpService:JSONEncode({content = content})
+    req({
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = payload
+    })
+end
+
+local serverFruits = {}
+local notified = {}
+
+local function notify_server(jobId)
+    local fruits = serverFruits[jobId]
+    if fruits and #fruits > 0 then
+        local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
+        local fruitList = table.concat(fruits, ", ")
+
+        local msg = string.format(
+            "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```\n📱 Mobile Copy JobId:\n`%s`",
+            fruitList,
+            seaName,
+            jobId,
+            jobId
+        )
+
+        send_webhook(msg)
+
+        serverFruits[jobId] = nil
+        notified[jobId] = false
     end
 end
 
-local function check_fruits()
-    local found = {}
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Tool") then
-            for _, fruitName in ipairs(FruitsToCheck) do
-                if string.find(string.lower(obj.Name), string.lower(fruitName)) then
-				    table.insert(found, fruitName)
-				end
+local function add_fruit(fruitName)
+    local jobId = tostring(game.JobId)
+    serverFruits[jobId] = serverFruits[jobId] or {}
+
+    for _, f in ipairs(serverFruits[jobId]) do
+        if f == fruitName then
+            return
+        end
+    end
+    table.insert(serverFruits[jobId], fruitName)
+
+    if not notified[jobId] then
+        notified[jobId] = true
+        task.delay(2, function()
+            notify_server(jobId)
+        end)
+    end
+end
+
+for _, obj in ipairs(workspace:GetDescendants()) do
+    if obj:IsA("Tool") then
+        for _, fruitName in ipairs(FruitsToCheck) do
+            if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+                add_fruit(fruitName)
             end
         end
     end
-    return found
 end
 
 workspace.ChildAdded:Connect(function(obj)
-    for _, fruitName in ipairs(FruitsToCheck) do
-        if string.find(string.lower(obj.Name), string.lower(fruitName)) then
-            local jobId = tostring(game.JobId)
-            local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
-
-            local msg = string.format(
-                "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```",
-                obj.Name,
-                seaName,
-                jobId
-            )
-            
-            msg = msg .. string.format("\n📱 Mobile Copy JobId:\n`%s`", jobId)
-            
-            send_webhook(msg)
+    if obj:IsA("Tool") then
+        for _, fruitName in ipairs(FruitsToCheck) do
+            if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+                add_fruit(fruitName)
+            end
         end
     end
 end)
-
-local initialFound = check_fruits()
-if #initialFound > 0 then
-    local jobId = tostring(game.JobId)
-    local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
-
-    for _, fruitName in ipairs(initialFound) do
-        local msg = string.format(
-            "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```",
-            fruitName,
-            seaName,
-            jobId
-        )
-        
-        msg = msg .. string.format("\n📱 Mobile Copy JobId:\n`%s`", jobId)
-        
-        send_webhook(msg)
-    end
-end
 
 toggleButton.MouseButton1Click:Connect(function()
     Library:ToggleUI()
