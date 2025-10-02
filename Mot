@@ -126,21 +126,21 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
 
     -- Themes
     if Settings["Theme"] then
-        local newColor = Themes[Settings["Theme"]]
+        local newColor = Themes.themes[Settings["Theme"]]
         if newColor then
             Modules.UI:updateSchemeColorTheme(newColor)
         end
     end
 
     if Settings["TextColor"] then
-        local newColor = Themes[Settings["TextColor"]]
+        local newColor = Themes.themes[Settings["TextColor"]]
         if newColor then
             Modules.UI:updateTextColorTheme(newColor)
         end
     end
 
     if Settings["Background"] then
-        local newColor = Themes[Settings["Background"]]
+        local newColor = Themes.backgroundThemes[Settings["Background"]]
         if newColor then
             Modules.UI:updateBackgroundTheme(newColor)
         end
