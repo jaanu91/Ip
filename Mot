@@ -47,7 +47,7 @@ function OthersStuffsModule.GetSettings()
     return Settings
 end
 
-function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
+function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes, Library)
     -- Aimlock
     if Settings["AimlockPlayers"] ~= nil then
         Modules.Aimlock:SetPlayerAimlock(Settings["AimlockPlayers"])
@@ -128,21 +128,21 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
     if Settings["Theme"] then
         local newColor = Themes.themes[Settings["Theme"]]
         if newColor then
-            Modules.UI:updateSchemeColorTheme(newColor)
+            Modules.UI:updateSchemeColor(newColor, Library)
         end
     end
 
     if Settings["TextColor"] then
         local newColor = Themes.themes[Settings["TextColor"]]
         if newColor then
-            Modules.UI:updateTextColorTheme(newColor)
+            Modules.UI:updateTextColor(newColor, Library)
         end
     end
 
     if Settings["Background"] then
         local newColor = Themes.backgroundThemes[Settings["Background"]]
         if newColor then
-            Modules.UI:updateBackgroundTheme(newColor)
+            Modules.UI:updateBackgroundColor(newColor, Library)
         end
     end
 
