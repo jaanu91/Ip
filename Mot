@@ -47,7 +47,7 @@ function OthersStuffsModule.GetSettings()
     return Settings
 end
 
-function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
+function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
     -- Aimlock
     if Settings["AimlockPlayers"] ~= nil then
         Modules.Aimlock:SetPlayerAimlock(Settings["AimlockPlayers"])
@@ -122,28 +122,6 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
     if Settings["WalkonWater"] ~= nil then
         Modules.Stuffs:SetWalkWater(Settings["WalkonWater"])
         Toggles.WalkonWater:UpdateToggle(nil, Settings["WalkonWater"])
-    end
-
-    -- Themes
-    if Settings["Theme"] then
-        local newColor = Themes[Settings["Theme"]]
-        if newColor then
-            Modules.UI:updateSchemeColor(newColor)
-        end
-    end
-
-    if Settings["TextColor"] then
-        local newColor = Themes[Settings["TextColor"]]
-        if newColor then
-            Modules.UI:updateTextColor(newColor)
-        end
-    end
-
-    if Settings["Background"] then
-        local newColor = Themes[Settings["Background"]]
-        if newColor then
-            Modules.UI:updateBackgroundColor(newColor)
-        end
     end
 
     -- Speed Hack
