@@ -47,7 +47,7 @@ function OthersStuffsModule.GetSettings()
     return Settings
 end
 
-function OtherStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
+function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
     -- Aimlock
     if Settings["AimlockPlayers"] ~= nil then
         Modules.Aimlock:SetPlayerAimlock(Settings["AimlockPlayers"])
