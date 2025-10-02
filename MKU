@@ -3,13 +3,11 @@ local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com
 local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Gk"))()
 local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Bg"))()
 local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Stuf"))()
+local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Mot"))()
+local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local SETTINGS_FILE = "SapiHub_Settings.json"
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-
-local Settings = {}
 
 local toggleGui = Instance.new("ScreenGui")
 toggleGui.Name = "ToggleGui"
@@ -30,142 +28,11 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleButton
 
-local dragging
-local dragInput
-local dragStart
-local startPos
+UiSettingsModule:MakeDraggable(toggleButton)
 
-local function update(input)
-	local delta = input.Position - dragStart
-	toggleButton.Position = UDim2.new(
-		startPos.X.Scale,
-		startPos.X.Offset + delta.X,
-		startPos.Y.Scale,
-		startPos.Y.Offset + delta.Y
-	)
-end
+local Settings = OthersStuffsModule.LoadSettings()
 
-toggleButton.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = toggleButton.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-toggleButton.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		update(input)
-	end
-end)
-
-local function LoadSettings()
-    if isfile and isfile(SETTINGS_FILE) then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(SETTINGS_FILE))
-        end)
-        if success and data then
-            Settings = data
-        else
-            Settings = {}
-        end
-    else
-        Settings = {}
-    end
-end
-
-local function SaveSettings()
-    if writefile then
-        writefile(SETTINGS_FILE, HttpService:JSONEncode(Settings))
-    end
-end
-
-local function ResetSettings()
-    if delfile and isfile and isfile(SETTINGS_FILE) then
-        delfile(SETTINGS_FILE)
-    end
-    Settings = {}
-end
-
-local currentTheme = {
-    SchemeColor = Color3.fromRGB(64, 64, 64),
-        Background = Color3.fromRGB(0, 0, 0),
-        Header = Color3.fromRGB(0, 0, 0),
-        TextColor = Color3.fromRGB(255,255,255),
-        ElementColor = Color3.fromRGB(20, 20, 20)
-}
-
-local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", currentTheme)
-
-local function updateSchemeColorTheme(newColor)
-    currentTheme.SchemeColor = newColor
-    local h, s, v = newColor:ToHSV()
-    currentTheme.Header = Color3.fromHSV(h, s * 0.6, v * 0.3)
-    currentTheme.ElementColor = Color3.fromHSV(h, s * 0.4, v * 0.2)
-
-    Library:ChangeColor(currentTheme)
-end
-
-local function updateBackgroundTheme(newColor)
-    currentTheme.Background = newColor
-    Library:ChangeColor(currentTheme)
-end
-
-local function updateTextColorTheme(newColor)
-    currentTheme.TextColor = newColor
-    Library:ChangeColor(currentTheme)
-end
-
-local themes = {
-    Red = Color3.fromRGB(220, 59, 48),
-    Green = Color3.fromRGB(48, 209, 88),
-    Purple = Color3.fromRGB(175, 82, 222),
-    Orange = Color3.fromRGB(255, 149, 0),
-    Pink = Color3.fromRGB(220, 105, 180),
-    Yellow = Color3.fromRGB(220, 204, 0),
-    Cyan = Color3.fromRGB(0, 220, 220),
-    Dark = Color3.fromRGB(100, 100, 100),
-    White = Color3.fromRGB(220, 220, 220),
-    Teal = Color3.fromRGB(64, 224, 208),
-    Lime = Color3.fromRGB(191, 220, 0),
-    Indigo = Color3.fromRGB(75, 0, 130)
-}
-
-local backgroundthemes = {
-    Blood = Color3.fromRGB(150, 40, 40),    
-    Grape = Color3.fromRGB(120, 80, 140),    
-    Ocean = Color3.fromRGB(70, 100, 160),    
-    Synapse = Color3.fromRGB(90, 100, 90),    
-    Pink = Color3.fromRGB(200, 100, 150),     
-    Midnight = Color3.fromRGB(60, 80, 110),   
-    Sentinel = Color3.fromRGB(80, 80, 80),    
-    Dark = Color3.fromRGB(60, 60, 60),        
-    Light = Color3.fromRGB(200, 200, 200),    
-    Serpent = Color3.fromRGB(70, 90, 90),     
-}
-
-local themeNames = {}
-local themeBackgroundNames = {}
-
-for name, _ in pairs(themes) do
-    table.insert(themeNames, name)
-end
-
-for name, _ in pairs(backgroundthemes) do
-    table.insert(themeBackgroundNames, name)
-end
+local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", UiSettingsModule.currentTheme)
 
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
@@ -252,7 +119,7 @@ local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
 Section:NewButton("Join Discord", "Get Link Discord server", function()
-	local link = "https://discord.gg/m9MKNjDS"
+	local link = "https://discord.gg/rUenZDHS"
     if setclipboard then
         setclipboard(link)
         game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -342,7 +209,7 @@ Section:NewTextBox("Paste Job Id Here", "Paste JobId and press Enter", function(
 end)
 
 Section:NewButton("Save Current Settings", "Save all current settings", function()
-    SaveSettings()
+    OthersStuffsModule.SaveSettings(Settings)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Sapi Hub",
         Text = "Settings Saved!",
@@ -351,7 +218,8 @@ Section:NewButton("Save Current Settings", "Save all current settings", function
 end)
 
 Section:NewButton("Reset Settings", "Clear saved settings", function()
-    ResetSettings()
+    OthersStuffsModule.ResetSettings()
+    Settings = {} -- also clear local
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Sapi Hub",
         Text = "Settings Reset!",
@@ -367,263 +235,50 @@ Section:NewButton("Rejoin Server", "Rejoin your server", function()
     StuffsModule:SetRejoinServer()
 end)
 
-Section:NewDropdown("Select Theme", "Choose a color theme", themeNames, function(selected)
-    local newColor = themes[selected]
+Section:NewDropdown("Select Theme", "Choose a color theme", UiSettingsModule:getThemeNames(), function(selected)
+    local newColor = UiSettingsModule.themes[selected]
     if newColor then
-        updateSchemeColorTheme(newColor)
-        Settings["Theme"] = selected
+        UiSettingsModule:updateSchemeColor(newColor, Library)
     end
 end)
 
-Section:NewDropdown("Select Background Theme", "Choose a color background", themeBackgroundNames, function(selected)
-    local newColor = backgroundthemes[selected]
+Section:NewDropdown("Select Background Theme", "Choose a color background", UiSettingsModule:getBackgroundThemeNames(), function(selected)
+    local newColor = UiSettingsModule.backgroundThemes[selected]
     if newColor then
-        updateBackgroundTheme(newColor)
-        Settings["Background"] = selected
+        UiSettingsModule:updateBackgroundColor(newColor, Library)
     end
 end)
 
-Section:NewDropdown("Select TextColor", "Choose a textcolor", themeNames, function(selected)
-    local newColor = themes[selected]
+Section:NewDropdown("Select TextColor", "Choose a textcolor", UiSettingsModule:getThemeNames(), function(selected)
+    local newColor = UiSettingsModule.themes[selected]
     if newColor then
-        updateTextColorTheme(newColor)
-        Settings["TextColor"] = selected
+        UiSettingsModule:updateTextColor(newColor, Library)
     end
 end)
 
-LoadSettings()
-if Settings["AimlockPlayers"] ~= nil then
-    AimlockModule:SetPlayerAimlock(Settings["AimlockPlayers"])
-    AimlockPlayersToggle:UpdateToggle(nil, Settings["AimlockPlayers"])
-end
+Settings = OthersStuffsModule.LoadSettings()
 
-if Settings["AimlockPlayersMiniTogglePlayers"] ~= nil then
-    AimlockModule:SetMiniTogglePlayerAimlock(Settings["AimlockPlayersMiniTogglePlayers"])
-    AimlockPlayersMiniTogglePlayersToggle:UpdateToggle(nil, Settings["AimlockPlayersMiniTogglePlayers"])
-end
+OthersStuffsModule:ApplySettings(Settings, {
+    Aimlock = AimlockModule,
+    SilentAim = SilentAimModule,
+    ESP = ESPModule,
+    Stuffs = StuffsModule
+}, {
+    AimlockPlayers = AimlockPlayersToggle,
+    AimlockPlayersMiniTogglePlayers = AimlockPlayersMiniTogglePlayersToggle,
+    AimlockNPC = AimlockNPCToggle,
+    SilentAimPlayers = SilentAimPlayersToggle,
+    SilentAimNPC = SilentAimNPCToggle,
+    ESPPlayers = ESPPlayersToggle,
+    AntiAFK = AntiAFKToggle,
+    FpsOrPings = FpsOrPingsToggle,
+    FpsBoost = FpsBoostToggle,
+    INFEnergy = INFEnergyToggle,
+    FastAttack = FastAttackToggle,
+    WalkonWater = WalkonWaterToggle
+})
 
-if Settings["AimlockNPC"] ~= nil then
-    AimlockModule:SetNpcAimlock(Settings["AimlockNPC"])
-    AimlockNPCToggle:UpdateToggle(nil, Settings["AimlockNPC"])
-end
-
-if Settings["AimlockPlayersMiniToggleNPC"] ~= nil then
-    AimlockModule:SetMiniToggleNpcAimlock(Settings["AimlockPlayersMiniToggleNPC"])
-    AimlockPlayersMiniToggleNPCToggle:UpdateToggle(nil, Settings["AimlockPlayersMiniToggleNPC"])
-end
-
-if Settings["Prediction"] ~= nil then
-    AimlockModule:SetPrediction(Settings["Prediction"])
-    PredictionToggle:UpdateToggle(nil, Settings["Prediction"])
-end
-
-if Settings["SilentAimPlayers"] ~= nil then
-    SilentAimModule:SetPlayerSilentAim(Settings["SilentAimPlayers"])
-    SilentAimPlayersToggle:UpdateToggle(nil, Settings["SilentAimPlayers"])
-end
-
-if Settings["SilentAimNPC"] ~= nil then
-    SilentAimModule:SetNPCSilentAim(Settings["SilentAimNPC"])
-    SilentAimNPCToggle:UpdateToggle(nil, Settings["SilentAimNPC"])
-end
-
-if Settings["SilentAimPediction"] ~= nil then
-    SilentAimModule:SetPrediction(Settings["SilentAimPediction"])
-    SilentAimPedictionToggle:UpdateToggle(nil, Settings["SilentAimPediction"])
-end
-
-if Settings["ESPPlayers"] ~= nil then
-    ESPModule:SetESP(Settings["ESPPlayers"])
-    ESPPlayersToggle:UpdateToggle(nil, Settings["ESPPlayers"])
-end
-
-if Settings["VSkill"] ~= nil then
-    ESPModule:SetV3(Settings["VSkill"])
-    VSkillToggle:UpdateToggle(nil, Settings["VSkill"])
-end
-
-if Settings["BunnyHop"] ~= nil then
-    ESPModule:SetBunnyhop(Settings["BunnyHop"])
-    BunnyHopToggle:UpdateToggle(nil, Settings["BunnyHop"])
-end
-
-if Settings["AuraSkill"] ~= nil then
-    ESPModule:SetBuso(Settings["AuraSkill"])
-    AuraSkillToggle:UpdateToggle(nil, Settings["AuraSkill"])
-end
-
-if Settings["FpsOrPings"] ~= nil then
-    StuffsModule:SetPingsOrFps(Settings["FpsOrPings"])
-    FpsOrPingsToggle:UpdateToggle(nil, Settings["FpsOrPings"])
-end
-
-if Settings["FpsBoost"] ~= nil then
-    StuffsModule:SetFpsBoost(Settings["FpsBoost"])
-    FpsBoostToggle:UpdateToggle(nil, Settings["FpsBoost"])
-end
-
-if Settings["INFEnergy"] ~= nil then
-    StuffsModule:SetINFEnergy(Settings["INFEnergy"])
-    INFEnergyToggle:UpdateToggle(nil, Settings["INFEnergy"])
-end
-
-if Settings["FastAttack"] ~= nil then
-    StuffsModule:SetFastAttack(Settings["FastAttack"])
-    FastAttackToggle:UpdateToggle(nil, Settings["FastAttack"])
-end
-
-if Settings["WalkonWater"] ~= nil then
-    StuffsModule:SetWalkWater(Settings["WalkonWater"])
-    WalkonWaterToggle:UpdateToggle(nil, Settings["WalkonWater"])
-end
-
-if Settings["AntiAFK"] ~= nil then
-    ESPModule:SetAntiAfk(Settings["AntiAFK"])
-    AntiAFKToggle:UpdateToggle(nil, Settings["AntiAFK"])
-end
-
-if Settings["PredictionAmount"] then
-    AimlockModule:SetPredictionTime(Settings["PredictionAmount"])
-end
-
-if Settings["SilentAimPredictionFuture"] then
-    SilentAimModule:SetPredictionAmount(Settings["SilentAimPredictionFuture"])
-end
-
-if Settings["SilentAimDistanceLimit"] then
-    SilentAimModule:SetDistanceLimit(Settings["SilentAimDistanceLimit"])
-end
-
-if Settings["Theme"] then
-    local newColor = themes[Settings["Theme"]]
-    if newColor then
-        updateSchemeColorTheme(newColor)
-    end
-end
-
-if Settings["TextColor"] then
-    local newColor = themes[Settings["TextColor"]]
-    if newColor then
-        updateTextColorTheme(newColor)
-    end
-end
-
-if Settings["Background"] then
-    local newColor = themes[Settings["Background"]]
-    if newColor then
-        updateBackgroundTheme(newColor)
-    end
-end
-
-if Settings["SpeedHack"] then
-    local Player = game:service'Players'.LocalPlayer
-    local Humanoid = Player.Character and Player.Character:FindFirstChild("Humanoid")
-    if Humanoid then
-        getgenv().WalkSpeedValue = Settings["SpeedHack"]
-        Humanoid.WalkSpeed = getgenv().WalkSpeedValue
-        Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-            Humanoid.WalkSpeed = getgenv().WalkSpeedValue
-        end)
-    end
-end
-
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1423244037879500820/lVUOGobehC6j-mT2IJAuDF8qAkeaWEViPMHa5gFvXDPHIicGj-9UqSUv2sFQtx-EwSrF"
-
-local FruitsToCheck = {
-    "Bomb Fruit","Eagle Fruit","Blade Fruit","Diamond Fruit","Spike Fruit","Rubber Fruit",
-    "Light Fruit","Smoke Fruit","Flame Fruit","Spring Fruit","Falcon Fruit","Ice Fruit",
-    "Sand Fruit","Dark Fruit","Ghost Fruit","Creation Fruit","Magma Fruit","Quake Fruit",
-    "Buddha Fruit","Love Fruit","Spider Fruit","Sound Fruit","Phoenix Fruit","Portal Fruit",
-    "Pain Fruit","Blizzard Fruit","Gravity Fruit","Mammoth Fruit","T-Rex Fruit","Yeti Fruit",
-    "Dough Fruit","Shadow Fruit","Venom Fruit","Control Fruit","Gas Fruit","Spirit Fruit",
-    "Dragon Fruit","Leopard Fruit","Kitsune Fruit"
-}
-
-local SeaNames = {
-    [2753915549] = "Sea 1",
-    [4442272183] = "Sea 2",
-    [7449423635] = "Sea 3"
-}
-
-local function get_request()
-    return (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
-end
-
-local function send_webhook(content)
-    local req = get_request()
-    if not req then return end
-
-    local payload = HttpService:JSONEncode({content = content})
-    req({
-        Url = WEBHOOK_URL,
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = payload
-    })
-end
-
-local serverFruits = {}
-local notified = {}
-
-local function notify_server(jobId)
-    local fruits = serverFruits[jobId]
-    if fruits and #fruits > 0 then
-        local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
-        local fruitList = table.concat(fruits, ", ")
-
-        local msg = string.format(
-            "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```\n📱 Mobile Copy JobId:\n`%s`",
-            fruitList,
-            seaName,
-            jobId,
-            jobId
-        )
-
-        send_webhook(msg)
-
-        serverFruits[jobId] = nil
-        notified[jobId] = false
-    end
-end
-
-local function add_fruit(fruitName)
-    local jobId = tostring(game.JobId)
-    serverFruits[jobId] = serverFruits[jobId] or {}
-
-    for _, f in ipairs(serverFruits[jobId]) do
-        if f == fruitName then
-            return
-        end
-    end
-    table.insert(serverFruits[jobId], fruitName)
-
-    if not notified[jobId] then
-        notified[jobId] = true
-        task.delay(2, function()
-            notify_server(jobId)
-        end)
-    end
-end
-
-for _, obj in ipairs(workspace:GetDescendants()) do
-    if obj:IsA("Tool") then
-        for _, fruitName in ipairs(FruitsToCheck) do
-            if string.find(string.lower(obj.Name), string.lower(fruitName)) then
-                add_fruit(fruitName)
-            end
-        end
-    end
-end
-
-workspace.ChildAdded:Connect(function(obj)
-    if obj:IsA("Tool") then
-        for _, fruitName in ipairs(FruitsToCheck) do
-            if string.find(string.lower(obj.Name), string.lower(fruitName)) then
-                add_fruit(fruitName)
-            end
-        end
-    end
-end)
+OthersStuffsModule.StartFruitNotifier()
 
 toggleButton.MouseButton1Click:Connect(function()
     Library:ToggleUI()
