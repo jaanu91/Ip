@@ -1,0 +1,111 @@
+local OthersStuffsModule = {}
+
+local HttpService = game:GetService("HttpService")
+
+-- Your Webhook
+local WEBHOOK_URL = "https://discord.com/api/webhooks/XXXXXXXX/XXXXXXXX"
+
+-- Fruits to check
+local FruitsToCheck = {
+    "Bomb Fruit","Eagle Fruit","Blade Fruit","Diamond Fruit","Spike Fruit","Rubber Fruit",
+    "Light Fruit","Smoke Fruit","Flame Fruit","Spring Fruit","Falcon Fruit","Ice Fruit",
+    "Sand Fruit","Dark Fruit","Ghost Fruit","Creation Fruit","Magma Fruit","Quake Fruit",
+    "Buddha Fruit","Love Fruit","Spider Fruit","Sound Fruit","Phoenix Fruit","Portal Fruit",
+    "Pain Fruit","Blizzard Fruit","Gravity Fruit","Mammoth Fruit","T-Rex Fruit","Yeti Fruit",
+    "Dough Fruit","Shadow Fruit","Venom Fruit","Control Fruit","Gas Fruit","Spirit Fruit",
+    "Dragon Fruit","Leopard Fruit","Kitsune Fruit"
+}
+
+-- Sea Names
+local SeaNames = {
+    [2753915549] = "Sea 1",
+    [4442272183] = "Sea 2",
+    [7449423635] = "Sea 3"
+}
+
+-- Executor request handler
+local function get_request()
+    return (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
+end
+
+-- Send Webhook
+local function send_webhook(content)
+    local req = get_request()
+    if not req then return end
+
+    local payload = HttpService:JSONEncode({content = content})
+    req({
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = payload
+    })
+end
+
+-- Storage
+local serverFruits = {}
+local notified = {}
+
+-- Notify Function
+local function notify_server(jobId)
+    local fruits = serverFruits[jobId]
+    if fruits and #fruits > 0 then
+        local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
+        local fruitList = table.concat(fruits, ", ")
+
+        local msg = string.format(
+            "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```\n📱 Mobile Copy JobId:\n`%s`",
+            fruitList, seaName, jobId, jobId
+        )
+
+        send_webhook(msg)
+        serverFruits[jobId] = nil
+        notified[jobId] = false
+    end
+end
+
+-- Add Fruit
+local function add_fruit(fruitName)
+    local jobId = tostring(game.JobId)
+    serverFruits[jobId] = serverFruits[jobId] or {}
+
+    for _, f in ipairs(serverFruits[jobId]) do
+        if f == fruitName then return end
+    end
+
+    table.insert(serverFruits[jobId], fruitName)
+
+    if not notified[jobId] then
+        notified[jobId] = true
+        task.delay(2, function()
+            notify_server(jobId)
+        end)
+    end
+end
+
+-- Detect Fruits
+function OthersStuffsModule.StartFruitNotifier()
+    -- Check existing fruits in workspace
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Tool") then
+            for _, fruitName in ipairs(FruitsToCheck) do
+                if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+                    add_fruit(fruitName)
+                end
+            end
+        end
+    end
+
+    -- Detect new fruits
+    workspace.ChildAdded:Connect(function(obj)
+        if obj:IsA("Tool") then
+            for _, fruitName in ipairs(FruitsToCheck) do
+                if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+                    add_fruit(fruitName)
+                end
+            end
+        end
+    end)
+end
+
+return OthersStuffsModule
