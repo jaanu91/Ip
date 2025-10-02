@@ -47,6 +47,119 @@ function OthersStuffsModule.GetSettings()
     return Settings
 end
 
+function OtherStuffsModule:ApplySettings(Settings, Modules, Toggles, Themes)
+    -- Aimlock
+    if Settings["AimlockPlayers"] ~= nil then
+        Modules.Aimlock:SetPlayerAimlock(Settings["AimlockPlayers"])
+        Toggles.AimlockPlayers:UpdateToggle(nil, Settings["AimlockPlayers"])
+    end
+
+    if Settings["AimlockPlayersMiniTogglePlayers"] ~= nil then
+        Modules.Aimlock:SetMiniTogglePlayerAimlock(Settings["AimlockPlayersMiniTogglePlayers"])
+        Toggles.AimlockPlayersMiniTogglePlayers:UpdateToggle(nil, Settings["AimlockPlayersMiniTogglePlayers"])
+    end
+
+    if Settings["AimlockNPC"] ~= nil then
+        Modules.Aimlock:SetNpcAimlock(Settings["AimlockNPC"])
+        Toggles.AimlockNPC:UpdateToggle(nil, Settings["AimlockNPC"])
+    end
+
+    if Settings["PredictionAmount"] then
+        Modules.Aimlock:SetPredictionTime(Settings["PredictionAmount"])
+    end
+
+    -- Silent Aim
+    if Settings["SilentAimPlayers"] ~= nil then
+        Modules.SilentAim:SetPlayerSilentAim(Settings["SilentAimPlayers"])
+        Toggles.SilentAimPlayers:UpdateToggle(nil, Settings["SilentAimPlayers"])
+    end
+
+    if Settings["SilentAimNPC"] ~= nil then
+        Modules.SilentAim:SetNPCSilentAim(Settings["SilentAimNPC"])
+        Toggles.SilentAimNPC:UpdateToggle(nil, Settings["SilentAimNPC"])
+    end
+
+    if Settings["SilentAimPredictionFuture"] then
+        Modules.SilentAim:SetPredictionAmount(Settings["SilentAimPredictionFuture"])
+    end
+
+    if Settings["SilentAimDistanceLimit"] then
+        Modules.SilentAim:SetDistanceLimit(Settings["SilentAimDistanceLimit"])
+    end
+
+    -- ESP
+    if Settings["ESPPlayers"] ~= nil then
+        Modules.ESP:SetESP(Settings["ESPPlayers"])
+        Toggles.ESPPlayers:UpdateToggle(nil, Settings["ESPPlayers"])
+    end
+
+    if Settings["AntiAFK"] ~= nil then
+        Modules.ESP:SetAntiAfk(Settings["AntiAFK"])
+        Toggles.AntiAFK:UpdateToggle(nil, Settings["AntiAFK"])
+    end
+
+    -- Stuffs
+    if Settings["FpsOrPings"] ~= nil then
+        Modules.Stuffs:SetPingsOrFps(Settings["FpsOrPings"])
+        Toggles.FpsOrPings:UpdateToggle(nil, Settings["FpsOrPings"])
+    end
+
+    if Settings["FpsBoost"] ~= nil then
+        Modules.Stuffs:SetFpsBoost(Settings["FpsBoost"])
+        Toggles.FpsBoost:UpdateToggle(nil, Settings["FpsBoost"])
+    end
+
+    if Settings["INFEnergy"] ~= nil then
+        Modules.Stuffs:SetINFEnergy(Settings["INFEnergy"])
+        Toggles.INFEnergy:UpdateToggle(nil, Settings["INFEnergy"])
+    end
+
+    if Settings["FastAttack"] ~= nil then
+        Modules.Stuffs:SetFastAttack(Settings["FastAttack"])
+        Toggles.FastAttack:UpdateToggle(nil, Settings["FastAttack"])
+    end
+
+    if Settings["WalkonWater"] ~= nil then
+        Modules.Stuffs:SetWalkWater(Settings["WalkonWater"])
+        Toggles.WalkonWater:UpdateToggle(nil, Settings["WalkonWater"])
+    end
+
+    -- Themes
+    if Settings["Theme"] then
+        local newColor = Themes[Settings["Theme"]]
+        if newColor then
+            Modules.UI:updateSchemeColorTheme(newColor)
+        end
+    end
+
+    if Settings["TextColor"] then
+        local newColor = Themes[Settings["TextColor"]]
+        if newColor then
+            Modules.UI:updateTextColorTheme(newColor)
+        end
+    end
+
+    if Settings["Background"] then
+        local newColor = Themes[Settings["Background"]]
+        if newColor then
+            Modules.UI:updateBackgroundTheme(newColor)
+        end
+    end
+
+    -- Speed Hack
+    if Settings["SpeedHack"] then
+        local Player = game:GetService("Players").LocalPlayer
+        local Humanoid = Player.Character and Player.Character:FindFirstChild("Humanoid")
+        if Humanoid then
+            getgenv().WalkSpeedValue = Settings["SpeedHack"]
+            Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+            Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+                Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+            end)
+        end
+    end
+end
+
 -- Fruits to check
 local FruitsToCheck = {
     "Bomb Fruit","Eagle Fruit","Blade Fruit","Diamond Fruit","Spike Fruit","Rubber Fruit",
