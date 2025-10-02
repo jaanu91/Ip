@@ -3,7 +3,7 @@ local OthersStuffsModule = {}
 local HttpService = game:GetService("HttpService")
 
 -- Your Webhook
-local WEBHOOK_URL = "https://discord.com/api/webhooks/XXXXXXXX/XXXXXXXX"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1423244037879500820/lVUOGobehC6j-mT2IJAuDF8qAkeaWEViPMHa5gFvXDPHIicGj-9UqSUv2sFQtx-EwSrF"
 
 -- Fruits to check
 local FruitsToCheck = {
