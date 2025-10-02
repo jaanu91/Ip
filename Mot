@@ -5,6 +5,48 @@ local HttpService = game:GetService("HttpService")
 -- Your Webhook
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1423244037879500820/lVUOGobehC6j-mT2IJAuDF8qAkeaWEViPMHa5gFvXDPHIicGj-9UqSUv2sFQtx-EwSrF"
 
+-- SETTINGS FILE
+local SETTINGS_FILE = "SapiHub_Settings.json"
+local Settings = {}
+
+-- 🔹 Load Settings
+function OthersStuffsModule.LoadSettings()
+    if isfile and isfile(SETTINGS_FILE) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(SETTINGS_FILE))
+        end)
+        if success and data then
+            Settings = data
+        else
+            Settings = {}
+        end
+    else
+        Settings = {}
+    end
+    return Settings
+end
+
+-- 🔹 Save Settings
+function OthersStuffsModule.SaveSettings(newSettings)
+    Settings = newSettings or Settings
+    if writefile then
+        writefile(SETTINGS_FILE, HttpService:JSONEncode(Settings))
+    end
+end
+
+-- 🔹 Reset Settings
+function OthersStuffsModule.ResetSettings()
+    if delfile and isfile and isfile(SETTINGS_FILE) then
+        delfile(SETTINGS_FILE)
+    end
+    Settings = {}
+end
+
+-- 🔹 Get Settings Table (so main script can modify)
+function OthersStuffsModule.GetSettings()
+    return Settings
+end
+
 -- Fruits to check
 local FruitsToCheck = {
     "Bomb Fruit","Eagle Fruit","Blade Fruit","Diamond Fruit","Spike Fruit","Rubber Fruit",
