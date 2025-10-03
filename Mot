@@ -113,6 +113,11 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.Stuffs:SetWalkWater(Settings["WalkonWater"])
         Toggles.WalkonWater:UpdateToggle(nil, Settings["WalkonWater"])
     end
+    
+    if Settings["V4"] ~= nil then
+        Modules.Ui:SetV4(Settings["V4"])
+        Toggles.V4:UpdateToggle(nil, Settings["V4"])
+    end
 
     if Settings["SpeedHack"] then
         local Player = game:GetService("Players").LocalPlayer
