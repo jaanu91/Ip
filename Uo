@@ -59,7 +59,7 @@ local function isValidStopCondition()
 end
 
 -- =========================
--- Touch Control
+-- Touch Control (Mobile)
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
     local camera = workspace.CurrentCamera
@@ -81,6 +81,49 @@ UserInputService.TouchEnded:Connect(function(touch)
         rightTouchActive = false
         EnableSilentAimbot()
         sharkZActive, vActive, cursedZActive = false, false, false
+    end
+end)
+
+-- =========================
+-- Keyboard Control (PC)
+-- =========================
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.V then
+            if lastTool == "Dough-Dough" then
+                vActive = true
+                DisableSilentAimbot()
+            end
+        elseif input.KeyCode == Enum.KeyCode.Z then
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                DisableSilentAimbot()
+            elseif currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                DisableSilentAimbot()
+            end
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.V then
+            if vActive then
+                vActive = false
+                EnableSilentAimbot()
+            end
+        elseif input.KeyCode == Enum.KeyCode.Z then
+            if sharkZActive then
+                sharkZActive = false
+                EnableSilentAimbot()
+            elseif cursedZActive then
+                cursedZActive = false
+                EnableSilentAimbot()
+            end
+        end
     end
 end)
 
