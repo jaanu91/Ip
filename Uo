@@ -92,17 +92,17 @@ UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.V then
-            if lastTool == "Dough-Dough" then
+            if isValidStopCondition() then
                 vActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
             end
         elseif input.KeyCode == Enum.KeyCode.Z then
-            if currentTool and currentTool.Name == "Shark Anchor" then
+            if isValidStopCondition() then
                 sharkZActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
-            elseif currentTool and currentTool.Name == "Cursed Dual Katana" then
+            elseif isValidStopCondition() then
                 cursedZActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
@@ -194,27 +194,18 @@ if not getgenv().VSkillHooked then
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Shark Anchor" then
 	                sharkZActive = true
-	                task.delay(2, function()
-	                    sharkZActive = false
-	                end)
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "V" then
 	            if lastTool == "Dough-Dough" then
 	                vActive = true
-	                task.delay(2, function()
-		                vActive = false
-					end)
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Cursed Dual Katana" then
 	                cursedZActive = true
-	                task.delay(2, function()
-	                    cursedZActive = false
-	                end)
 	            end
 	        end
 	    end
@@ -230,6 +221,7 @@ local function onCharacterAdded(char)
     
     sharkZActive, vActive, cursedZActive = false, false, false
     rightTouchActive = false
+    keyHoldingActive = false
     EnableSilentAimbot()
 
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
@@ -242,6 +234,7 @@ local function onCharacterAdded(char)
             lastTool = nil
             sharkZActive, vActive, cursedZActive = false, false, false
             rightTouchActive = false
+            keyHoldingActive = false
             EnableSilentAimbot()
         end
     end))
