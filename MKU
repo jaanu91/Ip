@@ -37,13 +37,13 @@ local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", UiSettingsModule.cur
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Added Fruits Notify still working on this ✔")
+Section:NewLabel("• Added Auto V4 ✔")
+Section:NewLabel("• Added Fruits Notify ✔")
 Section:NewLabel("• Added Themes ✔")
 Section:NewLabel("• Added JumpPower ✔")
 Section:NewLabel("• Added AutoSave or Reset Settings ✔")
 Section:NewLabel("• Added AntiAfk ✔")
 Section:NewLabel("• Added Fast Attack ✔")
-Section:NewLabel("• Added Server hop or Rejoin ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -199,6 +199,11 @@ Section:NewTextBox("Jump Power", "JumpValue", function(jumpfunc)
     end
 end)
 
+local V4Toggle = Section:NewToggle("・Auto V4", "Auto V4 Transform", function(state)
+    UiSettingsModule:SetV4(state)
+    Settings["V4"] = state
+end)
+
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -262,7 +267,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     Aimlock = AimlockModule,
     SilentAim = SilentAimModule,
     ESP = ESPModule,
-    Stuffs = StuffsModule
+    Stuffs = StuffsModule,
+    Ui = UiSettingsModule
 }, {
     AimlockPlayers = AimlockPlayersToggle,
     AimlockPlayersMiniTogglePlayers = AimlockPlayersMiniTogglePlayersToggle,
@@ -275,7 +281,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     FpsBoost = FpsBoostToggle,
     INFEnergy = INFEnergyToggle,
     FastAttack = FastAttackToggle,
-    WalkonWater = WalkonWaterToggle
+    WalkonWater = WalkonWaterToggle,
+    V4 = V4Toggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
