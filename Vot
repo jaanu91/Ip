@@ -1,5 +1,12 @@
 local UiSettingsModule = {}
 
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local fillFrame = player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("RaceEnergy"):WaitForChild("Fill")
+
+local V4Enabled = false
+local sizeConn 
+
 -- =========================
 -- Theme Data & Functions
 -- =========================
@@ -115,6 +122,39 @@ function UiSettingsModule:MakeDraggable(button)
             update(input)
         end
     end)
+end
+
+local function getAwakenRemote()
+    local backpack = player:WaitForChild("Backpack")
+    local awakening = backpack:FindFirstChild("Awakening")
+    if awakening then
+        return awakening:FindFirstChild("RemoteFunction")
+    end
+    return nil
+end
+
+local function tryAwaken()
+    local awakenRemote = getAwakenRemote()
+    if awakenRemote and fillFrame.Size.X.Scale >= 0.9 then
+        awakenRemote:InvokeServer(true)
+    end
+end
+
+function UiSettingsModule:SetV4(state)
+    V4Enabled = state
+    
+    if V4Enabled then
+        if not sizeConn then
+            sizeConn = fillFrame:GetPropertyChangedSignal("Size"):Connect(function()
+                tryAwaken()
+            end)
+        end
+    else
+        if sizeConn then
+            sizeConn:Disconnect()
+            sizeConn = nil
+        end
+    end
 end
 
 return UiSettingsModule
