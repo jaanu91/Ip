@@ -92,17 +92,17 @@ UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.V then
-            if isValidStopCondition() then
+            if lastTool == "Dough-Dough" then
                 vActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
             end
         elseif input.KeyCode == Enum.KeyCode.Z then
-            if isValidStopCondition() then
+            if currentTool and currentTool.Name == "Shark Anchor" then
                 sharkZActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
-            elseif isValidStopCondition() then
+            elseif currentTool and currentTool.Name == "Cursed Dual Katana" then
                 cursedZActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
@@ -133,7 +133,6 @@ UserInputService.InputEnded:Connect(function(input, gp)
         end
     end
 end)
-
 -- =========================
 -- Damage Counter Watch
 -- =========================
