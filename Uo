@@ -193,18 +193,21 @@ if not getgenv().VSkillHooked then
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Shark Anchor" then
 	                sharkZActive = true
+					keyHoldingActive = true
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "V" then
 	            if lastTool == "Dough-Dough" then
 	                vActive = true
+					keyHoldingActive = true
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Cursed Dual Katana" then
 	                cursedZActive = true
+					keyHoldingActive = true
 	            end
 	        end
 	    end
