@@ -267,22 +267,33 @@ end
 
 task.spawn(function()
 	while true do
-	    local char = player.Character or player.CharacterAdded:Wait();
-	    char:WaitForChild("Humanoid");
-	    char:WaitForChild("HumanoidRootPart");
-	    wait(.1);
+	    local char = player.Character or player.CharacterAdded:Wait()
+	    char:WaitForChild("Humanoid")
+	    char:WaitForChild("HumanoidRootPart")
+	    task.wait(0.1)
+        local PlayerGui = player:FindFirstChild("PlayerGui")
+        local kenButton = PlayerGui
+            and PlayerGui:FindFirstChild("MobileContextButtons")
+            and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+            and PlayerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
 		if AutoKen then
 		    if HasTag("Ken") then
-		        local observationManager = getrenv()._G.OM;
-		        if (observationManager and not observationManager.active) then
-		            observationManager:setActive(true);
-	                commE:FireServer("Ken", true);
-	            end
-	        end
-		    wait();
-		end 
+		        local observationManager = getrenv()._G.OM
+		        if observationManager and not observationManager.active then
+		            observationManager:setActive(true)
+		            commE:FireServer("Ken", true)
+		        end
+		    end
+            if kenButton and kenButton:GetAttribute("Selected") ~= true then
+                kenButton:SetAttribute("Selected", true)
+            end
+        else
+            if kenButton and kenButton:GetAttribute("Selected") == true then
+                kenButton:SetAttribute("Selected", false)
+            end
+		end
 	end
-end);
+end)
 
 function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
