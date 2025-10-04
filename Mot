@@ -118,6 +118,16 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.Ui:SetV4(Settings["V4"])
         Toggles.V4:UpdateToggle(nil, Settings["V4"])
     end
+    
+    if Settings["FruitCheck"] ~= nil then
+        Modules.Ui:SetFruitCheck(Settings["FruitCheck"])
+        Toggles.FruitCheck:UpdateToggle(nil, Settings["FruitCheck"])
+    end
+    
+    if Settings["TeleportFruit"] ~= nil then
+        Modules.Ui:SetTeleportFruit(Settings["TeleportFruit"])
+        Toggles.TeleportFruit:UpdateToggle(nil, Settings["TeleportFruit"])
+    end
 
     if Settings["SpeedHack"] then
         local Player = game:GetService("Players").LocalPlayer
