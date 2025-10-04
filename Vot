@@ -2,9 +2,14 @@ local UiSettingsModule = {}
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
 local fillFrame = player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("RaceEnergy"):WaitForChild("Fill")
 
 local V4Enabled = false
+local FruitCheck = false
+local TeleportFruit = false
 local sizeConn 
 
 -- =========================
@@ -140,6 +145,50 @@ local function tryAwaken()
     end
 end
 
+local function Tween(targetCFrame)
+	if not targetCFrame then return end
+	local info = TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+	local goal = {CFrame = hrp.CFrame + Vector3.new(0, 1, 0)}
+	local tween = TweenService:Create(targetCFrame, info, goal)
+	tween:Play()
+end
+
+spawn(function()
+    local notifiedFruits = {}
+    
+    while task.wait(0.5) do
+        if FruitCheck then
+            for _, v in pairs(workspace:GetChildren()) do
+                if v:IsA("Tool") and not notifiedFruits[v] then
+                    notifiedFruits[v] = true
+                    setthreadcontext(5)
+                    require(game:GetService("ReplicatedStorage").Notification).new(v.Name .. " Spawned"):Display()
+                end
+            end
+
+            for fruit in pairs(notifiedFruits) do
+                if not fruit.Parent then
+                    notifiedFruits[fruit] = nil
+                end
+            end
+        else
+            notifiedFruits = {}
+        end
+    end
+end)
+
+spawn(function()
+	while task.wait() do
+		if TeleportFruit then
+			for _, v in pairs(workspace:GetChildren()) do
+				if v:IsA("Tool") and v:FindFirstChild("Handle") then
+					Tween(v.Handle)
+				end
+			end
+		end
+	end
+end)
+
 function UiSettingsModule:SetV4(state)
     V4Enabled = state
     
@@ -155,6 +204,14 @@ function UiSettingsModule:SetV4(state)
             sizeConn = nil
         end
     end
+end
+
+function UiSettingsModule:SetFruitCheck(state)
+    FruitCheck = state
+end
+
+function UiSettingsModule:SetTeleportFruit(state)
+    TeleportFruit = state
 end
 
 return UiSettingsModule
