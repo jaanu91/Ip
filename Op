@@ -273,14 +273,7 @@ task.spawn(function()
 		wait(.1);
 		if AutoKen then
 		    if HasTag("Ken") then
-		        local observationManager = getrenv()._G.OM;
-		        if (observationManager and not observationManager.active) then
-					observationManager.radius = 0
-		            observationManager:setActive(true);
-		            commE:FireServer("Ken", true);
-		        end
-
-		        local PlayerGui = player:FindFirstChild("PlayerGui")
+				local PlayerGui = player:FindFirstChild("PlayerGui")
 		        if PlayerGui then
 		            local kenButton = PlayerGui:FindFirstChild("MobileContextButtons")
 	                and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
@@ -289,6 +282,13 @@ task.spawn(function()
 		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
 		                kenButton:SetAttribute("Selected", true)
 		            end
+		        end
+		
+		        local observationManager = getrenv()._G.OM;
+		        if (observationManager and not observationManager.active) then
+					observationManager.radius = 0
+		            observationManager:setActive(true);
+		            commE:FireServer("Ken", true);
 		        end
 		    end
 		    wait();
