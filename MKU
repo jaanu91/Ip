@@ -115,34 +115,6 @@ Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance fo
     end
 end)
 
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= Players.LocalPlayer then
-        table.insert(PlayerList, plr.Name)
-    end
-end
-
-local PlayerDropdown = Section:NewDropdown("・Select Player Target", "Choose a player to lock onto", PlayerList, function(selected)
-    if selected == "None" then
-        SilentAimModule:SetSelectedPlayer(nil)
-    else
-        SilentAimModule:SetSelectedPlayer(selected)
-    end
-end)
-
-local function RefreshPlayerList()
-    local newList = {"None"}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= Players.LocalPlayer then
-            table.insert(newList, plr.Name)
-        end
-    end
-    PlayerDropdown:Refresh(newList, true)
-end
-
-Players.PlayerAdded:Connect(RefreshPlayerList)
-Players.PlayerRemoving:Connect(RefreshPlayerList)
-RefreshPlayerList()
-
 local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
