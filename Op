@@ -34,6 +34,7 @@ local NPCaimbot = nil
 local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
+local SelectedPlayer = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -189,21 +190,21 @@ RunService.Heartbeat:Connect(function()
 
     local targetModel = nil
 
-    if SilentAimPlayersEnabled then  
-	    local closestPl = getClosestPlayer(lpHRP)  
-	    if closestPl then  
-	        Playersaimbot = closestPl.Name  
-	        local hrp = getHRP(closestPl.Character)  
-	        PlayersPosition = getPredictedPosition(hrp)  
-	        targetModel = closestPl.Character  
-	        applyHighlight(targetModel, "Player")  
-	    else  
-	        Playersaimbot, PlayersPosition = nil, nil  
-	    end  
+    if SilentAimPlayersEnabled then
+		local targetPlayer = SelectedPlayer or getClosestPlayer(lpHRP)
+		if targetPlayer and targetPlayer ~= player and targetPlayer.Character then
+			Playersaimbot = targetPlayer.Name
+			local hrp = getHRP(targetPlayer.Character)
+			PlayersPosition = getPredictedPosition(hrp)
+			targetModel = targetPlayer.Character
+			applyHighlight(targetModel, "Player")
+		else
+			Playersaimbot, PlayersPosition = nil, nil
+		end
 	elseif currentTargetType == "Player" then
-	    Playersaimbot, PlayersPosition = nil, nil  
-	    clearHighlight()
-	end  
+		Playersaimbot, PlayersPosition = nil, nil
+		clearHighlight()
+	end
 
 	if SilentAimNPCsEnabled then  
 	    local closestNPC = getClosestNPC(lpHRP)  
@@ -267,39 +268,34 @@ end
 
 task.spawn(function()
 	while true do
-		task.wait(0.2)
+		local char = player.Character or player.CharacterAdded:Wait();
+		char:WaitForChild("Humanoid");
+		char:WaitForChild("HumanoidRootPart");
+		wait(.1);
+		if AutoKen then
+		    if HasTag("Ken") then
+				local PlayerGui = player:FindFirstChild("PlayerGui")
+		        if PlayerGui then
+		            local kenButton = PlayerGui:FindFirstChild("MobileContextButtons")
+	                and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+	                and PlayerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
 
-		if not AutoKen then
-			continue
-		end
-
-		local char = player.Character or player.CharacterAdded:Wait()
-		if not char then
-			continue
-		end
-
-		local hasKen = HasTag("Ken")
-		local observationManager = getrenv()._G.OM
-		local PlayerGui = player:FindFirstChild("PlayerGui")
-
-		local kenButton = PlayerGui
-			and PlayerGui:FindFirstChild("MobileContextButtons")
-			and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-			and PlayerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
-
-		if not hasKen or (observationManager and not observationManager.active) then
-			if kenButton then
-				kenButton:SetAttribute("Selected", true)
-			end
-
-			if observationManager then
-				observationManager.radius = 0
-				observationManager:setActive(true)
-				commE:FireServer("Ken", true)
-			end
+		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
+		                kenButton:SetAttribute("Selected", true)
+		            end
+		        end
+		
+		        local observationManager = getrenv()._G.OM;
+		        if (observationManager and not observationManager.active) then
+					observationManager.radius = 0
+		            observationManager:setActive(true);
+		            commE:FireServer("Ken", true);
+		        end
+		    end
+		    wait();
 		end
 	end
-end)
+end);
 
 function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
@@ -337,6 +333,22 @@ function SilentAimModule:SetDistanceLimit(num)
 	if typeof(num) == "number" then
 		maxRange = num
 	end
+end
+
+function SilentAimModule:SetSelectedPlayer(playerName)
+	if not playerName or playerName == "" then
+		SelectedPlayer = nil
+		return
+	end
+
+	local found = Players:FindFirstChild(playerName)
+	if found then
+		SelectedPlayer = found
+	end
+end
+
+function SilentAimModule:GetSelectedPlayer()
+	return SelectedPlayer and SelectedPlayer.Name or "None"
 end
 
 function SilentAimModule:SetPrediction(state)
