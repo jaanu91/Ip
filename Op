@@ -8,13 +8,25 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local camera = workspace.CurrentCamera
+local RS = game:GetService("ReplicatedStorage")
+local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
+
+local Services = setmetatable({}, {
+    __index = function(self, serviceName)
+        local good, service = pcall(game.GetService, game, serviceName);
+        if (good) then
+            self[serviceName] = service
+            return service;
+        end
+    end
+});
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local UserWantsPlayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
-local infgeppo = false
+local AutoKen = false
 
 local Playersaimbot = nil
 local PlayersPosition = nil
@@ -247,21 +259,33 @@ spawn(function()
 	setreadonly(gg, true)
 end)
 
-function SilentAimModule:SetInfgeppo(state)
-	infgeppo = state
+local HasTag = function(tagName)
+  local char = player.Character
+  if (not char) then return false; end
+  return Services.CollectionService:HasTag(char, tagName);
+end
 
-	if infgeppo then
-		local char = player.Character or player.CharacterAdded:Wait()
-		local hum = char:FindFirstChild("Humanoid")
-
-		if hum then
-			for i, v in pairs(getconnections(hum.StateChanged)) do
-				if (v.Function and debug.getconstants(v.Function)[3] == "Landed") then
-					debug.setupvalue(v.Function, 1, 0)
-				end
-			end
-		end
+task.spawn(function()
+	while true do
+	    local char = player.Character or player.CharacterAdded:Wait();
+	    char:WaitForChild("Humanoid");
+	    char:WaitForChild("HumanoidRootPart");
+	    wait(.1);
+		if AutoKen then
+		    if HasTag("Ken") then
+		        local observationManager = getrenv()._G.OM;
+		        if (observationManager and not observationManager.active) then
+		            observationManager:setActive(true);
+	                commE:FireServer("Ken", true);
+	            end
+	        end
+		    wait();
+		end 
 	end
+end);
+
+function SilentAimModule:SetAutoKen(state)
+	AutoKen = state
 end
 
 function SilentAimModule:SetPlayerSilentAim(state)
