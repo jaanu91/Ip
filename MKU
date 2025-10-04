@@ -115,14 +115,6 @@ Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance fo
     end
 end)
 
-Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance for aimbot", {"200", "400", "600"}, function(selected)
-    local num = tonumber(selected)
-    if num then
-        SilentAimModule:SetDistanceLimit(num)
-        Settings["SilentAimDistanceLimit"] = num
-    end
-end)
-
 for _, plr in ipairs(Players:GetPlayers()) do
     if plr ~= Players.LocalPlayer then
         table.insert(PlayerList, plr.Name)
