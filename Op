@@ -267,34 +267,39 @@ end
 
 task.spawn(function()
 	while true do
-		local char = player.Character or player.CharacterAdded:Wait();
-		char:WaitForChild("Humanoid");
-		char:WaitForChild("HumanoidRootPart");
-		wait(.1);
-		if AutoKen then
-		    if HasTag("Ken") then
-				local PlayerGui = player:FindFirstChild("PlayerGui")
-		        if PlayerGui then
-		            local kenButton = PlayerGui:FindFirstChild("MobileContextButtons")
-	                and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-	                and PlayerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+		task.wait(0.2)
 
-		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
-		                kenButton:SetAttribute("Selected", true)
-		            end
-		        end
-		
-		        local observationManager = getrenv()._G.OM;
-		        if (observationManager and not observationManager.active) then
-					observationManager.radius = 0
-		            observationManager:setActive(true);
-		            commE:FireServer("Ken", true);
-		        end
-		    end
-		    wait();
+		if not AutoKen then
+			continue
+		end
+
+		local char = player.Character or player.CharacterAdded:Wait()
+		if not char then
+			continue
+		end
+
+		local hasKen = HasTag("Ken")
+		local observationManager = getrenv()._G.OM
+		local PlayerGui = player:FindFirstChild("PlayerGui")
+
+		local kenButton = PlayerGui
+			and PlayerGui:FindFirstChild("MobileContextButtons")
+			and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+			and PlayerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+
+		if not hasKen or (observationManager and not observationManager.active) then
+			if kenButton then
+				kenButton:SetAttribute("Selected", true)
+			end
+
+			if observationManager then
+				observationManager.radius = 0
+				observationManager:setActive(true)
+				commE:FireServer("Ken", true)
+			end
 		end
 	end
-end);
+end)
 
 function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
