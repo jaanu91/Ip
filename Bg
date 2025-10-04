@@ -8,12 +8,25 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local camera = workspace.CurrentCamera
+local RS = game:GetService("ReplicatedStorage")
+local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
+
+local Services = setmetatable({}, {
+    __index = function(self, serviceName)
+        local good, service = pcall(game.GetService, game, serviceName);
+        if (good) then
+            self[serviceName] = service
+            return service;
+        end
+    end
+});
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local UserWantsPlayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
+local AutoKen = false
 
 local Playersaimbot = nil
 local PlayersPosition = nil
@@ -21,6 +34,7 @@ local NPCaimbot = nil
 local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
+local SelectedPlayer = nil
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -176,21 +190,21 @@ RunService.Heartbeat:Connect(function()
 
     local targetModel = nil
 
-    if SilentAimPlayersEnabled then  
-	    local closestPl = getClosestPlayer(lpHRP)  
-	    if closestPl then  
-	        Playersaimbot = closestPl.Name  
-	        local hrp = getHRP(closestPl.Character)  
-	        PlayersPosition = getPredictedPosition(hrp)  
-	        targetModel = closestPl.Character  
-	        applyHighlight(targetModel, "Player")  
-	    else  
-	        Playersaimbot, PlayersPosition = nil, nil  
-	    end  
+    if SilentAimPlayersEnabled then
+		local targetPlayer = SelectedPlayer or getClosestPlayer(lpHRP)
+		if targetPlayer and targetPlayer ~= player and targetPlayer.Character then
+			Playersaimbot = targetPlayer.Name
+			local hrp = getHRP(targetPlayer.Character)
+			PlayersPosition = getPredictedPosition(hrp)
+			targetModel = targetPlayer.Character
+			applyHighlight(targetModel, "Player")
+		else
+			Playersaimbot, PlayersPosition = nil, nil
+		end
 	elseif currentTargetType == "Player" then
-	    Playersaimbot, PlayersPosition = nil, nil  
-	    clearHighlight()
-	end  
+		Playersaimbot, PlayersPosition = nil, nil
+		clearHighlight()
+	end
 
 	if SilentAimNPCsEnabled then  
 	    local closestNPC = getClosestNPC(lpHRP)  
@@ -246,6 +260,47 @@ spawn(function()
 	setreadonly(gg, true)
 end)
 
+local HasTag = function(tagName)
+  local char = player.Character
+  if (not char) then return false; end
+  return Services.CollectionService:HasTag(char, tagName);
+end
+
+task.spawn(function()
+	while true do
+		local char = player.Character or player.CharacterAdded:Wait();
+		char:WaitForChild("Humanoid");
+		char:WaitForChild("HumanoidRootPart");
+		wait(.1);
+		if AutoKen then
+		    if HasTag("Ken") then
+				local PlayerGui = player:FindFirstChild("PlayerGui")
+		        if PlayerGui then
+		            local kenButton = PlayerGui:FindFirstChild("MobileContextButtons")
+	                and PlayerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+	                and PlayerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+
+		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
+		                kenButton:SetAttribute("Selected", true)
+		            end
+		        end
+		
+		        local observationManager = getrenv()._G.OM;
+		        if (observationManager and not observationManager.active) then
+					observationManager.radius = 0
+		            observationManager:setActive(true);
+		            commE:FireServer("Ken", true);
+		        end
+		    end
+		    wait();
+		end
+	end
+end);
+
+function SilentAimModule:SetAutoKen(state)
+	AutoKen = state
+end
+
 function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsPlayerAim = state
 	SilentAimPlayersEnabled = state
@@ -278,6 +333,22 @@ function SilentAimModule:SetDistanceLimit(num)
 	if typeof(num) == "number" then
 		maxRange = num
 	end
+end
+
+function SilentAimModule:SetSelectedPlayer(playerName)
+	if not playerName or playerName == "" then
+		SelectedPlayer = nil
+		return
+	end
+
+	local found = Players:FindFirstChild(playerName)
+	if found then
+		SelectedPlayer = found
+	end
+end
+
+function SilentAimModule:GetSelectedPlayer()
+	return SelectedPlayer and SelectedPlayer.Name or "None"
 end
 
 function SilentAimModule:SetPrediction(state)
