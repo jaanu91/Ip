@@ -37,13 +37,13 @@ local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", UiSettingsModule.cur
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Added Auto Ken ✔")
+Section:NewLabel("• Added Select Target for Silent aim✔")
 Section:NewLabel("• Added Bring Fruits ✔")
 Section:NewLabel("• Added Spawned Fruits Check ✔")
 Section:NewLabel("• Added Auto V4 ✔")
 Section:NewLabel("• Added Fruits Notify ✔")
 Section:NewLabel("• Added Themes ✔")
-Section:NewLabel("• Added JumpPower ✔")
-Section:NewLabel("• Added AutoSave or Reset Settings ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -114,6 +114,42 @@ Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance fo
         Settings["SilentAimDistanceLimit"] = num
     end
 end)
+
+Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance for aimbot", {"200", "400", "600"}, function(selected)
+    local num = tonumber(selected)
+    if num then
+        SilentAimModule:SetDistanceLimit(num)
+        Settings["SilentAimDistanceLimit"] = num
+    end
+end)
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= Players.LocalPlayer then
+        table.insert(PlayerList, plr.Name)
+    end
+end
+
+local PlayerDropdown = Section:NewDropdown("・Select Player Target", "Choose a player to lock onto", PlayerList, function(selected)
+    if selected == "None" then
+        SilentAimModule:SetSelectedPlayer(nil)
+    else
+        SilentAimModule:SetSelectedPlayer(selected)
+    end
+end)
+
+local function RefreshPlayerList()
+    local newList = {"None"}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= Players.LocalPlayer then
+            table.insert(newList, plr.Name)
+        end
+    end
+    PlayerDropdown:Refresh(newList, true)
+end
+
+Players.PlayerAdded:Connect(RefreshPlayerList)
+Players.PlayerRemoving:Connect(RefreshPlayerList)
+RefreshPlayerList()
 
 local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
@@ -214,6 +250,11 @@ local TeleportFruitToggle = Section:NewToggle("・Bring Fruits", "It take few se
     Settings["TeleportFruit"] = state
 end)
 
+local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(state)
+    SilentAimModule:SetAutoKen(state)
+    Settings["AutoKen"] = state
+end)
+
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -294,7 +335,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     WalkonWater = WalkonWaterToggle,
     V4 = V4Toggle,
     FruitCheck = FruitCheckToggle,
-    TeleportFruit = TeleportFruitToggle
+    TeleportFruit = TeleportFruitToggle,
+    AutoKen = AutoKenToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
