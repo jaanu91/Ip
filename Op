@@ -304,11 +304,9 @@ task.spawn(function()
 		if AutoKen then
 		    if HasTag("Ken") then
 		        local observationManager = getrenv()._G.OM;
-				local KenHandler = ObservationManager.new(LocalPlayer)
 		        if (observationManager and not observationManager.active) then
+					observationManager.radius = 0
 		            observationManager:setActive(true);
-					KenHandler.radius = 0
-				    KenHandler:setActive(not KenHandler.active)
 		            commE:FireServer("Ken", true);
 		        end
 
