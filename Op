@@ -14,6 +14,7 @@ local SilentAimNPCsEnabled = false
 local UserWantsPlayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
+local infgeppo = false
 
 local Playersaimbot = nil
 local PlayersPosition = nil
@@ -246,6 +247,20 @@ spawn(function()
 	setreadonly(gg, true)
 end)
 
+if infgeppo then
+	local char = LocalPlayer.Character
+    if (char) then
+		local hum = char:FindFirstChild("Humanoid");
+	    if (hum) then
+	        for i, v in pairs(getconnections(hum.StateChanged)) do
+		        if (v.Function and debug.getconstants(v.Function)[3] == "Landed") then
+					debug.setupvalue(v.Function, 1, 0);
+	            end
+	        end
+	    end
+	end
+end
+
 function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsPlayerAim = state
 	SilentAimPlayersEnabled = state
@@ -282,6 +297,10 @@ end
 
 function SilentAimModule:SetPrediction(state)
 	PredictionEnabled = state
+end
+
+function SilentAimModule:SetInfgeppo(state)
+	infgeppo = state
 end
 
 function SilentAimModule:SetPredictionAmount(num)
