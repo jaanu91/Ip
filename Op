@@ -308,7 +308,7 @@ task.spawn(function()
 		        if (observationManager and not observationManager.active) then
 		            observationManager:setActive(true);
 					KenHandler.radius = 0
-				    KenHandler:setActive(not KenHandler.true)
+				    KenHandler:setActive(not KenHandler.active)
 		            commE:FireServer("Ken", true);
 		        end
 
