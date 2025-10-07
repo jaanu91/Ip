@@ -1,6 +1,7 @@
 local ZSkillModule = {}
 
-local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Op"))()
+local SilentAimModule = getgenv().SilentAimModule or loadstring(game:HttpGet(...))()
+getgenv().ZSkillModule = { SilentAimModule = SilentAimModule }
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -133,9 +134,15 @@ local function startAimlock()
 		return
 	end
 	if aimlockActive then return end
-	nearestTarget = GetNearestTarget(SilentAimModule.maxRange or 1000)
-	if not nearestTarget then
-		return
+	local targetPos = getgenv().ZSkillModule
+    and getgenv().ZSkillModule.SilentAimModule
+    and getgenv().ZSkillModule.SilentAimModule.PlayersPosition
+
+	if targetPos then
+	    cam.CFrame = CFrame.lookAt(cam.CFrame.Position, targetPos)
+	else
+	    nearestTarget = GetNearestTarget(SilentAimModule.maxRange or 1000)
+	    if not nearestTarget then return end
 	end
 
 	aimlockActive = true
