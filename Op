@@ -361,4 +361,14 @@ function SilentAimModule:SetPredictionAmount(num)
 	end
 end
 
+function SilentAimModule:GetPlayerTargetPosition()
+    return PlayersPosition
+end
+
+function SilentAimModule:GetPlayerTarget()
+    return Playersaimbot
+end
+
+getgenv().SilentAimModule = SilentAimModule
+
 return SilentAimModule
