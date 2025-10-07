@@ -10,6 +10,8 @@ local sanguineZActive, godhumanZActive = false, false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchReleased = false
+local rightTouching = false
+local rightTouchTime = 0
 local aimlockActive = false
 local aimRenderConn = nil
 local aimTimeoutTask = nil
@@ -174,14 +176,35 @@ local function watchDamageCounter()
 	end)
 end
 
--- ========= TOUCH INPUT =========
+-- ========= TOUCH INPUT (PREP + RELEASE AIMLOCK FOR SANGUINE ART Z) =========
+UserInputService.TouchStarted:Connect(function(touch)
+	if not ZSkillsEnabled then return end
+	local cam = workspace.CurrentCamera
+	if not cam or not touch or not touch.Position then return end
+
+	if touch.Position.X > cam.ViewportSize.X / 2 then
+		rightTouching = true
+		rightTouchTime = tick()
+	end
+end)
+
 UserInputService.TouchEnded:Connect(function(touch)
 	if not ZSkillsEnabled then return end
-	local camera = workspace.CurrentCamera
-	if not camera then return end
+	local cam = workspace.CurrentCamera
+	if not cam or not touch or not touch.Position then return end
 
-	if touch and touch.Position and touch.Position.X > camera.ViewportSize.X / 2 then
+	if touch.Position.X > cam.ViewportSize.X / 2 then
+		rightTouching = false
 		rightTouchReleased = true
+
+		if currentTool and currentTool.Name == "Sanguine Art" and sanguineZActive then
+			task.spawn(function()
+				task.wait(0.1)
+				startAimlock()
+			end)
+		elseif currentTool and currentTool.Name == "Godhuman" and godhumanZActive then
+			startAimlock()
+		end
 	end
 end)
 
@@ -203,13 +226,6 @@ if not getgenv().ZSkillHooked then
 						sanguineZActive = true
 					elseif currentTool.Name == "Godhuman" then
 						godhumanZActive = true
-					end
-				
-					if ZSkillsEnabled and rightTouchReleased then
-						startAimlock()
-						rightTouchReleased = false
-					else
-						stopAimlock("Z skill used without release")
 					end
 				end
 			end
