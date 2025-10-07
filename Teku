@@ -13,7 +13,6 @@ local rightTouchReleased = false
 local aimlockActive = false
 local aimStopTimer = nil
 local nearestTarget = nil
-local preAimTask = nil
 local ZSkillsEnabled = false
 
 -- ========= SAFE DISCONNECT =========
@@ -144,6 +143,7 @@ local function watchDamageCounter()
 end
 
 -- ========= TOUCH INPUT =========
+local preAimTask = nil
 
 UserInputService.TouchStarted:Connect(function(touch)
 	if not ZSkillsEnabled then return end
@@ -151,7 +151,7 @@ UserInputService.TouchStarted:Connect(function(touch)
 	if not camera then return end
 
 	if touch.Position.X > camera.ViewportSize.X / 2 then
-		if currentTool and currentTool.Name == "Sanguine Art" then
+		if sanguinZActive then
 			if preAimTask then task.cancel(preAimTask) end
 			preAimTask = task.spawn(function()
 				task.wait(0.1)
