@@ -361,4 +361,8 @@ function SilentAimModule:SetPredictionAmount(num)
 	end
 end
 
+if getgenv().ZSkillModule then
+	getgenv().ZSkillModule.SilentAimModule = SilentAimModule
+end
+
 return SilentAimModule
