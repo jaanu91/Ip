@@ -160,32 +160,42 @@ UserInputService.TouchEnded:Connect(function(touch)
 end)
 
 -- ========= SKILL HOOK =========
-if not getgenv().VSkillHooked then
-	getgenv().VSkillHooked = true
+if not getgenv().ZSkillHooked then
+	getgenv().ZSkillHooked = true
 	local old
 	old = hookmetamethod(game, "__namecall", function(self, ...)
 		local method = getnamecallmethod()
 		local args = {...}
-
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-		    if currentTool then
-		        if currentTool.Name == "Sanguine Art" then
-		            sanguinZActive = true
-		        elseif currentTool.Name == "Godhuman" then
-		            godhumanZActive = true
-		        end
-
-		        watchDamageCounter()
-
-
-		        if rightTouchReleased and isValidStopCondition() then
-		            task.defer(function()
-		                if isValidStopCondition() then
-		                    startAimlock()
-		                end
-		            end)
-		        end
-		    end
+		
+		if (method == "InvokeServer" or method == "FireServer") then
+	        local a1 = args[1]
+			
+			if typeof(a1) == "string" and a1:upper() == "Z" then
+				if currentTool.Name == "Sanguine Art" then
+					sanguinZActive = true
+			        watchDamageCounter()
+			        if rightTouchReleased and isValidStopCondition() then
+			            task.defer(function()
+			                if isValidStopCondition() then
+			                    startAimlock()
+			                end
+			            end)
+			        end
+			    end
+			end
+			if typeof(a1) == "string" and a1:upper() == "Z" then
+				if currentTool.Name == "Godhuman" then
+					godhumanZActive = true
+					watchDamageCounter()
+			        if rightTouchReleased and isValidStopCondition() then
+			            task.defer(function()
+			                if isValidStopCondition() then
+			                    startAimlock()
+			                end
+			            end)
+			        end
+				end
+			end
 		end
 		return old(self, ...)
 	end)
