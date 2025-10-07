@@ -79,7 +79,7 @@ local function startAimlock()
 		return
 	end
 	if aimlockActive then return end
-	nearestTarget = GetNearestTarget(80)
+	nearestTarget = GetNearestTarget(1000)
 	if not nearestTarget then
 		return
 	end
