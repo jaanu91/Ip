@@ -176,7 +176,7 @@ local function watchDamageCounter()
 	end)
 end
 
--- ========= TOUCH INPUT (PREP + RELEASE AIMLOCK FOR SANGUINE ART Z) =========
+-- ========= TOUCH INPUT =========
 UserInputService.TouchStarted:Connect(function(touch)
 	if not ZSkillsEnabled then return end
 	local cam = workspace.CurrentCamera
@@ -185,13 +185,11 @@ UserInputService.TouchStarted:Connect(function(touch)
 	if touch.Position.X > cam.ViewportSize.X / 2 then
 		rightTouching = true
 		rightTouchTime = tick()
-		if sanguineZActive and ZSkillsEnabled then
-			task.spawn(function()
-				task.wait(0.1) 
-				if rightTouching and not aimlockActive then
-					startAimlock()
-				end
-			end)
+
+		if sanguineZActive then
+			if not aimlockActive then
+				startAimlock()
+			end
 		end
 	end
 end)
@@ -205,12 +203,10 @@ UserInputService.TouchEnded:Connect(function(touch)
 		rightTouching = false
 		rightTouchReleased = true
 
-		if currentTool and currentTool.Name == "Sanguine Art" and sanguineZActive then
-			task.spawn(function()
+		if currentTool and currentTool.Name == "Godhuman" and godhumanZActive then
+			if not aimlockActive then
 				startAimlock()
-			end)
-		elseif currentTool and currentTool.Name == "Godhuman" and godhumanZActive then
-			startAimlock()
+			end
 		end
 	end
 end)
