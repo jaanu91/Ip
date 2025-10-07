@@ -1,5 +1,7 @@
 local ZSkillModule = {}
 
+local SilentAimModule = getgenv().SilentAimModule
+
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
@@ -13,7 +15,6 @@ local rightTouchReleased = false
 local aimlockActive = false
 local aimStopTimer = nil
 local nearestTarget = nil
-local ZSkillsEnabled = false
 
 -- ========= SAFE DISCONNECT =========
 local function clearConnections()
@@ -24,25 +25,16 @@ local function clearConnections()
 	if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
 end
 
--- ========= NEAREST TARGET FINDER =========
-local function GetNearestTarget(maxDistance)
-	local lp = player
-	local char = lp.Character
-	if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+local function GetNearestTarget(range)
+    local lpHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not lpHRP then return nil end
 
-	local hrp = char.HumanoidRootPart
-	local closest, closestDist = nil, maxDistance or 100
+    if SilentAimModule:IsPlayerAimEnabled() then
+        local pl = SilentAimModule:GetSelectedPlayer() and Players:FindFirstChild(SilentAimModule:GetSelectedPlayer()) or nil
+        return pl or getClosestPlayer(lpHRP)
+    end
 
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") then
-			local dist = (plr.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
-			if dist < closestDist and plr.Character.Humanoid.Health > 0 then
-				closest = plr.Character
-				closestDist = dist
-			end
-		end
-	end
-	return closest
+    return nil
 end
 
 -- ========= TOOL HOOK =========
@@ -69,17 +61,18 @@ local function stopAimlock(reason)
 	if not aimlockActive then return end
 	aimlockActive = false
 	nearestTarget = nil
+	rightTouchReleased = false
 	sanguinZActive, godhumanZActive = false, false
 	if aimStopTimer then pcall(function() aimStopTimer:Disconnect() end) end
 end
 
 -- ========= START AIMLOCK =========
 local function startAimlock()
-	if not ZSkillsEnabled then
+	if not SilentAimModule:IsPlayerAimEnabled() then
 		return
 	end
 	if aimlockActive then return end
-	nearestTarget = GetNearestTarget(1000)
+	nearestTarget = GetNearestTarget(SilentAimModule.maxRange or 1000)
 	if not nearestTarget then
 		return
 	end
@@ -87,7 +80,7 @@ local function startAimlock()
 	aimlockActive = true
 	
 	aimStopTimer = RunService.RenderStepped:Connect(function()
-		if not ZSkillsEnabled then
+		if not SilentAimModule:IsPlayerAimEnabled() then
 			stopAimlock("ZSkills disabled mid-aim")
 			return
 		end
@@ -106,7 +99,7 @@ end
 
 -- ========= WATCH DAMAGE COUNTER =========
 local function watchDamageCounter()
-	if not ZSkillsEnabled then return end
+	if not SilentAimModule:IsPlayerAimEnabled() then return end
 	if dmgConn then pcall(function() dmgConn:Disconnect() end) end
 	dmgConn = nil
 
@@ -134,7 +127,7 @@ local function watchDamageCounter()
 	end
 
 	dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-		if not ZSkillsEnabled then return end
+		if not SilentAimModule:IsPlayerAimEnabled() then return end
 		local dmgText = tonumber(dmgTextLabel.Text) or 0
 		if dmgText > 0 and aimlockActive then
 			stopAimlock("Damage detected")
@@ -144,7 +137,7 @@ end
 
 -- ========= TOUCH INPUT =========
 UserInputService.TouchEnded:Connect(function(touch)
-	if not ZSkillsEnabled then return end
+	if not SilentAimModule:IsPlayerAimEnabled() then return end
 	local camera = workspace.CurrentCamera
 	if not camera then return end
 
@@ -209,16 +202,5 @@ end
 
 player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then onCharacterAdded(player.Character) end
-
-
--- ========= PUBLIC TOGGLE FUNCTION =========
-function ZSkillModule:SetZSkills(state)
-	ZSkillsEnabled = state
-	if not state then
-		stopAimlock("ZSkills disabled")
-		clearConnections()
-	else
-	end
-end
 
 return ZSkillModule
