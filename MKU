@@ -5,6 +5,7 @@ local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.c
 local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Stuf"))()
 local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Mot"))()
 local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
+local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -143,6 +144,11 @@ end
 Players.PlayerAdded:Connect(RefreshPlayerList)
 Players.PlayerRemoving:Connect(RefreshPlayerList)
 RefreshPlayerList()
+
+local ZSkillToggle = Section:NewToggle("・GodhumanZ Aimlock", "I only set Godhuman", function(state)
+    ZSkillModule:SetZSkills(state)
+    Settings["ZSkills"] = state
+end)
 
 local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
@@ -312,7 +318,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     SilentAim = SilentAimModule,
     ESP = ESPModule,
     Stuffs = StuffsModule,
-    Ui = UiSettingsModule
+    Ui = UiSettingsModule,
+    Zskill= ZSkillModule
 }, {
     AimlockPlayers = AimlockPlayersToggle,
     AimlockPlayersMiniTogglePlayers = AimlockPlayersMiniTogglePlayersToggle,
@@ -329,7 +336,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     V4 = V4Toggle,
     FruitCheck = FruitCheckToggle,
     TeleportFruit = TeleportFruitToggle,
-    AutoKen = AutoKenToggle
+    AutoKen = AutoKenToggle,
+    ZSkills = ZSkillToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
