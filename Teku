@@ -185,6 +185,14 @@ UserInputService.TouchStarted:Connect(function(touch)
 	if touch.Position.X > cam.ViewportSize.X / 2 then
 		rightTouching = true
 		rightTouchTime = tick()
+		if sanguineZActive and ZSkillsEnabled then
+			task.spawn(function()
+				task.wait(0.1) 
+				if rightTouching and not aimlockActive then
+					startAimlock()
+				end
+			end)
+		end
 	end
 end)
 
@@ -199,7 +207,6 @@ UserInputService.TouchEnded:Connect(function(touch)
 
 		if currentTool and currentTool.Name == "Sanguine Art" and sanguineZActive then
 			task.spawn(function()
-				task.wait(0.1)
 				startAimlock()
 			end)
 		elseif currentTool and currentTool.Name == "Godhuman" and godhumanZActive then
