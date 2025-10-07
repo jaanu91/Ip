@@ -99,8 +99,8 @@ local function startAimlock()
 		end
 	end)
 
-	task.delay(3, function()
-		stopAimlock("3s timeout")
+	task.delay(2, function()
+		stopAimlock("2s timeout")
 	end)
 end
 
