@@ -173,7 +173,6 @@ local function watchDamageCounter()
 end
 
 -- ========= SKILL HOOK =========
--- ========= SKILL HOOK (Instant Aimlock on Z) =========
 if not getgenv().ZSkillHooked then
 	getgenv().ZSkillHooked = true
 
@@ -188,12 +187,12 @@ if not getgenv().ZSkillHooked then
 				if currentTool and currentTool.Name == "Sanguine Art" then
 					sanguineZActive = true
 					if ZSkillsEnabled then
-						startAimlock()
+						GetNearestTarget(1000)
 					end
 				elseif currentTool and currentTool.Name == "Godhuman" then
 					godhumanZActive = true
 					if ZSkillsEnabled then
-						startAimlock()
+						GetNearestTarget(1000)
 					end
 				end
 			end
