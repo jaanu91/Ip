@@ -1,0 +1,223 @@
+local ZSkillModule = {}
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local currentTool = nil
+local sanguinZActive, godhumanZActive = false, false
+local dmgConn = nil
+local characterConnections = {}
+local rightTouchReleased = false
+local aimlockActive = false
+local aimStopTimer = nil
+local nearestTarget = nil
+local ZSkillsEnabled = false
+
+-- ========= SAFE DISCONNECT =========
+local function clearConnections()
+	for _, conn in ipairs(characterConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	characterConnections = {}
+	if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
+end
+
+-- ========= NEAREST TARGET FINDER =========
+local function GetNearestTarget(maxDistance)
+	local lp = player
+	local char = lp.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+
+	local hrp = char.HumanoidRootPart
+	local closest, closestDist = nil, maxDistance or 100
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") then
+			local dist = (plr.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+			if dist < closestDist and plr.Character.Humanoid.Health > 0 then
+				closest = plr.Character
+				closestDist = dist
+			end
+		end
+	end
+	return closest
+end
+
+-- ========= TOOL HOOK =========
+local function hookTool(tool)
+	currentTool = tool
+	table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			currentTool = nil
+			sanguinZActive, godhumanZActive = false, false
+			rightTouchReleased = false
+			aimlockActive = false
+		end
+	end))
+end
+
+-- ========= VALID SKILL CONDITION =========
+local function isValidStopCondition()
+	if not ZSkillsEnabled then return false end
+	return (currentTool and currentTool.Name == "Sanguine Art" and sanguinZActive)
+		or (currentTool and currentTool.Name == "Godhuman" and godhumanZActive)
+end
+
+-- ========= STOP AIMLOCK =========
+local function stopAimlock(reason)
+	if not aimlockActive then return end
+	aimlockActive = false
+	nearestTarget = nil
+	if aimStopTimer then pcall(function() aimStopTimer:Disconnect() end) end
+end
+
+-- ========= START AIMLOCK =========
+local function startAimlock()
+	if not ZSkillsEnabled then
+		return
+	end
+	if aimlockActive then return end
+	nearestTarget = GetNearestTarget(80)
+	if not nearestTarget then
+		return
+	end
+
+	aimlockActive = true
+	
+	aimStopTimer = RunService.RenderStepped:Connect(function()
+		if not ZSkillsEnabled then
+			stopAimlock("ZSkills disabled mid-aim")
+			return
+		end
+		if aimlockActive and nearestTarget and nearestTarget:FindFirstChild("HumanoidRootPart") then
+			local cam = workspace.CurrentCamera
+			cam.CFrame = CFrame.lookAt(cam.CFrame.Position, nearestTarget.HumanoidRootPart.Position)
+		else
+			stopAimlock("Lost target or inactive")
+		end
+	end)
+
+	task.delay(3, function()
+		stopAimlock("3s timeout")
+	end)
+end
+
+-- ========= WATCH DAMAGE COUNTER =========
+local function watchDamageCounter()
+	if not ZSkillsEnabled then return end
+	if dmgConn then pcall(function() dmgConn:Disconnect() end) end
+	dmgConn = nil
+
+	local gui = player:WaitForChild("PlayerGui"):WaitForChild("Main", 5)
+	if not gui then return end
+
+	local dmgCounter = gui:FindFirstChild("DmgCounter")
+	if not dmgCounter then
+		table.insert(characterConnections, gui.ChildAdded:Connect(function(child)
+			if child.Name == "DmgCounter" then
+				watchDamageCounter()
+			end
+		end))
+		return
+	end
+
+	local dmgTextLabel = dmgCounter:FindFirstChild("Text")
+	if not dmgTextLabel then
+		table.insert(characterConnections, dmgCounter.ChildAdded:Connect(function(child)
+			if child.Name == "Text" then
+				watchDamageCounter()
+			end
+		end))
+		return
+	end
+
+	dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+		if not ZSkillsEnabled then return end
+		local dmgText = tonumber(dmgTextLabel.Text) or 0
+		if dmgText > 0 and aimlockActive then
+			stopAimlock("Damage detected")
+		end
+	end)
+end
+
+-- ========= TOUCH INPUT =========
+UserInputService.TouchEnded:Connect(function(touch)
+	if not ZSkillsEnabled then return end
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+
+	if touch.Position.X > camera.ViewportSize.X / 2 then
+		rightTouchReleased = true
+		if isValidStopCondition() then
+			startAimlock()
+		end
+	end
+end)
+
+-- ========= SKILL HOOK =========
+if not getgenv().VSkillHooked then
+	getgenv().VSkillHooked = true
+	local old
+	old = hookmetamethod(game, "__namecall", function(self, ...)
+		local method = getnamecallmethod()
+		local args = {...}
+
+		if ZSkillsEnabled and (method == "InvokeServer" or method == "FireServer") then
+			local a1 = args[1]
+			if typeof(a1) == "string" and a1:upper() == "Z" then
+				if currentTool then
+					if currentTool.Name == "Sanguine Art" then
+						sanguinZActive = true
+					elseif currentTool.Name == "Godhuman" then
+						godhumanZActive = true
+					end
+					watchDamageCounter()
+				end
+			end
+		end
+		return old(self, ...)
+	end)
+end
+
+-- =========================
+-- Character Handling
+-- =========================
+local function onCharacterAdded(char)
+    if char ~= player.Character then return end
+	clearConnections()
+    
+    sanguinZActive, godhumanZActive = false, false
+    rightTouchReleased = false
+
+    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then hookTool(child) end
+    end))
+
+    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
+        if child == currentTool then
+            currentTool = nil
+            sanguinZActive, godhumanZActive = false, false
+            rightTouchReleased = false
+        end
+    end))
+
+    watchDamageCounter()
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then onCharacterAdded(player.Character) end
+
+
+-- ========= PUBLIC TOGGLE FUNCTION =========
+function ZSkillModule:SetZSkills(state)
+	ZSkillsEnabled = state
+	if not state then
+		stopAimlock("ZSkills disabled")
+		clearConnections()
+	else
+	end
+end
+
+return ZSkillModule
