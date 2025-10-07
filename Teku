@@ -9,7 +9,6 @@ local currentTool = nil
 local sanguineZActive, godhumanZActive = false, false
 local dmgConn = nil
 local characterConnections = {}
-local rightTouchReleased = false
 local aimlockActive = false
 local aimRenderConn = nil
 local aimTimeoutTask = nil
@@ -74,16 +73,9 @@ local function hookTool(tool)
 		if not parent then
 			currentTool = nil
 			sanguineZActive, godhumanZActive = false, false
-			rightTouchReleased = false
 			aimlockActive = false
 		end
 	end))
-end
-
--- ========= VALID SKILL CONDITION =========
-local function isValidStopCondition()
-	return (currentTool and currentTool.Name == "Sanguine Art" and sanguineZActive)
-		or (currentTool and currentTool.Name == "Godhuman" and godhumanZActive)
 end
 
 -- ========= STOP AIMLOCK =========
@@ -180,37 +172,29 @@ local function watchDamageCounter()
 	end)
 end
 
--- ========= TOUCH INPUT =========
-UserInputService.TouchEnded:Connect(function(touch)
-	if not ZSkillsEnabled then return end
-	local camera = workspace.CurrentCamera
-	if not camera then return end
-
-	if touch and touch.Position and touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouchReleased = true
-		if isValidStopCondition() then
-			startAimlock()
-		end
-	end
-end)
-
 -- ========= SKILL HOOK =========
+-- ========= SKILL HOOK (Instant Aimlock on Z) =========
 if not getgenv().ZSkillHooked then
 	getgenv().ZSkillHooked = true
 
 	local oldNamecall
 	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 		local method = getnamecallmethod()
-		local args = {...}
+		local args = { ... }
 
 		if (method == "InvokeServer" or method == "FireServer") and args[1] then
 			local a1 = args[1]
 			if typeof(a1) == "string" and a1:upper() == "Z" then
 				if currentTool and currentTool.Name == "Sanguine Art" then
 					sanguineZActive = true
-					startAimlock()
+					if ZSkillsEnabled then
+						startAimlock()
+					end
 				elseif currentTool and currentTool.Name == "Godhuman" then
 					godhumanZActive = true
+					if ZSkillsEnabled then
+						startAimlock()
+					end
 				end
 			end
 		end
@@ -228,7 +212,6 @@ local function onCharacterAdded(char)
 	clearConnections()
 
 	sanguineZActive, godhumanZActive = false, false
-	rightTouchReleased = false
 
 	for _, child in ipairs(char:GetChildren()) do
 		if child:IsA("Tool") then
@@ -246,7 +229,6 @@ local function onCharacterAdded(char)
 		if child == currentTool then
 			currentTool = nil
 			sanguineZActive, godhumanZActive = false, false
-			rightTouchReleased = false
 		end
 	end))
 
