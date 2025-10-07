@@ -149,13 +149,10 @@ UserInputService.TouchEnded:Connect(function(touch)
 	if not camera then return end
 
 	if touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouchReleased = true
-
-		task.defer(function()
-			if isValidStopCondition() then
-				startAimlock()
-			end
-		end)
+		rightTouchReleased = true			
+		if isValidStopCondition() then
+			startAimlock()
+		end
 	end
 end)
 
@@ -173,27 +170,11 @@ if not getgenv().ZSkillHooked then
 			if typeof(a1) == "string" and a1:upper() == "Z" then
 				if currentTool.Name == "Sanguine Art" then
 					sanguinZActive = true
-			        watchDamageCounter()
-			        if rightTouchReleased and isValidStopCondition() then
-			            task.defer(function()
-			                if isValidStopCondition() then
-			                    startAimlock()
-			                end
-			            end)
-			        end
 			    end
 			end
 			if typeof(a1) == "string" and a1:upper() == "Z" then
 				if currentTool.Name == "Godhuman" then
 					godhumanZActive = true
-					watchDamageCounter()
-			        if rightTouchReleased and isValidStopCondition() then
-			            task.defer(function()
-			                if isValidStopCondition() then
-			                    startAimlock()
-			                end
-			            end)
-			        end
 				end
 			end
 		end
