@@ -13,6 +13,7 @@ local rightTouchReleased = false
 local aimlockActive = false
 local aimStopTimer = nil
 local nearestTarget = nil
+local preAimTask = nil
 local ZSkillsEnabled = false
 
 -- ========= SAFE DISCONNECT =========
@@ -143,19 +144,38 @@ local function watchDamageCounter()
 end
 
 -- ========= TOUCH INPUT =========
+
+UserInputService.TouchStarted:Connect(function(touch)
+	if not ZSkillsEnabled then return end
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+
+	if touch.Position.X > camera.ViewportSize.X / 2 then
+		if currentTool and currentTool.Name == "Sanguine Art" then
+			if preAimTask then task.cancel(preAimTask) end
+			preAimTask = task.spawn(function()
+				task.wait(0.1)
+				startAimlock()
+			end)
+		end
+	end
+end)
+
 UserInputService.TouchEnded:Connect(function(touch)
 	if not ZSkillsEnabled then return end
 	local camera = workspace.CurrentCamera
 	if not camera then return end
 
 	if touch.Position.X > camera.ViewportSize.X / 2 then
-		rightTouchReleased = true			
+		rightTouchReleased = true
+
+		if preAimTask then task.cancel(preAimTask) preAimTask = nil end
+
 		if isValidStopCondition() then
 			startAimlock()
 		end
 	end
 end)
-
 -- ========= SKILL HOOK =========
 if not getgenv().ZSkillHooked then
 	getgenv().ZSkillHooked = true
