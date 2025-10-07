@@ -133,6 +133,11 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.SilentAim:SetAutoKen(Settings["AutoKen"])
         Toggles.AutoKen:UpdateToggle(nil, Settings["AutoKen"])
     end
+    
+    if Settings["ZSkills"] ~= nil then
+        Modules.Zskill:SetZSkills(Settings["ZSkills"])
+        Toggles.ZSkills:UpdateToggle(nil, Settings["ZSkills"])
+    end
 
     if Settings["SpeedHack"] then
         local Player = game:GetService("Players").LocalPlayer
