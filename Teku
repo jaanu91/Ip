@@ -60,7 +60,6 @@ end
 
 -- ========= VALID SKILL CONDITION =========
 local function isValidStopCondition()
-	if not ZSkillsEnabled then return false end
 	return (currentTool and currentTool.Name == "Sanguine Art" and sanguinZActive)
 		or (currentTool and currentTool.Name == "Godhuman" and godhumanZActive)
 end
@@ -70,6 +69,7 @@ local function stopAimlock(reason)
 	if not aimlockActive then return end
 	aimlockActive = false
 	nearestTarget = nil
+	sanguinZActive, godhumanZActive = false, false
 	if aimStopTimer then pcall(function() aimStopTimer:Disconnect() end) end
 end
 
