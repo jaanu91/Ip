@@ -6,7 +6,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local currentTool = nil
-local sanguineZActive, godhumanZActive = false, false
+local godhumanZActive = false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchReleased = false
@@ -75,7 +75,7 @@ local function hookTool(tool)
 	table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
 		if not parent then
 			currentTool = nil
-			sanguineZActive, godhumanZActive = false, false
+			godhumanZActive = false
 			rightTouchReleased = false
 			aimlockActive = false
 		end
@@ -87,7 +87,7 @@ local function stopAimlock(reason)
 	if not aimlockActive then return end
 	aimlockActive = false
 	nearestTarget = nil
-	sanguineZActive, godhumanZActive = false, false
+	godhumanZActive = false
 
 	if aimRenderConn then
 		pcall(function() aimRenderConn:Disconnect() end)
@@ -177,23 +177,6 @@ local function watchDamageCounter()
 end
 
 -- ========= TOUCH INPUT =========
-UserInputService.TouchStarted:Connect(function(touch)
-	if not ZSkillsEnabled then return end
-	local cam = workspace.CurrentCamera
-	if not cam or not touch or not touch.Position then return end
-
-	if touch.Position.X > cam.ViewportSize.X / 2 then
-		rightTouching = true
-		rightTouchTime = tick()
-
-		if sanguineZActive then
-			if not aimlockActive then
-				startAimlock()
-			end
-		end
-	end
-end)
-
 UserInputService.TouchEnded:Connect(function(touch)
 	if not ZSkillsEnabled then return end
 	local cam = workspace.CurrentCamera
@@ -225,9 +208,7 @@ if not getgenv().ZSkillHooked then
 
 			if typeof(a1) == "string" and a1:upper() == "Z" then
 				if currentTool then
-					if currentTool.Name == "Sanguine Art" then
-						sanguineZActive = true
-					elseif currentTool.Name == "Godhuman" then
+					if currentTool.Name == "Godhuman" then
 						godhumanZActive = true
 					end
 				end
@@ -245,7 +226,7 @@ local function onCharacterAdded(char)
 
 	clearConnections()
 
-	sanguineZActive, godhumanZActive = false, false
+	godhumanZActive = false
 	rightTouchReleased = false
 
 	for _, child in ipairs(char:GetChildren()) do
@@ -263,7 +244,7 @@ local function onCharacterAdded(char)
 	table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
 		if child == currentTool then
 			currentTool = nil
-			sanguineZActive, godhumanZActive = false, false
+			godhumanZActive = false
 			rightTouchReleased = false
 		end
 	end))
