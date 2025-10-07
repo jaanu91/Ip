@@ -193,18 +193,22 @@ if not getgenv().ZSkillHooked then
 	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 		local method = getnamecallmethod()
 		local args = {...}
+		
+		if (method == "InvokeServer" or method == "FireServer") then
+	        local a1 = args[1]
 
-		if typeof(a1) == "string" and a1:upper() == "Z" then
-			if currentTool then
-				if currentTool.Name == "Sanguine Art" then
-					sanguineZActive = true
-				elseif currentTool.Name == "Godhuman" then
-					godhumanZActive = true
-				end
+			if typeof(a1) == "string" and a1:upper() == "Z" then
+				if currentTool then
+					if currentTool.Name == "Sanguine Art" then
+						sanguineZActive = true
+					elseif currentTool.Name == "Godhuman" then
+						godhumanZActive = true
+					end
 				
-				if ZSkillsEnabled and rightTouchReleased then
-					startAimlock()
-					rightTouchReleased = false
+					if ZSkillsEnabled and rightTouchReleased then
+						startAimlock()
+						rightTouchReleased = false
+					end
 				end
 			end
 		end
