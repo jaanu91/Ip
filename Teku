@@ -208,6 +208,8 @@ if not getgenv().ZSkillHooked then
 					if ZSkillsEnabled and rightTouchReleased then
 						startAimlock()
 						rightTouchReleased = false
+					else
+						stopAimlock("Z skill used without release")
 					end
 				end
 			end
