@@ -29,7 +29,7 @@ local PredictionEnabled = false
 local AutoKen = false
 
 local playersaimbot = nil
-local playersPosition = nil
+local PlayersPosition = nil
 local NPCaimbot = nil
 local NPCPosition = nil
 local currentHighlight = nil
@@ -195,14 +195,14 @@ RunService.Heartbeat:Connect(function()
 		if targetplayer and targetplayer ~= player and targetplayer.Character then
 			playersaimbot = targetplayer.Name
 			local hrp = getHRP(targetplayer.Character)
-			playersPosition = getPredictedPosition(hrp)
+			PlayersPosition = getPredictedPosition(hrp)
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
 		else
-			playersaimbot, playersPosition = nil, nil
+			playersaimbot, PlayersPosition = nil, nil
 		end
 	elseif currentTargetType == "player" then
-		playersaimbot, playersPosition = nil, nil
+		playersaimbot, PlayersPosition = nil, nil
 		clearHighlight()
 	end
 
@@ -377,7 +377,7 @@ function SilentAimModule:SetSelectedplayer(playerName)
 		return
 	end
 
-	local found = players:FindFirstChild(playerName)
+	local found = Players:FindFirstChild(playerName)
 	if found then
 		Selectedplayer = found
 	end
