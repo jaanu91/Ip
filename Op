@@ -316,45 +316,8 @@ function SilentAimModule:SetPredictionAmount(num) if typeof(num) == "number" the
 do
     local AimBotPart = nil
     local AimBotSkill = false
-    local NearestPlayer = nil
-    local AimbotPlayer = true
     local AimbotTap = true
     local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
-    local SEARCH_RADIUS = 1000
-    local UPDATE_INTERVAL = 0.12
-
-    task.spawn(function()
-        while RunService:IsRunning() do
-            local bestDist = math.huge
-            local best = nil
-            local Character = player.Character or player.CharacterAdded:Wait()
-            local RootPart = Character:FindFirstChild("HumanoidRootPart")
-            local myPos = RootPart and RootPart.Position
-            if not myPos then
-                Character = player.Character or player.CharacterAdded:Wait()
-                RootPart = Character:FindFirstChild("HumanoidRootPart")
-                myPos = RootPart and RootPart.Position
-            end
-
-            if myPos then
-                for _, plr in pairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character and plr.Character.Parent then
-                        local pp = plr.Character.PrimaryPart or plr.Character:FindFirstChild("HumanoidRootPart")
-                        if pp then
-                            local d = (pp.Position - myPos).Magnitude
-                            if d < bestDist and d <= SEARCH_RADIUS then
-                                bestDist = d
-                                best = plr
-                            end
-                        end
-                    end
-                end
-            end
-
-            NearestPlayer = best
-            task.wait(UPDATE_INTERVAL)
-        end
-    end)
 
     local ok, hm = pcall(function() return hookmetamethod end)
     if ok and hm then
@@ -369,7 +332,7 @@ do
                         return OldHook(self, pos or V1, V2, ...)
                     end
 
-                    if AimbotPlayer and playersPosition then
+                    if SilentAimplayersEnabled and playersPosition then
                         return OldHook(self, playersPosition, V2, ...)
                     end
 
@@ -394,7 +357,7 @@ do
                                 return OldHook(self, V1, pos or V2, V2, ...)
                             end
 
-                            if AimbotPlayer and playersPosition then
+                            if SilentAimplayersEnabled and playersPosition then
                                 return OldHook(self, V1, playersPosition, nil, ...)
                             elseif SilentAimNPCsEnabled and NPCPosition then
                                 return OldHook(self, V1, NPCPosition, nil, ...)
