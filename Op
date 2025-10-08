@@ -12,7 +12,6 @@ if not player then
     player = Players.PlayerAdded:Wait()
 end
 
--- Ensure consistent character references
 local function getLocalChar()
     return player.Character or player.CharacterAdded:Wait()
 end
@@ -24,7 +23,6 @@ local lpChar = getLocalChar()
 -- -----------------------
 local SilentAimModule = {}
 
--- try to load VSkillModule safely
 local VSkillModule
 do
     local ok, res = pcall(function()
@@ -33,7 +31,6 @@ do
     if ok then VSkillModule = res end
 end
 
--- Safe attempt to get a "CommE" remote (may live in workspace or ReplicatedStorage)
 local commE
 do
     local remotes = Workspace:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remotes")
@@ -53,7 +50,6 @@ local Services = setmetatable({}, {
     end
 })
 
--- Settings / state
 local SilentAimplayersEnabled = false
 local SilentAimNPCsEnabled = false
 local UserWantsplayerAim = false
@@ -90,7 +86,7 @@ local function getPredictedPosition(hrp)
 end
 
 local function isAllyWithMe(targetplayer)
-    local myGui = player:FindFirstChild("playerGui")
+    local myGui = player:FindFirstChild("PlayerGui")
     if not myGui then return false end
 
     local scrolling = myGui:FindFirstChild("Main")
@@ -218,9 +214,6 @@ local function clearHighlight()
     end
 end
 
--- -----------------------
--- Heartbeat tracking of targets
--- -----------------------
 RunService.Heartbeat:Connect(function()
     lpChar = player.Character
     if not lpChar then return end
@@ -270,7 +263,6 @@ local HasTag = function(tagName)
     return CollectionService:HasTag(char, tagName)
 end
 
--- AutoKen worker (keeps original behavior, safe-guarded)
 task.spawn(function()
     while true do
         local char = player.Character or player.CharacterAdded:Wait()
@@ -279,7 +271,7 @@ task.spawn(function()
         wait(0.1)
         if AutoKen then
             if HasTag("Ken") then
-                local playerGui = player:FindFirstChild("playerGui")
+                local playerGui = player:FindFirstChild("PlayerGui")
                 if playerGui then
                     local kenButton = playerGui:FindFirstChild("MobileContextButtons")
                         and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
@@ -324,21 +316,16 @@ function SilentAimModule:GetSelectedplayer() return Selectedplayer and Selectedp
 function SilentAimModule:SetPrediction(state) PredictionEnabled = state end
 function SilentAimModule:SetPredictionAmount(num) if typeof(num) == "number" then PredictionAmount = num end end
 
--- -----------------------
--- Integration: add hookmetamethod aimbot behavior (from user's first script)
--- -----------------------
 do
-    -- Aimbot local variables
     local AimBotPart = nil
     local AimBotSkill = false
     local NearestPlayer = nil
-    local AimbotPlayer = true      -- allow hooking to players by default
-    local AimbotTap = true         -- allow TAP invoke replacement
+    local AimbotPlayer = true
+    local AimbotTap = true
     local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
     local SEARCH_RADIUS = 1000
     local UPDATE_INTERVAL = 0.12
 
-    -- Maintain nearest player (separate lightweight loop; uses Players service)
     task.spawn(function()
         while RunService:IsRunning() do
             local bestDist = math.huge
@@ -372,24 +359,19 @@ do
         end
     end)
 
-    -- Hook metamethod if available
     local ok, hm = pcall(function() return hookmetamethod end)
     if ok and hm then
         local OldHook
         OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
             local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
-            -- handle RemoteEvent:FireServer(Vector3, ...)
             if tostring(self) == "RemoteEvent" and Method == "fireserver" then
                 if typeof(V1) == "Vector3" then
-                    -- AimBotPart & AimBotSkill override (if provided)
                     if AimBotPart and AimBotSkill then
                         local part = AimBotPart[1]
                         local pos = (part and part.Position) or AimBotPart[2]
                         return OldHook(self, pos or V1, V2, ...)
                     end
 
-                    -- Prefer SilentAim player/NPC selection and prediction if enabled
-                    -- playersPosition / NPCPosition are kept updated by SilentAimModule heartbeat
                     if AimbotPlayer and playersPosition then
                         return OldHook(self, playersPosition, V2, ...)
                     end
@@ -399,9 +381,7 @@ do
                     end
                 end
             elseif Method == "invokeserver" then
-                -- When invoking server with string commands
                 if type(V1) == "string" then
-                    -- handle TAP pattern (user's first script had TAP special-case)
                     if V1 == "TAP" and typeof(V2) == "Vector3" then
                         if AimbotTap and playersPosition then
                             return OldHook(self, "TAP", playersPosition, ...)
@@ -409,7 +389,6 @@ do
                             return OldHook(self, "TAP", NPCPosition, ...)
                         end
                     else
-                        -- skill usage (Z/X/C/V/F) and similar
                         local Enemie = ...
                         if table.find(Skills, V1) and typeof(V2) == "Vector3" and not Enemie then
                             if AimBotPart and AimBotSkill then
@@ -419,8 +398,6 @@ do
                             end
 
                             if AimbotPlayer and playersPosition then
-                                -- Many server skill APIs accept (skillName, position, targetModel)
-                                -- Provide predicted position and (if desirable) the HRP or nil
                                 return OldHook(self, V1, playersPosition, nil, ...)
                             elseif SilentAimNPCsEnabled and NPCPosition then
                                 return OldHook(self, V1, NPCPosition, nil, ...)
@@ -434,11 +411,9 @@ do
         end)
     end
 
-    -- Wire up Mouse module if present (like in the first script)
     if MouseModule and typeof(MouseModule) == "Instance" then
         local ok2, Mouse = pcall(function() return require(MouseModule) end)
         if ok2 and Mouse then
-            -- Prefer to position the local mouse at the player's HRP initial position
             local Character = player.Character or player.CharacterAdded:Wait()
             local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
             if RootPart then
@@ -457,7 +432,6 @@ do
                 end)
             end
 
-            -- Also keep Mouse.Hit updated to selected SilentAim target if available
             RunService.Heartbeat:Connect(function()
                 if Mouse then
                     if playersPosition then
