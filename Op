@@ -1,131 +1,129 @@
+-- SilentAimModule (fixed)
 local SilentAimModule = {}
 
 local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Kata"))()
 
-local players = game:GetService("players")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
 
-local player = players.Localplayer
-local char = player.char or player.charAdded:Wait()
+local player = Players.LocalPlayer
+local character = player and (player.Character or player.CharacterAdded:Wait()) or nil
 local camera = workspace.CurrentCamera
-local RS = game:GetService("RS")
-local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
-local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
-
-local Services = setmetatable({}, {
-    __index = function(self, serviceName)
-        local good, service = pcall(game.GetService, game, serviceName);
-        if (good) then
-            self[serviceName] = service
-            return service;
-        end
+local commE = nil
+do
+    local ok, remotes = pcall(function()
+        local r = ReplicatedStorage:FindFirstChild("Remotes")
+        return r
+    end)
+    if ok and remotes then
+        commE = remotes:FindFirstChild("CommE")
     end
-});
+end
 
+-- Local state
 local SilentAimPlayersEnabled = false
-local SilentAimNPCsEnabled = false
-local UserWantsplayerAim = false
-local UserWantsNPCAim = false
-local PredictionEnabled = false
-local AutoKen = false
+local SilentAimNPCsEnabled    = false
+local UserWantsPlayerAim      = false
+local UserWantsNPCAim         = false
+local PredictionEnabled       = false
+local AutoKen                 = false
 
-local playersaimbot = nil
+local playersAimbot   = nil
 local playersPosition = nil
-local NPCaimbot = nil
-local NPCPosition = nil
+local npcAimbot       = nil
+local npcPosition     = nil
 local currentHighlight = nil
 local currentTargetType = nil
-local Selectedplayer = nil
+local selectedPlayer = nil
 
-local PredictionAmount = 0.1
+local predictionAmount = 0.1
 local maxRange = 1000
 
 local function getHRP(model)
-	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
-	return model.HumanoidRootPart
+    if not model then return nil end
+    return model:FindFirstChild("HumanoidRootPart")
 end
 
 local function getPredictedPosition(hrp)
-	if not hrp then return nil end
-	if not PredictionEnabled then
-		return hrp.Position
-	end
-	return hrp.Position + (hrp.Velocity * PredictionAmount)
+    if not hrp then return nil end
+    if not PredictionEnabled then
+        return hrp.Position
+    end
+    return hrp.Position + (hrp.Velocity * predictionAmount)
 end
 
--- =========================
--- Team Check
--- =========================
-local function isAllyWithMe(targetplayer)
-	local myGui = player:FindFirstChild("playerGui")
-	if not myGui then return false end
+local function isAllyWithMe(targetPlayer)
+    if not player then return false end
+    local myGui = player:FindFirstChild("PlayerGui")
+    if not myGui then return false end
 
-	local scrolling = myGui:FindFirstChild("Main")
-		and myGui.Main:FindFirstChild("Allies")
-		and myGui.Main.Allies:FindFirstChild("Container")
-		and myGui.Main.Allies.Container:FindFirstChild("Allies")
-		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+    local main = myGui:FindFirstChild("Main")
+    if not main then return false end
+    local alliesContainer = main:FindFirstChild("Allies")
+        and main.Allies:FindFirstChild("Container")
+        and main.Allies.Container:FindFirstChild("Allies")
+        and main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
 
-	if scrolling then
-		for _, frame in pairs(scrolling:GetDescendants()) do
-			if frame:IsA("ImageButton") and frame.Name == targetplayer.Name then
-				return true
-			end
-		end
-	end
-
-	return false
+    if alliesContainer then
+        for _, frame in pairs(alliesContainer:GetDescendants()) do
+            if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
+                return true
+            end
+        end
+    end
+    return false
 end
 
-local function isEnemy(targetplayer)
-	if not targetplayer or targetplayer == player then
-		return false
-	end
+local function isEnemy(targetPlayer)
+    if not targetPlayer or targetPlayer == player then
+        return false
+    end
 
-	local myTeam = player.Team
-	local targetTeam = targetplayer.Team
+    local myTeam = player.Team
+    local targetTeam = targetPlayer.Team
 
-	if myTeam and targetTeam then
-		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
-			return true
-		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
-			return true
-		end
+    if myTeam and targetTeam then
+        if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+            return true
+        elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+            return true
+        end
 
-		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
-			if isAllyWithMe(targetplayer) then
-				return false -- ally, not enemy
-			end
-			return true
-		end
+        if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+            if isAllyWithMe(targetPlayer) then
+                return false
+            end
+            return true
+        end
 
-		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
-			return false
-		end
-	end
+        if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+            return false
+        end
+    end
 
-	return true
+    return true
 end
 
-local function getClosestplayer(lpHRP)
-	if not lpHRP then return nil end
-	
-	local closest = nil
-	local closestDist = math.huge
-	for _, pl in ipairs(players:Getplayers()) do
-		if pl ~= player and isEnemy(pl) and pl.char and pl.char.Parent ~= nil then
-			local hum = pl.char:FindFirstChildWhichIsA("Humanoid")
-			local hrp = getHRP(pl.char)
-			if hum and hum.Health > 0 and hrp then
-				local dist = (hrp.Position - lpHRP.Position).Magnitude
-				if dist <= maxRange and dist < closestDist then
-					closestDist = dist
-					closest = pl
-				end
-			end
-		end
-	end
-	return closest
+local function getClosestPlayer(lpHRP)
+    if not lpHRP then return nil end
+    local closest = nil
+    local closestDist = math.huge
+    for _, pl in ipairs(Players:GetPlayers()) do
+        if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
+            local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
+            local hrp = getHRP(pl.Character)
+            if hum and hum.Health > 0 and hrp then
+                local dist = (hrp.Position - lpHRP.Position).Magnitude
+                if dist <= maxRange and dist < closestDist then
+                    closestDist = dist
+                    closest = pl
+                end
+            end
+        end
+    end
+    return closest
 end
 
 local function getClosestNPC(lpHRP)
@@ -156,23 +154,24 @@ local function applyHighlight(targetModel, targetType)
     if not targetModel then return end
     if currentHighlight and currentHighlight.Adornee == targetModel then return end
 
-    if currentHighlight then  
-        currentHighlight:Destroy()  
-        currentHighlight = nil  
-        currentTargetType = nil  
-    end  
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+        currentTargetType = nil
+    end
 
-    local hl = Instance.new("Highlight")  
-    hl.FillColor = Color3.fromRGB(255, 255, 0)  
-    hl.OutlineColor = Color3.fromRGB(255, 255, 0)  
-    hl.FillTransparency = 0.5  
-    hl.OutlineTransparency = 0  
-    hl.Adornee = targetModel  
-    hl.Parent = targetModel  
-    currentHighlight = hl  
+    local hl = Instance.new("Highlight")
+    hl.FillColor = Color3.fromRGB(255, 255, 0)
+    hl.OutlineColor = Color3.fromRGB(255, 255, 0)
+    hl.FillTransparency = 0.5
+    hl.OutlineTransparency = 0
+    hl.Adornee = targetModel
+    hl.Parent = workspace -- safe parent
+    currentHighlight = hl
     currentTargetType = targetType
 
-    VSkillModule:CheckVSkillUsage(SilentAimModule)
+    -- keep existing behaviour
+    pcall(function() VSkillModule:CheckVSkillUsage(SilentAimModule) end)
 end
 
 local function clearHighlight()
@@ -183,8 +182,18 @@ local function clearHighlight()
     end
 end
 
+-- Heartbeat: evaluate current targets
 RunService.Heartbeat:Connect(function()
-    local lpChar = player.char
+    if not player then
+        player = Players.LocalPlayer
+        if player then
+            character = player.Character or player.CharacterAdded:Wait()
+        else
+            return
+        end
+    end
+
+    local lpChar = player.Character
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
     if not lpHRP then return end
@@ -192,78 +201,82 @@ RunService.Heartbeat:Connect(function()
     local targetModel = nil
 
     if SilentAimPlayersEnabled then
-		local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
-		if targetplayer and targetplayer ~= player and targetplayer.char then
-			playersaimbot = targetplayer.Name
-			local hrp = getHRP(targetplayer.char)
-			playersPosition = getPredictedPosition(hrp)
-			targetModel = targetplayer.char
-			applyHighlight(targetModel, "player")
-		else
-			playersaimbot, playersPosition = nil, nil
-		end
-	elseif currentTargetType == "player" then
-		playersaimbot, playersPosition = nil, nil
-		clearHighlight()
-	end
+        local targetPlayer = selectedPlayer or getClosestPlayer(lpHRP)
+        if targetPlayer and targetPlayer ~= player and targetPlayer.Character then
+            playersAimbot = targetPlayer.Name
+            local hrp = getHRP(targetPlayer.Character)
+            playersPosition = getPredictedPosition(hrp)
+            targetModel = targetPlayer.Character
+            applyHighlight(targetModel, "player")
+        else
+            playersAimbot, playersPosition = nil, nil
+        end
+    elseif currentTargetType == "player" then
+        playersAimbot, playersPosition = nil, nil
+        clearHighlight()
+    end
 
-	if SilentAimNPCsEnabled then  
-	    local closestNPC = getClosestNPC(lpHRP)  
-	    if closestNPC then  
-	        NPCaimbot = closestNPC.Name  
-	        local hrp = getHRP(closestNPC)  
-	        NPCPosition = getPredictedPosition(hrp)  
-	        if not targetModel then  
-	            targetModel = closestNPC  
-	            applyHighlight(targetModel, "NPC")  
-	        end  
-	    else  
-	        NPCaimbot, NPCPosition = nil, nil  
-	    end  
-	elseif currentTargetType == "NPC" then
-	    NPCaimbot, NPCPosition = nil, nil  
-	    clearHighlight()
-	end
+    if SilentAimNPCsEnabled then
+        local closestNPC = getClosestNPC(lpHRP)
+        if closestNPC then
+            npcAimbot = closestNPC.Name
+            local hrp = getHRP(closestNPC)
+            npcPosition = getPredictedPosition(hrp)
+            if not targetModel then
+                targetModel = closestNPC
+                applyHighlight(targetModel, "NPC")
+            end
+        else
+            npcAimbot, npcPosition = nil, nil
+        end
+    elseif currentTargetType == "NPC" then
+        npcAimbot, npcPosition = nil, nil
+        clearHighlight()
+    end
 end)
 
+-- Namecall hook (only if metatable is available)
 spawn(function()
-	local success, gg = pcall(function() return getrawmetatable(game) end)
-	if not success or not gg then return end
-	local old = gg.__namecall
-	if not old then return end
+    local success, gg = pcall(function() return getrawmetatable(game) end)
+    if not success or not gg then return end
+    local old = gg.__namecall
+    if not old then return end
 
-	setreadonly(gg, false)
-	gg.__namecall = newcclosure(function(...)
-		local method = getnamecallmethod()
-		local args = {...}
+    setreadonly(gg, false)
+    gg.__namecall = newcclosure(function(...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-		local targetPos = nil
-		if SilentAimPlayersEnabled and PlayersPosition then
-			targetPos = PlayersPosition
-		elseif SilentAimNPCsEnabled and NPCPosition then
-			targetPos = NPCPosition
-		end
+        local targetPos = nil
+        if SilentAimPlayersEnabled and playersPosition then
+            targetPos = playersPosition
+        elseif SilentAimNPCsEnabled and npcPosition then
+            targetPos = npcPosition
+        end
 
-		if targetPos and tostring(method) == "FireServer" then
-			if tostring(args[1]) == "RemoteEvent" then
-				if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-					if typeof(args[2]) == "Vector3" then
-						args[2] = targetPos
-					else
-						args[2] = CFrame.new(targetPos)
-					end
-					return old(unpack(args))
-				end
-			end
-		end
-		return old(...)
-	end)
-	setreadonly(gg, true)
+        if targetPos and tostring(method) == "FireServer" then
+            if tostring(args[1]) == "RemoteEvent" then
+                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                    if typeof(args[2]) == "Vector3" then
+                        args[2] = targetPos
+                    else
+                        args[2] = CFrame.new(targetPos)
+                    end
+                    return old(unpack(args))
+                end
+            end
+        end
+        return old(...)
+    end)
+    setreadonly(gg, true)
 end)
-if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+
+-- Mouse module handling (if present)
+local mouseModuleInstance = ReplicatedStorage:FindFirstChild("Mouse")
+if mouseModuleInstance and typeof(mouseModuleInstance) == "Instance" then
+    local ok2, Mouse = pcall(function() return require(mouseModuleInstance) end)
     if ok2 and Mouse then
-        local RootPart = char:FindFirstChild("HumanoidRootPart")
+        local RootPart = character and character:FindFirstChild("HumanoidRootPart")
         if RootPart then
             pcall(function()
                 Mouse.Hit = CFrame.new(RootPart.Position)
@@ -271,75 +284,76 @@ if MouseModule and typeof(MouseModule) == "Instance" then
             end)
         else
             task.spawn(function()
-                local RootPart = char:WaitForChild("HumanoidRootPart")
+                local rp = character and character:WaitForChild("HumanoidRootPart")
                 pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
+                    Mouse.Hit = CFrame.new(rp.Position)
+                    Mouse.Target = rp
                 end)
             end)
         end
 
         RunService.Heartbeat:Connect(function()
             if Mouse then
-                if NPCPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-                elseif PlayersPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+                if npcPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(npcPosition) end)
+                elseif playersPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(playersPosition) end)
                 end
             end
         end)
     end
 end
 
-local HasTag = function(tagName)
-  local char = player.char
-  if (not char) then return false; end
-  return Services.CollectionService:HasTag(char, tagName);
+local function hasTag(tagName)
+    local char = player and player.Character
+    if not char then return false end
+    return CollectionService:HasTag(char, tagName)
 end
 
 task.spawn(function()
-	while true do
-		local char = player.char or player.charAdded:Wait();
-		char:WaitForChild("Humanoid");
-		char:WaitForChild("HumanoidRootPart");
-		wait(.1);
-		if AutoKen then
-		    if HasTag("Ken") then
-				local playerGui = player:FindFirstChild("playerGui")
-		        if playerGui then
-		            local kenButton = playerGui:FindFirstChild("MobileContextButtons")
-	                and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-	                and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+    while true do
+        local char = player and (player.Character or player.CharacterAdded:Wait())
+        char:WaitForChild("Humanoid")
+        char:WaitForChild("HumanoidRootPart")
+        task.wait(0.1)
+        if AutoKen then
+            if hasTag("Ken") then
+                local playerGui = player and player:FindFirstChild("PlayerGui")
+                if playerGui then
+                    local kenButton = playerGui:FindFirstChild("MobileContextButtons")
+                        and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+                        and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
 
-		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
-		                kenButton:SetAttribute("Selected", true)
-		            end
-		        end
-		
-		        local observationManager = getrenv()._G.OM;
-		        if (observationManager and not observationManager.active) then
-					observationManager.radius = 0
-		            observationManager:setActive(true);
-		            commE:FireServer("Ken", true);
-		        end
-		    end
-		    wait();
-		end
-	end
-end);
+                    if kenButton and kenButton:GetAttribute("Selected") ~= true then
+                        kenButton:SetAttribute("Selected", true)
+                    end
+                end
 
-function SilentAimModule:SetAutoKen(state)
-	AutoKen = state
-end
+                local observationManager = getrenv()._G.OM
+                if (observationManager and not observationManager.active) then
+                    observationManager.radius = 0
+                    observationManager:setActive(true)
+                    if commE then
+                        pcall(function() commE:FireServer("Ken", true) end)
+                    end
+                end
+            end
+            task.wait()
+        end
+    end
+end)
+
+-- API functions (matching names used by your UI)
+function SilentAimModule:SetAutoKen(state) AutoKen = state end
 
 function SilentAimModule:SetPlayerSilentAim(state)
-	UserWantsplayerAim = state
-	SilentAimPlayersEnabled = state
+    UserWantsPlayerAim = state
+    SilentAimPlayersEnabled = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
-	UserWantsNPCAim = state
-	SilentAimNPCsEnabled = state
+    UserWantsNPCAim = state
+    SilentAimNPCsEnabled = state
 end
 
 function SilentAimModule:Pause()
@@ -348,11 +362,11 @@ function SilentAimModule:Pause()
 end
 
 function SilentAimModule:Restore()
-    SilentAimPlayersEnabled = UserWantsplayerAim
+    SilentAimPlayersEnabled = UserWantsPlayerAim
     SilentAimNPCsEnabled = UserWantsNPCAim
 end
 
-function SilentAimModule:IsplayerAimEnabled()
+function SilentAimModule:IsPlayerAimEnabled()
     return SilentAimPlayersEnabled
 end
 
@@ -361,35 +375,36 @@ function SilentAimModule:IsNPCAimEnabled()
 end
 
 function SilentAimModule:SetDistanceLimit(num)
-	if typeof(num) == "number" then
-		maxRange = num
-	end
-end
-
-function SilentAimModule:SetSelectedplayer(playerName)
-	if not playerName or playerName == "" then
-		Selectedplayer = nil
-		return
-	end
-
-	local found = players:FindFirstChild(playerName)
-	if found then
-		Selectedplayer = found
-	end
-end
-
-function SilentAimModule:GetSelectedplayer()
-	return Selectedplayer and Selectedplayer.Name or "None"
+    if typeof(num) == "number" then maxRange = num end
 end
 
 function SilentAimModule:SetPrediction(state)
-	PredictionEnabled = state
+    PredictionEnabled = state
 end
 
 function SilentAimModule:SetPredictionAmount(num)
-	if typeof(num) == "number" then
-		PredictionAmount = num
-	end
+    if typeof(num) == "number" then predictionAmount = num end
+end
+
+-- Accept both capitalizations to avoid mismatches with other scripts
+function SilentAimModule:SetSelectedPlayer(playerName)
+    if not playerName or playerName == "" then
+        selectedPlayer = nil
+        return
+    end
+
+    local found = Players:FindFirstChild(playerName)
+    if found then selectedPlayer = found end
+end
+function SilentAimModule:SetSelectedplayer(playerName) -- alias
+    return SilentAimModule:SetSelectedPlayer(playerName)
+end
+
+function SilentAimModule:GetSelectedPlayer()
+    return selectedPlayer and selectedPlayer.Name or "None"
+end
+function SilentAimModule:GetSelectedplayer() -- alias
+    return SilentAimModule:GetSelectedPlayer()
 end
 
 return SilentAimModule
