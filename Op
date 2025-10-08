@@ -56,7 +56,7 @@ end
 -- Team Check
 -- =========================
 local function isAllyWithMe(targetplayer)
-	local myGui = player:FindFirstChild("playerGui")
+	local myGui = player:FindFirstChild("PlayerGui")
 	if not myGui then return false end
 
 	local scrolling = myGui:FindFirstChild("Main")
@@ -111,7 +111,7 @@ local function getClosestplayer(lpHRP)
 	
 	local closest = nil
 	local closestDist = math.huge
-	for _, pl in ipairs(Players:Getplayers()) do
+	for _, pl in ipairs(Players:GetPlayers()) do
 		if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
 			local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
 			local hrp = getHRP(pl.Character)
@@ -310,7 +310,7 @@ task.spawn(function()
 		wait(.1);
 		if AutoKen then
 		    if HasTag("Ken") then
-				local playerGui = player:FindFirstChild("playerGui")
+				local playerGui = player:FindFirstChild("PlayerGui")
 		        if playerGui then
 		            local kenButton = playerGui:FindFirstChild("MobileContextButtons")
 	                and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
