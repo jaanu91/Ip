@@ -19,7 +19,7 @@ local Skill = false
 local botTap = true
 local Skills = {"Z", "X", "C", "V", "F"}
 
-local playersaimbot = nil
+local Playersaimbot = nil
 local PlayersPosition = nil
 local NPCaimbot = nil
 local NPCPosition = nil
@@ -119,13 +119,13 @@ RunService.Heartbeat:Connect(function()
 		if closestPlayer and closestPlayer.Character then
 			local hrp = getHRP(closestPlayer.Character)
 			if hrp then
-				playersaimbot = closestPlayer.Name
+				Playersaimbot = closestPlayer.Name
 				PlayersPosition = getPredictedPosition(hrp)
 				targetModel = closestPlayer.Character
 				applyHighlight(targetModel, "Player")
 			end
 		else
-			playersaimbot, PlayersPosition = nil, nil
+			Playersaimbot, PlayersPosition = nil, nil
 			clearHighlight()
 		end
 	elseif currentTargetType == "Player" then
@@ -245,7 +245,7 @@ do
 end
 
 function SilentAimModule:SetPlayerSilentAim(state)
-	SilentAimPlayersEnabled = state
+	SilentAimplayersEnabled = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
