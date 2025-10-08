@@ -173,22 +173,24 @@ RunService.Heartbeat:Connect(function()
     local targetModel = nil
 
     if SilentAimPlayersEnabled then
-        local closestPlayer = getClosestPlayer(lpHRP)
-        if closestPlayer and closestPlayer.Character then
-            local hrp = getHRP(closestPlayer.Character)
-            if hrp then
-                playersaimbot = closestPlayer.Name
-                PlayersPosition = getPredictedPosition(hrp)
-                targetModel = closestPlayer.Character
-                applyHighlight(targetModel, "Player")
-            end
-        else
-            playersaimbot, PlayersPosition = nil, nil
-        end
-    elseif currentTargetType == "Player" then
+	    local closestPlayer = getClosestPlayer(lpHRP)
+	    if closestPlayer and closestPlayer.Character then
+	        print("Closest player found:", closestPlayer.Name)
+	        local hrp = getHRP(closestPlayer.Character)
+	        if hrp then
+	            playersaimbot = closestPlayer.Name
+	            PlayersPosition = getPredictedPosition(hrp)
+	            targetModel = closestPlayer.Character
+	            applyHighlight(targetModel, "Player")
+	        end
+	    else
+	        print("No player found nearby.")
+	        playersaimbot, PlayersPosition = nil, nil
+	    end
+	elseif currentTargetType == "Player" then
         playersaimbot, PlayersPosition = nil, nil
         clearHighlight()
-    end
+	end
 
     if SilentAimNPCsEnabled then
         local closestNPC = getClosestNPC(lpHRP)
