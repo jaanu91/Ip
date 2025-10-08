@@ -317,9 +317,9 @@ end
 do
     local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
 
-    local ok, hm = pcall(function() return hookmetamethod end)
-    setreadonly(hm, false)
-    if ok and hm then
+    local ok, hookMeta = pcall(getrawmetatable, game)
+    if ok and hookMeta then
+        setreadonly(hookMeta, false)
         local OldHook
         OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
             local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
@@ -368,7 +368,7 @@ do
 
             return OldHook(self, V1, V2, ...)
         end)
-        setreadonly(hm, true)
+        setreadonly(hookMeta, true)
     end
 
     if MouseModule and typeof(MouseModule) == "Instance" then
