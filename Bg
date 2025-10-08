@@ -371,7 +371,7 @@ function SilentAimModule:SetDistanceLimit(num)
 	end
 end
 
-function SilentAimModule:SetSelectedplayer(playerName)
+function SilentAimModule:SetSelectedPlayer(playerName)
 	if not playerName or playerName == "" then
 		Selectedplayer = nil
 		return
@@ -383,7 +383,7 @@ function SilentAimModule:SetSelectedplayer(playerName)
 	end
 end
 
-function SilentAimModule:GetSelectedplayer()
+function SilentAimModule:GetSelectedPlayer()
 	return Selectedplayer and Selectedplayer.Name or "None"
 end
 
