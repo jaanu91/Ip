@@ -27,6 +27,7 @@ local UserWantsplayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
 local AutoKen = false
+local GunBot = false
 
 local playersaimbot = nil
 local PlayersPosition = nil
@@ -296,6 +297,43 @@ if MouseModule and typeof(MouseModule) == "Instance" then
     end
 end
 
+local mouse = player:GetMouse()
+mouse.Button1Down:Connect(function()
+	if not GunBot then return end
+	
+	local Character = player.Character
+	if not Character then return end
+	
+	local tool = Character:FindFirstChildWhichIsA("Tool")
+	if not tool or not tool:FindFirstChild("Handle") then return end
+
+	local RootPart = Character:FindFirstChild("HumanoidRootPart")
+	if not RootPart then return end
+
+	local targetPlayer = getClosestplayer(RootPart)
+	if not targetPlayer or not targetPlayer.Character then return end
+
+	local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not targetHRP then return end
+
+	local shootDirection = (targetHRP.Position - tool.Handle.CFrame.Position).Unit * 100
+	local hitPart, hitPos = workspace:FindPartOnRayWithIgnoreList(
+		Ray.new(tool.Handle.CFrame.Position, shootDirection),
+		{ Character, workspace._WorldOrigin }
+	)
+
+	local aimPosition = getPredictedPosition(targetHRP)
+
+	if tool:FindFirstChild("RemoteFunctionShoot") then
+		tool.RemoteFunctionShoot:InvokeServer(
+			aimPosition,
+			(require(game.ReplicatedStorage.Util).Other.hrpFromPart(hitPart))
+		)
+	elseif tool:FindFirstChild("RemoteEventShoot") then
+		tool.RemoteEventShoot:FireServer(aimPosition)
+	end
+end)
+
 local HasTag = function(tagName)
   local char = player.Character
   if (not char) then return false; end
@@ -342,6 +380,10 @@ function SilentAimModule:SetPlayerSilentAim(state)
 	SilentAimPlayersEnabled = state
 end
 
+function SilentAimModule:SetGunSilentAim(state)
+	GunBot = state
+end
+
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
@@ -371,7 +413,7 @@ function SilentAimModule:SetDistanceLimit(num)
 	end
 end
 
-function SilentAimModule:SetSelectedplayer(playerName)
+function SilentAimModule:SetSelectedPlayer(playerName)
 	if not playerName or playerName == "" then
 		Selectedplayer = nil
 		return
@@ -383,7 +425,7 @@ function SilentAimModule:SetSelectedplayer(playerName)
 	end
 end
 
-function SilentAimModule:GetSelectedplayer()
+function SilentAimModule:SetSelectedPlayer()
 	return Selectedplayer and Selectedplayer.Name or "None"
 end
 
