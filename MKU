@@ -39,13 +39,13 @@ local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", UiSettingsModule.cur
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Fixed Buddy Sword X in Silent aimbot ✔")
+Section:NewLabel("• Fixed Sanguine art Z in silent aimbot ✔")
 Section:NewLabel("• Added Auto Ken ✔")
-Section:NewLabel("• Added Select Target for Silent aim✔")
+Section:NewLabel("• Added Select Target for Silent aim ✔")
 Section:NewLabel("• Added Bring Fruits ✔")
 Section:NewLabel("• Added Spawned Fruits Check ✔")
 Section:NewLabel("• Added Auto V4 ✔")
-Section:NewLabel("• Added Fruits Notify ✔")
-Section:NewLabel("• Added Themes ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
