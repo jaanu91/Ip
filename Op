@@ -1,3 +1,6 @@
+
+local SilentAimModule = {}
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -15,44 +18,8 @@ end
 
 local lpChar = getLocalChar()
 
--- -----------------------
--- SilentAimModule core
--- -----------------------
-local SilentAimModule = {}
-
-local VSkillModule
-do
-    local ok, res = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Kata"))()
-    end)
-    if ok then VSkillModule = res end
-end
-
-local commE
-do
-    local remotes = Workspace:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remotes")
-    if remotes then
-        local ok, r = pcall(function() return remotes:WaitForChild("CommE") end)
-        if ok then commE = r end
-    end
-end
-
-local Services = setmetatable({}, {
-    __index = function(self, serviceName)
-        local ok, service = pcall(game.GetService, game, serviceName)
-        if ok then
-            rawset(self, serviceName, service)
-            return service
-        end
-    end
-})
-
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
-local UserWantsplayerAim = false
-local UserWantsNPCAim = false
-local PredictionEnabled = false
-local AutoKen = false
 local Skill = false
 local botTap = true
 local Skills = {"Z", "X", "C", "V", "F"}
@@ -150,10 +117,6 @@ local function applyHighlight(targetModel, targetType)
     hl.Parent = targetModel
     currentHighlight = hl
     currentTargetType = targetType
-
-    if VSkillModule and type(VSkillModule.CheckVSkillUsage) == "function" then
-        pcall(function() VSkillModule:CheckVSkillUsage(SilentAimModule) end)
-    end
 end
 
 local function clearHighlight()
@@ -211,109 +174,16 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-local HasTag = function(tagName)
-    local char = player.Character
-    if (not char) then return false end
-    return CollectionService:HasTag(char, tagName)
-end
-
-task.spawn(function()
-    while true do
-        local char = player.Character or player.CharacterAdded:Wait()
-        char:WaitForChild("Humanoid")
-        char:WaitForChild("HumanoidRootPart")
-        wait(0.1)
-        if AutoKen then
-            if HasTag("Ken") then
-                local playerGui = player:FindFirstChild("PlayerGui")
-                if playerGui then
-                    local kenButton = playerGui:FindFirstChild("MobileContextButtons")
-                        and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-                        and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
-
-                    if kenButton and kenButton:GetAttribute("Selected") ~= true then
-                        kenButton:SetAttribute("Selected", true)
-                    end
-                end
-
-                local observationManager = getrenv and getrenv()._G and getrenv()._G.OM
-                if (observationManager and not observationManager.active) then
-                    observationManager.radius = 0
-                    pcall(function() observationManager:setActive(true) end)
-                    if commE and typeof(commE.FireServer) == "function" then
-                        pcall(function() commE:FireServer("Ken", true) end)
-                    end
-                end
-            end
-            wait()
-        end
-    end
-end)
-
 -- -----------------------
 -- Public API
 -- -----------------------
-function SilentAimModule:SetAutoKen(state)
-	AutoKen = state
-end
 
 function SilentAimModule:SetplayerSilentAim(state)
-	UserWantsplayerAim = state; 
 	SilentAimPlayersEnabled = state 
 end
 
 function SilentAimModule:SetNPCSilentAim(state) 
-	UserWantsNPCAim = state; 
 	SilentAimNPCsEnabled = state 
-end
-
-function SilentAimModule:Pause() 
-	SilentAimPlayersEnabled = false; 
-	SilentAimNPCsEnabled = false 
-end
-
-function SilentAimModule:Restore() 
-	SilentAimPlayersEnabled = UserWantsplayerAim; 
-	SilentAimNPCsEnabled = UserWantsNPCAim 
-end
-
-function SilentAimModule:IsplayerAimEnabled()
-	return SilentAimPlayersEnabled 
-end
-
-function SilentAimModule:IsNPCAimEnabled() 
-	return SilentAimNPCsEnabled 
-end
-
-function SilentAimModule:SetDistanceLimit(num) 
-	if typeof(num) == "number" then 
-		maxRange = num 
-	end 
-end
-
-function SilentAimModule:SetSelectedPlayer(playerName)
-    if not playerName or playerName == "" then 
-		Selectedplayer = nil; 
-		return 
-	end
-    local found = Players:FindFirstChild(playerName)
-    if found then 
-		Selectedplayer = found 
-	end
-end
-
-function SilentAimModule:GetSelectedPlayer() 
-	return Selectedplayer and Selectedplayer.Name or "None" 
-end
-
-function SilentAimModule:SetPrediction(state) 
-	PredictionEnabled = state 
-end
-
-function SilentAimModule:SetPredictionAmount(num) 
-	if typeof(num) == "number" then 
-		PredictionAmount = num 
-	end 
 end
 
 do
