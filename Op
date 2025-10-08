@@ -22,13 +22,12 @@ local Services = setmetatable({}, {
     end
 });
 
-local SilentAimplayersEnabled = false
+local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
 local UserWantsplayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
 local AutoKen = false
-local Skills = {"Z", "X", "C", "V", "F"}
 
 local playersaimbot = nil
 local playersPosition = nil
@@ -192,7 +191,7 @@ RunService.Heartbeat:Connect(function()
 
     local targetModel = nil
 
-    if SilentAimplayersEnabled then
+    if SilentAimPlayersEnabled then
 		local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
 		if targetplayer and targetplayer ~= player and targetplayer.char then
 			playersaimbot = targetplayer.Name
@@ -333,9 +332,9 @@ function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
 end
 
-function SilentAimModule:SetplayerSilentAim(state)
+function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsplayerAim = state
-	SilentAimplayersEnabled = state
+	SilentAimPlayersEnabled = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
@@ -344,17 +343,17 @@ function SilentAimModule:SetNPCSilentAim(state)
 end
 
 function SilentAimModule:Pause()
-    SilentAimplayersEnabled = false
+    SilentAimPlayersEnabled = false
     SilentAimNPCsEnabled = false
 end
 
 function SilentAimModule:Restore()
-    SilentAimplayersEnabled = UserWantsplayerAim
+    SilentAimPlayersEnabled = UserWantsplayerAim
     SilentAimNPCsEnabled = UserWantsNPCAim
 end
 
 function SilentAimModule:IsplayerAimEnabled()
-    return SilentAimplayersEnabled
+    return SilentAimPlayersEnabled
 end
 
 function SilentAimModule:IsNPCAimEnabled()
