@@ -1,6 +1,3 @@
--- Combined Silent Aim + aimbot hook integration
--- Merged from user's two scripts. Keeps hookmetamethod and integrates player/NPC selection + prediction.
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
