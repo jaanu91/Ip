@@ -244,8 +244,8 @@ do
     end
 end
 
-function SilentAimModule:SetplayerSilentAim(state)
-	SilentAimplayersEnabled = state
+function SilentAimModule:SetPlayerSilentAim(state)
+	SilentAimPlayersEnabled = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
