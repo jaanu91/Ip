@@ -231,11 +231,9 @@ task.spawn(function()
     if not ok or not hm then
         return
     end
-
-    if setreadonly then
-        setreadonly(hm, false)
-    end
-
+    
+    setreadonly(hm, false)
+    
     OldHook = hookmetamethod(game, "__namecall", function(self, ...)
         local args = {...}
         local Method = getnamecallmethod and getnamecallmethod():lower() or ""
@@ -265,11 +263,8 @@ task.spawn(function()
         end
 
         return OldHook(self, ...)
-    end)
-
-    if setreadonly then
-        setreadonly(hm, true)
-    end
+    end)        
+    setreadonly(hm, true)
 end)
 
 local HasTag = function(tagName)
