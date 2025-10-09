@@ -227,78 +227,59 @@ end)
 
 spawn(function()
     local ok, hookMeta = pcall(getrawmetatable, game)
-    if not ok or not hookMeta then return end
+    if ok and hookMeta then
+        setreadonly(hookMeta, false)
+        local OldHook
+        OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
+            local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
 
-    setreadonly(hookMeta, false)
-    local OldHook
-    OldHook = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = (getnamecallmethod and getnamecallmethod():lower()) or ""
-        local args = {...}
-
-        if method == "fireserver" or method == "invokeserver" then
-            local isInstance = (typeof(self) == "Instance")
-            local isRemoteEvent = isInstance and (self.ClassName == "RemoteEvent" or self:IsA("RemoteEvent"))
-            local isRemoteFunction = isInstance and (self.ClassName == "RemoteFunction" or self:IsA("RemoteFunction"))
-
-            if isRemoteEvent or isRemoteFunction then
-                for i = 1, #args do
-                    local v = args[i]
-                    if typeof(v) == "Vector3" then
-                        if SilentAimPlayersEnabled and PlayersPosition then
-                            args[i] = PlayersPosition
-                        elseif SilentAimNPCsEnabled and NPCPosition then
-                            args[i] = NPCPosition
-                        end
-                        break
-                    elseif typeof(v) == "CFrame" then
-                        if SilentAimPlayersEnabled and PlayersPosition then
-                            args[i] = CFrame.new(PlayersPosition)
-                        elseif SilentAimNPCsEnabled and NPCPosition then
-                            args[i] = CFrame.new(NPCPosition)
-                        end
-                        break
+            if tostring(self) == "RemoteEvent" and Method == "fireserver" then
+                if typeof(V1) == "Vector3" then
+                    if SilentAimPlayersEnabled and PlayersPosition then
+                        return OldHook(self, PlayersPosition, V2, ...)
+                    elseif SilentAimNPCsEnabled and NPCPosition then
+                        return OldHook(self, NPCPosition, V2, ...)
                     end
                 end
-
-                return OldHook(self, table.unpack(args))
-            end
-        end
-
-        return OldHook(self, ...)
-    end)
-    setreadonly(hookMeta, true)
-end)
-
-if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
-    if ok2 and Mouse then
-        local RootPart = Character:FindFirstChild("HumanoidRootPart")
-        if RootPart then
-            pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
-            end)
-        else
-            task.spawn(function()
-                local RootPart = Character:WaitForChild("HumanoidRootPart")
-                pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
-                end)
-            end)
-        end
-
-        RunService.Heartbeat:Connect(function()
-            if Mouse then
-                if NPCPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-                elseif PlayersPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+            elseif Method == "invokeserver" then
+                if type(V1) == "string" then
+                    if V1 == "TAP" and typeof(V2) == "Vector3" then
+                        if SilentAimPlayersEnabled and PlayersPosition then
+                            return OldHook(self, "TAP", PlayersPosition, ...)
+                        elseif SilentAimNPCsEnabled and NPCPosition then
+                            return OldHook(self, "TAP", NPCPosition, ...)
+                        end
+                    elseif typeof(V2) == "Vector3" then
+                        if SilentAimPlayersEnabled and PlayersPosition then
+                            return OldHook(self, V1, PlayersPosition, nil, ...)
+                        elseif SilentAimNPCsEnabled and NPCPosition then
+                            return OldHook(self, V1, NPCPosition, nil, ...)
+                        end
+                    end
                 end
             end
+
+            return OldHook(self, V1, V2, ...)
         end)
+        setreadonly(hookMeta, true)
     end
-end
+end)
+
+RunService.Heartbeat:Connect(function()
+    local RootPart = Character:FindFirstChild("HumanoidRootPart")
+    if MouseModule and typeof(MouseModule) == "table" then
+        if PlayersPosition then
+            MouseModule.Hit = CFrame.new(PlayersPosition)
+            MouseModule.Target = workspace:FindPartOnRay(Ray.new(PlayersPosition, Vector3.new(0, -5, 0)))
+        elseif NPCPosition then
+            MouseModule.Hit = CFrame.new(NPCPosition)
+            MouseModule.Target = workspace:FindPartOnRay(Ray.new(NPCPosition, Vector3.new(0, -5, 0)))
+        elseif RootPart then
+            MouseModule.Hit = CFrame.new(RootPart.Position)
+            MouseModule.Target = RootPart
+        end
+    end
+end)
 
 local HasTag = function(tagName)
   local char = player.Character
