@@ -265,33 +265,36 @@ spawn(function()
     end
 end)
 
-local Mouse = require(game.ReplicatedStorage.Mouse)
-local getAimbotCFrame = function()
-    -- Replace this with your actual target position logic
-    if SilentAimPlayersEnabled and PlayersPosition then
-        return CFrame.new(PlayersPosition)
-    elseif SilentAimNPCsEnabled and NPCPosition then
-        return CFrame.new(NPCPosition)
-    else
-        return Mouse.Hit -- fallback: default behavior, if no silent aim target
+if MouseModule and typeof(MouseModule) == "Instance" then
+    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+    if ok2 and Mouse then
+        local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        if RootPart then
+            pcall(function()
+                Mouse.Hit = CFrame.new(RootPart.Position)
+                Mouse.Target = RootPart
+            end)
+        else
+            task.spawn(function()
+                local RootPart = Character:WaitForChild("HumanoidRootPart")
+                pcall(function()
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end)
+            end)
+        end
+
+        RunService.Heartbeat:Connect(function()
+            if Mouse then
+                if NPCPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+                elseif PlayersPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+                end
+            end
+        end)
     end
 end
-
-setmetatable(Mouse, {
-    __index = function(t, k)
-        if k == "Hit" then
-            return getAimbotCFrame()
-        end
-        return rawget(t, k)
-    end,
-    __newindex = function(t, k, v)
-        if k == "Hit" then
-            -- silently ignore overwrites to Mouse.Hit, so only our value is used
-        else
-            rawset(t, k, v)
-        end
-    end
-})
 
 local HasTag = function(tagName)
   local char = player.Character
