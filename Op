@@ -265,21 +265,40 @@ spawn(function()
     end
 end)
 
-RunService.Heartbeat:Connect(function()
-    local RootPart = Character:FindFirstChild("HumanoidRootPart")
-    if MouseModule and typeof(MouseModule) == "table" then
-        if PlayersPosition then
-            MouseModule.Hit = CFrame.new(PlayersPosition)
-            MouseModule.Target = workspace:FindPartOnRay(Ray.new(PlayersPosition, Vector3.new(0, -5, 0)))
-        elseif NPCPosition then
-            MouseModule.Hit = CFrame.new(NPCPosition)
-            MouseModule.Target = workspace:FindPartOnRay(Ray.new(NPCPosition, Vector3.new(0, -5, 0)))
-        elseif RootPart then
-            MouseModule.Hit = CFrame.new(RootPart.Position)
-            MouseModule.Target = RootPart
+if MouseModule and typeof(MouseModule) == "Instance" then
+    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+    if ok2 and Mouse then
+        local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        if RootPart then
+            pcall(function()
+                Mouse.Hit = CFrame.new(RootPart.Position)
+                Mouse.Target = RootPart
+            end)
+        else
+            task.spawn(function()
+                pcall(function()
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end)
+            end)
         end
+
+        RunService.Heartbeat:Connect(function()
+            if Mouse then
+                if NPCPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+                    pcall(function() Mouse.Target = workspace:FindPartOnRay(Ray.new(NPCPosition, Vector3.new(0, -5, 0))) end)
+                elseif PlayersPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+                    pcall(function() Mouse.Target = workspace:FindPartOnRay(Ray.new(PlayersPosition, Vector3.new(0, -5, 0))) end)
+                elseif RootPart then
+	                pcall(function() Mouse.Hit = CFrame.new(RootPart.Position) end)
+                    pcall(function() Mouse.Target = RootPart end)
+                end
+            end
+        end)
     end
-end)
+end
 
 local HasTag = function(tagName)
   local char = player.Character
