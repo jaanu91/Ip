@@ -1,4 +1,4 @@
--- ================= VSkillModule (updated for Godhuman Z aimlock) =================
+-- ================= VSkillModule =================
 local VSkillModule = {}
 
 local Players = game:GetService("Players")
@@ -7,15 +7,12 @@ local UserInputService = game:GetService("UserInputService")
 
 local currentTool = nil
 local lastTool = nil
-local sharkZActive, vActive, cursedZActive, godhumanZActive = false, false, false, false
+local sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchActive = false
 local keyHoldingActive = false
 local SilentAimModuleRef = nil
-
--- special flag: when true we enabled silent-aim specifically for Godhuman on release
-local aimLockForGodhuman = false
 
 local function clearConnections()
 	for _, conn in ipairs(characterConnections) do
@@ -33,15 +30,7 @@ local function DisableSilentAimbot()
     end
 end
 
-local function EnableSilentAimbotPlayersAndNPC()
-    if SilentAimModuleRef then
-        -- explicitly enable both player & NPC silent aim so module will pick closest
-        SilentAimModuleRef:SetPlayerSilentAim(true)
-        SilentAimModuleRef:SetNPCSilentAim(true)
-    end
-end
-
-local function RestoreSilentAimbot()
+local function EnableSilentAimbot()
     if SilentAimModuleRef then
         SilentAimModuleRef:Restore()
     end
@@ -57,20 +46,18 @@ local function hookTool(tool)
         if not parent then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive, godhumanZActive = false, false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
             rightTouchActive = false
-            aimLockForGodhuman = false
-            RestoreSilentAimbot()
+            EnableSilentAimbot()
         end
     end))
 end
 
 local function isValidStopCondition()
-    -- used in earlier logic to decide when Z/V are active
     return (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
         or (lastTool == "Dough-Dough" and vActive)
         or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
-        or (currentTool and (currentTool.Name == "Godhuman" or currentTool.Name == "Godhuman Z") and godhumanZActive)
+        or (currentTool and currentTool.Name == "Lightning-Lightning" and lightningFActive)
 end
 
 -- =========================
@@ -79,11 +66,9 @@ end
 UserInputService.TouchStarted:Connect(function(touch)
     local camera = workspace.CurrentCamera
     if not camera then return end
-
-    -- right half of screen
+    
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = true
-        -- if we are holding a skill that should disable aim while held, disable it
         if isValidStopCondition() then
             DisableSilentAimbot()
         end
@@ -93,24 +78,11 @@ end)
 UserInputService.TouchEnded:Connect(function(touch)
     local camera = workspace.CurrentCamera
     if not camera then return end
-
+    
     if touch.Position.X > camera.ViewportSize.X / 2 then
-        -- finger lifted from right side
         rightTouchActive = false
-
-        -- If Godhuman Z was the skill being held, on release we enable aimlock (nearest target)
-        if godhumanZActive then
-            -- enable silent-aim and tell module to choose closest (SelectedPlayer nil -> it will pick closest)
-            EnableSilentAimbotPlayersAndNPC()
-            aimLockForGodhuman = true
-
-            -- we keep godhumanZActive true until damage is detected (watchDamageCounter will clear)
-            -- do NOT immediately clear godhumanZActive here; wait for damage to occur
-        else
-            -- for other skills, restore user's silent aim state
-            RestoreSilentAimbot()
-            sharkZActive, vActive, cursedZActive = false, false, false
-        end
+        EnableSilentAimbot()
+        sharkZActive, vActive, cursedZActive = false, false, false
     end
 end)
 
@@ -135,12 +107,13 @@ UserInputService.InputBegan:Connect(function(input, gp)
                 cursedZActive = true
                 keyHoldingActive = true
                 DisableSilentAimbot()
-            elseif currentTool and (currentTool.Name == "Godhuman" or currentTool.Name == "Godhuman Z") then
-                -- start Godhuman Z hold
-                godhumanZActive = true
-                keyHoldingActive = true
-                DisableSilentAimbot()
             end
+        elseif input.KeyCode == Enum.KeyCode.F then
+		    if currentTool and currentTool.Name == "Lightning-Lightning" then
+		        lightningFActive = true
+		        keyHoldingActive = true
+		        DisableSilentAimbot()
+		    end
         end
     end
 end)
@@ -152,28 +125,27 @@ UserInputService.InputEnded:Connect(function(input, gp)
             if vActive then
                 vActive = false
                 keyHoldingActive = false
-                RestoreSilentAimbot()
+                EnableSilentAimbot()
             end
         elseif input.KeyCode == Enum.KeyCode.Z then
             if sharkZActive then
                 sharkZActive = false
                 keyHoldingActive = false
-                RestoreSilentAimbot()
+                EnableSilentAimbot()
             elseif cursedZActive then
                 cursedZActive = false
                 keyHoldingActive = false
-                RestoreSilentAimbot()
-            elseif godhumanZActive then
-                -- on Z release (keyboard) for Godhuman behave same as right-screen release:
-                godhumanZActive = false -- for keyboard flow we choose to treat it as "released -> enable aimlock"
-                EnableSilentAimbotPlayersAndNPC()
-                aimLockForGodhuman = true
-                keyHoldingActive = false
+                EnableSilentAimbot()
             end
+        elseif input.KeyCode == Enum.KeyCode.F then
+		    if lightningFActive then
+		        lightningFActive = false
+		        keyHoldingActive = false
+		        EnableSilentAimbot()
+		    end
         end
     end
 end)
-
 -- =========================
 -- Damage Counter Watch
 -- =========================
@@ -208,18 +180,10 @@ local function watchDamageCounter()
 
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
 	    local dmgText = tonumber(dmgTextLabel.Text) or 0
-	    -- if damage happened AND we had enabled aimlock specifically for Godhuman, disable it now
-	    if dmgText > 0 and aimLockForGodhuman then
-	        aimLockForGodhuman = false
-	        godhumanZActive = false
-	        -- stop the aimlock we enabled for the Godhuman release
+	    if dmgText > 0 and isValidStopCondition() and (rightTouchActive or keyHoldingActive) then
 	        DisableSilentAimbot()
-	    elseif dmgText > 0 and isValidStopCondition() and (rightTouchActive or keyHoldingActive) then
-            -- fallback for other skills: while still holding something that needs aim disabled, keep it disabled
-	        DisableSilentAimbot()
-	    elseif not rightTouchActive and not keyHoldingActive and not aimLockForGodhuman then
-	        -- if nothing holding and no godhuman special aim active -> restore default user setting
-	        RestoreSilentAimbot()
+	    elseif not rightTouchActive and not keyHoldingActive then
+	        EnableSilentAimbot()
 	    end
 	end)
 
@@ -227,7 +191,7 @@ local function watchDamageCounter()
 end
 
 -- =========================
--- Skill Detection (hook network calls)
+-- Skill Detection
 -- =========================
 if not getgenv().VSkillHooked then
     getgenv().VSkillHooked = true
@@ -244,14 +208,6 @@ if not getgenv().VSkillHooked then
 	                sharkZActive = true
 					keyHoldingActive = true
 					DisableSilentAimbot()
-	            elseif currentTool and (currentTool.Name == "Cursed Dual Katana") then
-	                cursedZActive = true
-					keyHoldingActive = true
-					DisableSilentAimbot()
-	            elseif currentTool and (currentTool.Name == "Godhuman" or currentTool.Name == "Godhuman Z") then
-	                godhumanZActive = true
-	                keyHoldingActive = true
-	                DisableSilentAimbot()
 	            end
 	        end
         
@@ -262,6 +218,22 @@ if not getgenv().VSkillHooked then
 					DisableSilentAimbot()
 	            end
 	        end
+        
+	        if typeof(a1) == "string" and a1:upper() == "Z" then
+	            if currentTool and currentTool.Name == "Cursed Dual Katana" then
+	                cursedZActive = true
+					keyHoldingActive = true
+					DisableSilentAimbot()
+	            end
+	        end
+	
+			if typeof(a1) == "string" and a1:upper() == "F" then
+			    if currentTool and currentTool.Name == "Lightning-Lightning" then
+			        lightningFActive = true
+			        keyHoldingActive = true
+			        DisableSilentAimbot()
+			    end
+			end
 	    end
 	    return old(self, ...)
 	end)
@@ -273,11 +245,10 @@ end
 local function onCharacterAdded(char)
     clearConnections()
     
-    sharkZActive, vActive, cursedZActive, godhumanZActive = false, false, false, false
+    sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
     rightTouchActive = false
     keyHoldingActive = false
-    aimLockForGodhuman = false
-    RestoreSilentAimbot()
+    EnableSilentAimbot()
 
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
         if child:IsA("Tool") then hookTool(child) end
@@ -287,11 +258,10 @@ local function onCharacterAdded(char)
         if child == currentTool and lastTool then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive, godhumanZActive = false, false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
             rightTouchActive = false
             keyHoldingActive = false
-            aimLockForGodhuman = false
-            RestoreSilentAimbot()
+            EnableSilentAimbot()
         end
     end))
 
