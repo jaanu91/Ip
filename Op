@@ -8,7 +8,7 @@ local Character = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
-local MouseModule = RS:FindFirstChild("Mouse")
+local MouseModule = RS:FindFirstChild("WrapMouse")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 
 local Services = setmetatable({}, {
@@ -27,7 +27,6 @@ local UserWantsplayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
 local AutoKen = false
-local GunBot = false
 
 local playersaimbot = nil
 local PlayersPosition = nil
@@ -267,72 +266,35 @@ spawn(function()
 end)
 
 if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
-    if ok2 and Mouse then
+    local ok2, WrapMouse = pcall(function() return require(MouseModule) end)
+    if ok2 and WrapMouse then
         local RootPart = Character:FindFirstChild("HumanoidRootPart")
         if RootPart then
             pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
+                WrapMouse.Hit = CFrame.new(RootPart.Position)
+                WrapMouse.Target = RootPart
             end)
         else
             task.spawn(function()
                 local RootPart = Character:WaitForChild("HumanoidRootPart")
                 pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
+                    WrapMouse.Hit = CFrame.new(RootPart.Position)
+                    WrapMouse.Target = RootPart
                 end)
             end)
         end
 
         RunService.Heartbeat:Connect(function()
-            if Mouse then
+            if WrapMouse then
                 if NPCPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+                    pcall(function() WrapMouse.Hit = CFrame.new(NPCPosition) end)
                 elseif PlayersPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+                    pcall(function() WrapMouse.Hit = CFrame.new(PlayersPosition) end)
                 end
             end
         end)
     end
 end
-
-local mouse = player:GetMouse()
-mouse.Button1Down:Connect(function()
-	if not GunBot then return end
-	
-	local Character = player.Character
-	if not Character then return end
-	
-	local tool = Character:FindFirstChildWhichIsA("Tool")
-	if not tool or not tool:FindFirstChild("Handle") then return end
-
-	local RootPart = Character:FindFirstChild("HumanoidRootPart")
-	if not RootPart then return end
-
-	local targetPlayer = getClosestplayer(RootPart)
-	if not targetPlayer or not targetPlayer.Character then return end
-
-	local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not targetHRP then return end
-
-	local shootDirection = (targetHRP.Position - tool.Handle.CFrame.Position).Unit * 100
-	local hitPart, hitPos = workspace:FindPartOnRayWithIgnoreList(
-		Ray.new(tool.Handle.CFrame.Position, shootDirection),
-		{ Character, workspace._WorldOrigin }
-	)
-
-	local aimPosition = getPredictedPosition(targetHRP)
-
-	if tool:FindFirstChild("RemoteFunctionShoot") then
-		tool.RemoteFunctionShoot:InvokeServer(
-			aimPosition,
-			(require(game.ReplicatedStorage.Util).Other.hrpFromPart(hitPart))
-		)
-	elseif tool:FindFirstChild("RemoteEventShoot") then
-		tool.RemoteEventShoot:FireServer(aimPosition)
-	end
-end)
 
 local HasTag = function(tagName)
   local char = player.Character
@@ -378,10 +340,6 @@ end
 function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsplayerAim = state
 	SilentAimPlayersEnabled = state
-end
-
-function SilentAimModule:SetGunSilentAim(state)
-	GunBot = state
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
