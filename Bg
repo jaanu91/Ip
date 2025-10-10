@@ -46,9 +46,16 @@ end
 
 local function getPredictedPosition(hrp)
 	if not hrp then return nil end
-	if not PredictionEnabled then
+
+	local humanoid = hrp.Parent:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
 		return hrp.Position
 	end
+
+	if not PredictionEnabled or humanoid.WalkSpeed < 5 then
+		return hrp.Position
+	end
+
 	return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
 
