@@ -383,15 +383,16 @@ function StuffsModule:SetFpsBoost(state)
             end
 
             local func = compiledOrErr
-            if type(func) ~= "function" then
-                warn("Didi script did not return an executable function after compilation.")
-                return
-            end
-
-            -- execute in protected call to capture runtime errors
-            local okRun, runErr = pcall(function()
-                func()
-            end)
+			if type(func) == "function" then
+			    local okRun, runErr = pcall(func)
+			    if not okRun then
+			        warn("Runtime error while executing Didi script:", runErr)
+			        return
+			    end
+			else
+			    warn("Didi script returned unexpected value after compilation:", typeof(func))
+			    return
+			end
 
             if not okRun then
                 warn("Runtime error while executing Didi script:", runErr)
