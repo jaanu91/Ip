@@ -355,53 +355,19 @@ function StuffsModule:SetFpsBoost(state)
         }
 
         if not fpsBoostLoaded then
-            -- Try to fetch + compile + run the remote script robustly
-            local url = "https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi"
-            local okHttp, scriptCode = pcall(function()
-                return game:HttpGet(url)
-            end)
-
-            if not okHttp or not scriptCode or scriptCode == "" then
-                warn("Failed to fetch Didi script. HTTP error or empty response. HttpGet success:", okHttp)
-                return
-            end
-
-            -- prefer loadstring if present, otherwise try load()
-            local loader = loadstring or load
-            if not loader then
-                warn("No loadstring/load available in this environment. Cannot compile remote script.")
-                return
-            end
-
-            local okCompile, compiledOrErr = pcall(function()
-                return loader(scriptCode)
-            end)
-
-            if not okCompile then
-                warn("Compilation error when trying to load Didi script:", compiledOrErr)
-                return
-            end
-
-            local func = compiledOrErr
-			if type(func) == "function" then
-			    local okRun, runErr = pcall(func)
-			    if not okRun then
-			        warn("Runtime error while executing Didi script:", runErr)
-			        return
-			    end
+			local url = "https://raw.githubusercontent.com/jaanu91/Ip/main/Didi.lua"
+			local scriptCode = game:HttpGet(url)
+			local func, err = loadstring(scriptCode)
+			if not func then
+			    warn("Compilation failed:", err)
 			else
-			    warn("Didi script returned unexpected value after compilation:", typeof(func))
-			    return
+			    local ok, runErr = pcall(func)
+			    if not ok then
+			        warn("Runtime error in Didi script:", runErr)
+			    else
+			        print("Didi script loaded and executed successfully.")
+			    end
 			end
-
-            if not okRun then
-                warn("Runtime error while executing Didi script:", runErr)
-                return
-            end
-
-            -- success
-            fpsBoostLoaded = true
-            print("Didi script loaded and executed successfully.")
         end
     end
 end
