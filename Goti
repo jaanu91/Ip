@@ -362,7 +362,9 @@ function StuffsModule:SetFpsBoost(state)
 		    ["Low Rendering"] = true, -- Lower Rendering
 		    ["Low Quality Parts"] = true -- Lower quality parts
 		}
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/CasperFlyModz/discord.gg-rips/main/FPSBooster.lua"))()
+		if _G.Settings then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/CasperFlyModz/discord.gg-rips/main/FPSBooster.lua"))()
+		end
     end
 end
 
