@@ -1,523 +1,124 @@
--- MADE BY RIP#6666 (patched for robustness)
--- send issues or suggestions to my discord: discord.gg/rips
-
-if not _G.Ignore then
-    _G.Ignore = {} -- Add Instances to this table to ignore them (e.g. _G.Ignore = {workspace.Map, workspace.Map2})
-end
-if _G.SendNotifications == nil then
-    _G.SendNotifications = true -- Set to false if you don't want notifications
-end
-if _G.ConsoleLogs == nil then
-    _G.ConsoleLogs = false -- Set to true if you want console logs (mainly for debugging)
-end
-
-if not game:IsLoaded() then
-    repeat task.wait() until game:IsLoaded()
-end
-
-if not _G.Settings then
-    _G.Settings = {
-        Players = {
-            ["Ignore Me"] = true,
-            ["Ignore Others"] = true,
-            ["Ignore Tools"] = true
-        },
-        Meshes = {
-            NoMesh = false,
-            NoTexture = false,
-            Destroy = false
-        },
-        Images = {
-            Invisible = true,
-            Destroy = false
-        },
-        Explosions = {
-            Smaller = true,
-            Invisible = false,
-            Destroy = false
-        },
-        Particles = {
-            Invisible = true,
-            Destroy = false
-        },
-        TextLabels = {
-            LowerQuality = false,
-            Invisible = false,
-            Destroy = false
-        },
-        MeshParts = {
-            LowerQuality = true,
-            Invisible = false,
-            NoTexture = false,
-            NoMesh = false,
-            Destroy = false
-        },
-        Other = {
-            ["FPS Cap"] = true,
-            ["No Camera Effects"] = true,
-            ["No Clothes"] = true,
-            ["Low Water Graphics"] = true,
-            ["No Shadows"] = true,
-            ["Low Rendering"] = true,
-            ["Low Quality Parts"] = true,
-            ["Low Quality Models"] = true,
-            ["Reset Materials"] = true,
-            ["Lower Quality MeshParts"] = true,
-            ClearNilInstances = false
-        }
-    }
-end
-
 local Players = game:GetService("Players")
-local Lighting = game:GetService("Lighting")
-local StarterGui = game:GetService("StarterGui")
-local MaterialService = game:GetService("MaterialService")
-
-local ME = Players.LocalPlayer
-local CanBeEnabled = {"ParticleEmitter", "Trail", "Smoke", "Fire", "Sparkles"}
-
-local function safeIsDescendantOf(inst, parent)
-    if typeof(inst) ~= "Instance" or typeof(parent) ~= "Instance" then return false end
-    return pcall(function() return inst:IsDescendantOf(parent) end) and inst:IsDescendantOf(parent)
-end
-
-local function PartOfCharacter(Inst)
-    if typeof(Inst) ~= "Instance" then return false end
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= ME and v.Character and safeIsDescendantOf(Inst, v.Character) then
+local BadInstances = {"DataModelMesh", "FaceInstance", "ParticleEmitter", "Trail", "Smoke", "Fire", "Sparkles", "PostEffect", "Explosion", "Clothing", "BasePart"}
+local CanBeEnabled = {"ParticleEmitter", "Trail", "Smoke", "Fire", "Sparkles", "PostEffect"}
+local function PartOfCharacter(Instance)
+    for i, v in pairs(Players:GetPlayers()) do
+        if v.Character and Instance:IsDescendantOf(v.Character) then
             return true
         end
     end
     return false
 end
-
-local function DescendantOfIgnore(Inst)
-    if typeof(Inst) ~= "Instance" then return false end
-    for _, v in pairs(_G.Ignore) do
-        if type(v) == "userdata" and safeIsDescendantOf(Inst, v) then
-            return true
+local function ReturnDescendants()
+    local Descendants = {}
+    WaitNumber = 5000
+    if _G.Settings.Players["Ignore Others"] then
+        for i, v in pairs(game:GetDescendants()) do
+            if not v:IsDescendantOf(Players) and not PartOfCharacter(v) then
+                for i2, v2 in pairs(BadInstances) do
+                    if v:IsA(v2) then
+                        table.insert(Descendants, v)
+                    end
+                end
+            end
+            if i == WaitNumber then
+                task.wait()
+                WaitNumber = WaitNumber + 5000
+            end
+        end
+    elseif _G.Settings.Players["Ignore Me"] then
+        for i, v in pairs(game:GetDescendants()) do
+            if not v:IsDescendantOf(Players) and not v:IsDescendantOf(ME.Character) then
+                for i2, v2 in pairs(BadInstances) do
+                    if v:IsA(v2) then
+                        table.insert(Descendants, v)
+                    end
+                end
+            end
+            if i == WaitNumber then
+                task.wait()
+                WaitNumber = WaitNumber + 5000
+            end
         end
     end
-    return false
+    return Descendants
 end
-
-local function TryDestroy(inst)
-    if typeof(inst) ~= "Instance" then return end
-    pcall(function() inst:Destroy() end)
-end
-
-local function TrySetProperty(inst, propName, value)
-    if typeof(inst) ~= "Instance" then return end
-    pcall(function() inst[propName] = value end)
-end
-
-local function CheckIfBad(Inst)
-    -- guard: Inst must be Instance
-    if typeof(Inst) ~= "Instance" then return end
-
-    -- don't process instances under Players service (player objects)
-    local ok, isDesc = pcall(function() return Inst:IsDescendantOf(Players) end)
-    if ok and isDesc then return end
-
-    -- Build the combined condition for ignoring players/tools/etc.
-    local passesPlayersIgnore = (_G.Settings.Players["Ignore Others"] and not PartOfCharacter(Inst)) or (not _G.Settings.Players["Ignore Others"])
-    local passesMeIgnore = (_G.Settings.Players["Ignore Me"] and ME.Character and not safeIsDescendantOf(Inst, ME.Character)) or (not _G.Settings.Players["Ignore Me"])
-    local passesToolsIgnore = (_G.Settings.Players["Ignore Tools"] and not Inst:IsA("BackpackItem") and not Inst:FindFirstAncestorWhichIsA("BackpackItem")) or (not _G.Settings.Players["Ignore Tools"])
-    local passesGlobalIgnore = (_G.Ignore and type(_G.Ignore) == "table" and not table.find(_G.Ignore, Inst) and not DescendantOfIgnore(Inst)) or (not _G.Ignore or type(_G.Ignore) ~= "table" or #_G.Ignore <= 0)
-
-    if not (passesPlayersIgnore and passesMeIgnore and passesToolsIgnore and passesGlobalIgnore) then
-        return
-    end
-
-    -- Now handle types safely using pcall for property access / mutation
-    local className = Inst.ClassName
-
-    -- Special meshes / DataModelMesh (SpecialMesh / Mesh) handling
-    if Inst:IsA("SpecialMesh") or Inst:IsA("Mesh") or Inst:IsA("DataModelMesh") then
-        if _G.Settings.Meshes.NoMesh then
-            pcall(function()
-                if Inst.MeshId ~= nil then Inst.MeshId = "" end
-            end)
-        end
-        if _G.Settings.Meshes.NoTexture then
-            pcall(function()
-                if Inst.TextureId ~= nil then Inst.TextureId = "" end
-                if Inst.TextureID ~= nil then Inst.TextureID = "" end
-            end)
-        end
-        if _G.Settings.Meshes.Destroy or _G.Settings["No Meshes"] then
-            TryDestroy(Inst)
-        end
-
-    elseif Inst:IsA("FaceInstance") then
-        if _G.Settings.Images.Invisible then
-            pcall(function()
-                if Inst.Transparency ~= nil then Inst.Transparency = 1 end
-                if Inst.Shiny ~= nil then Inst.Shiny = 1 end
-            end)
-        end
-        if _G.Settings.Images.LowDetail then
-            pcall(function() if Inst.Shiny ~= nil then Inst.Shiny = 1 end end)
-        end
-        if _G.Settings.Images.Destroy then TryDestroy(Inst) end
-
-    elseif Inst:IsA("ShirtGraphic") then
-        if _G.Settings.Images.Invisible then
-            pcall(function() if Inst.Graphic ~= nil then Inst.Graphic = "" end end)
-        end
-        if _G.Settings.Images.Destroy then TryDestroy(Inst) end
-
-    elseif table.find(CanBeEnabled, className) then
-        if _G.Settings["Invisible Particles"] or _G.Settings["No Particles"] or (_G.Settings.Other and _G.Settings.Other["Invisible Particles"]) or (_G.Settings.Particles and _G.Settings.Particles.Invisible) then
-            pcall(function() if Inst.Enabled ~= nil then Inst.Enabled = false end end)
-        end
-        if (_G.Settings.Other and _G.Settings.Other["No Particles"]) or (_G.Settings.Particles and _G.Settings.Particles.Destroy) then
-            TryDestroy(Inst)
-        end
-
-    elseif Inst:IsA("PostEffect") and (_G.Settings["No Camera Effects"] or (_G.Settings.Other and _G.Settings.Other["No Camera Effects"])) then
-        pcall(function() if Inst.Enabled ~= nil then Inst.Enabled = false end end)
-
-    elseif Inst:IsA("Explosion") then
-        if _G.Settings["Smaller Explosions"] or (_G.Settings.Other and _G.Settings.Other["Smaller Explosions"]) or (_G.Settings.Explosions and _G.Settings.Explosions.Smaller) then
-            pcall(function()
-                if Inst.BlastPressure ~= nil then Inst.BlastPressure = 1 end
-                if Inst.BlastRadius ~= nil then Inst.BlastRadius = 1 end
-            end)
-        end
-        if _G.Settings["Invisible Explosions"] or (_G.Settings.Other and _G.Settings.Other["Invisible Explosions"]) or (_G.Settings.Explosions and _G.Settings.Explosions.Invisible) then
-            pcall(function()
-                if Inst.BlastPressure ~= nil then Inst.BlastPressure = 1 end
-                if Inst.BlastRadius ~= nil then Inst.BlastRadius = 1 end
-                if Inst.Visible ~= nil then Inst.Visible = false end
-            end)
-        end
-        if _G.Settings["No Explosions"] or (_G.Settings.Other and _G.Settings.Other["No Explosions"]) or (_G.Settings.Explosions and _G.Settings.Explosions.Destroy) then
-            TryDestroy(Inst)
-        end
-
-    elseif Inst:IsA("Clothing") or Inst:IsA("SurfaceAppearance") or Inst:IsA("BaseWrap") then
-        if _G.Settings["No Clothes"] or (_G.Settings.Other and _G.Settings.Other["No Clothes"]) then
-            TryDestroy(Inst)
-        end
-
-    elseif Inst:IsA("BasePart") and not Inst:IsA("MeshPart") then
-        if _G.Settings["Low Quality Parts"] or (_G.Settings.Other and _G.Settings.Other["Low Quality Parts"]) then
-            pcall(function()
-                if Inst.Material ~= nil then Inst.Material = Enum.Material.Plastic end
-                if Inst.Reflectance ~= nil then Inst.Reflectance = 0 end
-            end)
-        end
-
-    elseif Inst:IsA("TextLabel") and safeIsDescendantOf(Inst, workspace) then
-        if _G.Settings["Lower Quality TextLabels"] or (_G.Settings.Other and _G.Settings.Other["Lower Quality TextLabels"]) or (_G.Settings.TextLabels and _G.Settings.TextLabels.LowerQuality) then
-            pcall(function()
-                if Inst.Font ~= nil then Inst.Font = Enum.Font.SourceSans end
-                if Inst.TextScaled ~= nil then Inst.TextScaled = false end
-                if Inst.RichText ~= nil then Inst.RichText = false end
-                if Inst.TextSize ~= nil then Inst.TextSize = 14 end
-            end)
-        end
-        if _G.Settings["Invisible TextLabels"] or (_G.Settings.Other and _G.Settings.Other["Invisible TextLabels"]) or (_G.Settings.TextLabels and _G.Settings.TextLabels.Invisible) then
-            pcall(function() if Inst.Visible ~= nil then Inst.Visible = false end end)
-        end
-        if _G.Settings["No TextLabels"] or (_G.Settings.Other and _G.Settings.Other["No TextLabels"]) or (_G.Settings.TextLabels and _G.Settings.TextLabels.Destroy) then
-            TryDestroy(Inst)
-        end
-
-    elseif Inst:IsA("Model") then
-        if _G.Settings["Low Quality Models"] or (_G.Settings.Other and _G.Settings.Other["Low Quality Models"]) then
-            pcall(function() if Inst.LevelOfDetail ~= nil then Inst.LevelOfDetail = 1 end end)
-        end
-
-    elseif Inst:IsA("MeshPart") then
-        if _G.Settings["Low Quality MeshParts"] or (_G.Settings.Other and _G.Settings.Other["Low Quality MeshParts"]) or (_G.Settings.MeshParts and _G.Settings.MeshParts.LowerQuality) then
-            pcall(function()
-                if Inst.RenderFidelity ~= nil then Inst.RenderFidelity = 2 end
-                if Inst.Reflectance ~= nil then Inst.Reflectance = 0 end
-                if Inst.Material ~= nil then Inst.Material = Enum.Material.Plastic end
-            end)
-        end
-        if _G.Settings["Invisible MeshParts"] or (_G.Settings.Other and _G.Settings.Other["Invisible MeshParts"]) or (_G.Settings.MeshParts and _G.Settings.MeshParts.Invisible) then
-            pcall(function()
-                if Inst.Transparency ~= nil then Inst.Transparency = 1 end
-                if Inst.RenderFidelity ~= nil then Inst.RenderFidelity = 2 end
-                if Inst.Reflectance ~= nil then Inst.Reflectance = 0 end
-                if Inst.Material ~= nil then Inst.Material = Enum.Material.Plastic end
-            end)
-        end
-        if _G.Settings.MeshParts and _G.Settings.MeshParts.NoTexture then
-            pcall(function()
-                if Inst.TextureID ~= nil then Inst.TextureID = "" end
-                if Inst.TextureId ~= nil then Inst.TextureId = "" end
-            end)
-        end
-        if _G.Settings.MeshParts and _G.Settings.MeshParts.NoMesh then
-            pcall(function()
-                if Inst.MeshId ~= nil then Inst.MeshId = "" end
-            end)
-        end
-        if _G.Settings["No MeshParts"] or (_G.Settings.Other and _G.Settings.Other["No MeshParts"]) or (_G.Settings.MeshParts and _G.Settings.MeshParts.Destroy) then
-            TryDestroy(Inst)
+local function CheckIfBad(Instance)
+    if not Instance:IsDescendantOf(Players) and not PartOfCharacter(Instance) then
+        if Instance:IsA("DataModelMesh") then
+            if _G.Settings.Meshes.LowDetail then
+                sethiddenproperty(Instance, "LODX", Enum.LevelOfDetailSetting.Low)
+                sethiddenproperty(Instance, "LODY", Enum.LevelOfDetailSetting.Low)
+            elseif _G.Settings.Meshes.Destroy then
+                Instance:Destroy()
+            end
+        elseif Instance:IsA("FaceInstance") then
+            if _G.Settings.Images.Invisible then
+                Instance.Transparency = 1
+            elseif _G.Settings.Images.LowDetail then
+                Instance.Shiny = 1
+            elseif _G.Settings.Images.Destroy then
+                Instance:Destroy()
+            end
+        elseif table.find(CanBeEnabled, Instance.ClassName) then
+            if _G.Settings["No Particles"] or (_G.Settings.Other and _G.Settings.Other["No Particles"]) then
+                Instance.Enabled = false
+            end
+        elseif Instance:IsA("Explosion") then
+            if _G.Settings["No Explosions"] or (_G.Settings.Other and _G.Settings.Other["No Explosions"]) then
+                Instance.Visible = false
+            end
+        elseif Instance:IsA("Clothing") then
+            if _G.Settings["No Clothes"] or (_G.Settings.Other and _G.Settings.Other["No Clothes"]) then
+                Instance:Destroy()
+            end
+        elseif Instance:IsA("BasePart") then
+            if _G.Settings["Low Quality Parts"] or (_G.Settings.Other and _G.Settings.Other["Low Quality Parts"]) then
+                Instance.Material = Enum.Material.Plastic
+                Instance.Reflectance = 0
+            end
         end
     end
 end
-
--- notify that we're loading
-if _G.SendNotifications then
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "discord.gg/rips",
-            Text = "Loading FPS Booster...",
-            Duration = math.huge,
-            Button1 = "Okay"
-        })
-    end)
+if _G.Settings["Low Water Graphics"] or (_G.Settings.Other and _G.Settings.Other["Low Water Graphics"]) then
+    workspace:FindFirstChildOfClass("Terrain").WaterWaveSize = 0
+    workspace:FindFirstChildOfClass("Terrain").WaterWaveSpeed = 0
+    workspace:FindFirstChildOfClass("Terrain").WaterReflectance = 0
+    workspace:FindFirstChildOfClass("Terrain").WaterTransparency = 0
 end
-
--- Low water graphics
-coroutine.wrap(function()
-    pcall(function()
-        if (_G.Settings["Low Water Graphics"] or (_G.Settings.Other and _G.Settings.Other["Low Water Graphics"])) then
-            local terrain = workspace:FindFirstChildOfClass("Terrain")
-            if not terrain then
-                repeat task.wait() until workspace:FindFirstChildOfClass("Terrain")
-                terrain = workspace:FindFirstChildOfClass("Terrain")
-            end
-            pcall(function()
-                terrain.WaterWaveSize = 0
-                terrain.WaterWaveSpeed = 0
-                terrain.WaterReflectance = 0
-                terrain.WaterTransparency = 0
-            end)
-            if sethiddenproperty then
-                pcall(function() sethiddenproperty(terrain, "Decoration", false) end)
-            else
-                if _G.SendNotifications then
-                    pcall(function()
-                        StarterGui:SetCore("SendNotification", {
-                            Title = "discord.gg/rips",
-                            Text = "Your exploit does not support sethiddenproperty, please use a different exploit.",
-                            Duration = 5,
-                            Button1 = "Okay"
-                        })
-                    end)
-                end
-                warn("Your exploit does not support sethiddenproperty, please use a different exploit.")
-            end
-            if _G.SendNotifications then
-                pcall(function()
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "discord.gg/rips",
-                        Text = "Low Water Graphics Enabled",
-                        Duration = 5,
-                        Button1 = "Okay"
-                    })
-                end)
-            end
-            if _G.ConsoleLogs then warn("Low Water Graphics Enabled") end
-        end
-    end)
-end)()
-
--- No shadows
-coroutine.wrap(function()
-    pcall(function()
-        if _G.Settings["No Shadows"] or (_G.Settings.Other and _G.Settings.Other["No Shadows"]) then
-            Lighting.GlobalShadows = false
-            Lighting.FogEnd = 9e9
-            Lighting.ShadowSoftness = 0
-            if sethiddenproperty then
-                pcall(function() sethiddenproperty(Lighting, "Technology", 2) end)
-            else
-                if _G.SendNotifications then
-                    pcall(function()
-                        StarterGui:SetCore("SendNotification", {
-                            Title = "discord.gg/rips",
-                            Text = "Your exploit does not support sethiddenproperty, please use a different exploit.",
-                            Duration = 5,
-                            Button1 = "Okay"
-                        })
-                    end)
-                end
-                warn("Your exploit does not support sethiddenproperty, please use a different exploit.")
-            end
-            if _G.SendNotifications then
-                pcall(function()
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "discord.gg/rips",
-                        Text = "No Shadows Enabled",
-                        Duration = 5,
-                        Button1 = "Okay"
-                    })
-                end)
-            end
-            if _G.ConsoleLogs then warn("No Shadows Enabled") end
-        end
-    end)
-end)()
-
--- Low rendering
-coroutine.wrap(function()
-    pcall(function()
-        if _G.Settings["Low Rendering"] or (_G.Settings.Other and _G.Settings.Other["Low Rendering"]) then
-            pcall(function()
-                settings().Rendering.QualityLevel = 1
-                settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level04
-            end)
-            if _G.SendNotifications then
-                pcall(function()
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "discord.gg/rips",
-                        Text = "Low Rendering Enabled",
-                        Duration = 5,
-                        Button1 = "Okay"
-                    })
-                end)
-            end
-            if _G.ConsoleLogs then warn("Low Rendering Enabled") end
-        end
-    end)
-end)()
-
--- Reset materials
-coroutine.wrap(function()
-    pcall(function()
-        if _G.Settings["Reset Materials"] or (_G.Settings.Other and _G.Settings.Other["Reset Materials"]) then
-            for i, v in pairs(MaterialService:GetChildren()) do
-                pcall(function() v:Destroy() end)
-            end
-            pcall(function() MaterialService.Use2022Materials = false end)
-            if _G.SendNotifications then
-                pcall(function()
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "discord.gg/rips",
-                        Text = "Reset Materials Enabled",
-                        Duration = 5,
-                        Button1 = "Okay"
-                    })
-                end)
-            end
-            if _G.ConsoleLogs then warn("Reset Materials Enabled") end
-        end
-    end)
-end)()
-
--- FPS cap / uncapped
-coroutine.wrap(function()
-    pcall(function()
-        local fpsSetting = _G.Settings["FPS Cap"] or (_G.Settings.Other and _G.Settings.Other["FPS Cap"])
-        if fpsSetting and setfpscap then
-            if type(fpsSetting) == "string" or type(fpsSetting) == "number" then
-                pcall(function() setfpscap(tonumber(fpsSetting)) end)
-                if _G.SendNotifications then
-                    pcall(function()
-                        StarterGui:SetCore("SendNotification", {
-                            Title = "discord.gg/rips",
-                            Text = "FPS Capped to " .. tostring(fpsSetting),
-                            Duration = 5,
-                            Button1 = "Okay"
-                        })
-                    end)
-                end
-                if _G.ConsoleLogs then warn("FPS Capped to " .. tostring(fpsSetting)) end
-            elseif fpsSetting == true then
-                pcall(function() setfpscap(1e6) end)
-                if _G.SendNotifications then
-                    pcall(function()
-                        StarterGui:SetCore("SendNotification", {
-                            Title = "discord.gg/rips",
-                            Text = "FPS Uncapped",
-                            Duration = 5,
-                            Button1 = "Okay"
-                        })
-                    end)
-                end
-                if _G.ConsoleLogs then warn("FPS Uncapped") end
-            end
-        elseif fpsSetting then
-            pcall(function()
-                StarterGui:SetCore("SendNotification", {
-                    Title = "discord.gg/rips",
-                    Text = "FPS Cap Failed",
-                    Duration = 5,
-                    Button1 = "Okay"
-                })
-            end)
-            warn("FPS Cap Failed or setfpscap not available")
-        end
-    end)
-end)()
-
--- Clear nil instances (if available)
-coroutine.wrap(function()
-    pcall(function()
-        if _G.Settings.Other["ClearNilInstances"] and getnilinstances then
-            for _, v in pairs(getnilinstances()) do
-                pcall(function() v:Destroy() end)
-            end
-            if _G.SendNotifications then
-                pcall(function()
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "discord.gg/rips",
-                        Text = "Cleared Nil Instances",
-                        Duration = 5,
-                        Button1 = "Okay"
-                    })
-                end)
-            end
-        elseif _G.Settings.Other["ClearNilInstances"] then
-            pcall(function()
-                StarterGui:SetCore("SendNotification", {
-                    Title = "discord.gg/rips",
-                    Text = "Your exploit does not support getnilinstances, please use a different exploit.",
-                    Duration = 5,
-                    Button1 = "Okay"
-                })
-            end)
-            warn("Your exploit does not support getnilinstances, please use a different exploit.")
-        end
-    end)
-end)()
-
--- Process existing descendants safely
-local Descendants = game:GetDescendants()
-if _G.SendNotifications then
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "discord.gg/rips",
-            Text = "Checking " .. tostring(#Descendants) .. " Instances...",
-            Duration = 15,
-            Button1 = "Okay"
-        })
-    end)
+if _G.Settings["No Shadows"] or (_G.Settings.Other and _G.Settings.Other["No Shadows"]) then
+    game:GetService("Lighting").GlobalShadows = false
+    game:GetService("Lighting").FogEnd = 9e9
 end
-if _G.ConsoleLogs then warn("Checking " .. tostring(#Descendants) .. " Instances...") end
-
-for _, v in pairs(Descendants) do
-    pcall(function() CheckIfBad(v) end)
+if _G.Settings["Low Rendering"] or (_G.Settings.Other and _G.Settings.Other["Low Rendering"]) then
+    settings().Rendering.QualityLevel = 1
 end
-
--- Final loaded notification
-if _G.SendNotifications then
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "discord.gg/rips",
-            Text = "FPS Booster Loaded!",
-            Duration = 5,
-            Button1 = "Okay"
-        })
-    end)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "FPS Booster",
+    Text = "Loading FPS Booster...",
+    Duration = math.huge,
+    Button1 = "Okay"
+})
+local Descendants = ReturnDescendants()
+local WaitNumber = 500
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "FPS Booster",
+    Text = "Checking " .. #Descendants .. " Instances...",
+    Duration = 5,
+    Button1 = "Okay"
+})
+for i, v in pairs(Descendants) do
+    CheckIfBad(v)
+    print("Loaded " .. i .. "/" .. #Descendants)
+    if i == WaitNumber then
+        task.wait()
+        WaitNumber = WaitNumber + 500
+    end
 end
-warn("FPS Booster Loaded!")
-
--- Safe descendant added handling
-game.DescendantAdded:Connect(function(value)
-    -- small delay to allow properties to settle; use task.defer to avoid blocking
-    task.defer(function()
-        pcall(function()
-            task.wait(_G.LoadedWait or 1)
-            CheckIfBad(value)
-        end)
-    end)
-end)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "FPS Booster",
+    Text = "FPS Booster Loaded!",
+    Duration = math.huge,
+    Button1 = "Okay"
+})
+game.DescendantAdded:Connect(CheckIfBad)
