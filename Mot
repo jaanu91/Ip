@@ -159,7 +159,7 @@ local FruitsToCheck = {
     "Buddha Fruit","Love Fruit","Spider Fruit","Sound Fruit","Phoenix Fruit","Portal Fruit",
     "Pain Fruit","Blizzard Fruit","Gravity Fruit","Mammoth Fruit","T-Rex Fruit","Yeti Fruit",
     "Dough Fruit","Shadow Fruit","Venom Fruit","Control Fruit","Gas Fruit","Spirit Fruit",
-    "Dragon Fruit","Leopard Fruit","Kitsune Fruit"
+    "Dragon Fruit","Leopard Fruit","Kitsune Fruit","Lightning Fruit"
 }
 
 local SeaNames = {
