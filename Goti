@@ -9,6 +9,7 @@ local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChi
 local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
+local fpsBoostLoaded = false 
 local InfiniteEnergy = false
 local FastAttackEnabled = false
 local WalkWaterEnabled = false
@@ -341,29 +342,40 @@ function StuffsModule:SetFpsBoost(state)
     if state then
         _G.Settings = {
             Players = {
-                ["Ignore Me"] = true, -- Ignore your Character
-                ["Ignore Others"] = true -- Ignore other Characters
+                ["Ignore Me"] = true,
+                ["Ignore Others"] = true
             },
             Meshes = {
-                Destroy = true, -- Destroy Meshes
-                LowDetail = true -- Low detail meshes
+                Destroy = true,
+                LowDetail = true
             },
             Images = {
-                Invisible = false, -- Invisible Images
-                LowDetail = true, -- Low detail images
-                Destroy = false, -- Destroy Images
+                Invisible = false,
+                LowDetail = true,
+                Destroy = false,
             },
-            ["No Particles"] = true, -- Disables all ParticleEmitter, Trail, Smoke, Fire and Sparkles
-            ["No Camera Effects"] = true, -- Disables all PostEffect's (Camera/Lighting Effects)
-            ["No Explosions"] = true, -- Makes Explosion's invisible
-            ["No Clothes"] = true, -- Removes Clothing from the game
-            ["Low Water Graphics"] = true, -- Removes Water Quality
-            ["No Shadows"] = true, -- Remove Shadows
-            ["Low Rendering"] = true, -- Lower Rendering
-            ["Low Quality Parts"] = true -- Lower quality parts
+            ["No Particles"] = true,
+            ["No Camera Effects"] = true,
+            ["No Explosions"] = true,
+            ["No Clothes"] = true,
+            ["Low Water Graphics"] = true,
+            ["No Shadows"] = true,
+            ["Low Rendering"] = true,
+            ["Low Quality Parts"] = true
         }
 
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi"))()
+        if not fpsBoostLoaded then
+			pcall(function()
+			    local ok, res = pcall(function()
+		            return loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi"))()
+		        end)
+		        if ok then
+		            fpsBoostLoaded = true
+		        else
+			        warn("Failed to load remote fps boost script:", res)
+		        end
+		    end)
+		end
     end
 end
 
