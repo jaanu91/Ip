@@ -1,4 +1,3 @@
--- Cleaned / fixed FPS boost script
 local StuffsModule = {}
 
 local PingsOrFpsEnabled = false
@@ -10,7 +9,7 @@ local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChi
 local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
-local fpsBoostLoaded = false
+local fpsBoostLoaded = false 
 local InfiniteEnergy = false
 local FastAttackEnabled = false
 local WalkWaterEnabled = false
@@ -18,26 +17,26 @@ local WalkWaterEnabled = false
 local savedSettings = {}
 local connections = {}
 
--- Create GUI
 local function createGui()
-    if ScreenGui then return end
-    ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "FpsPingGui"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+	if ScreenGui then return end 
 
-    FpsPingLabel = Instance.new("TextLabel")
-    FpsPingLabel.Name = "FpsPingLabel"
-    FpsPingLabel.Size = UDim2.new(0, 120, 0, 20) -- wider for both values
-    FpsPingLabel.Position = UDim2.new(1, -10, 0, 10) -- top-right corner
-    FpsPingLabel.AnchorPoint = Vector2.new(1, 0)
-    FpsPingLabel.BackgroundTransparency = 1
-    FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FpsPingLabel.Font = Enum.Font.SourceSansBold
-    FpsPingLabel.TextSize = 18
-    FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right
-    FpsPingLabel.RichText = true -- allow color tags
-    FpsPingLabel.Parent = ScreenGui
+	ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "FpsPingGui"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	FpsPingLabel = Instance.new("TextLabel")
+	FpsPingLabel.Name = "FpsPingLabel"
+	FpsPingLabel.Size = UDim2.new(0, 120, 0, 20) -- wider for both values
+	FpsPingLabel.Position = UDim2.new(1, -10, 0, 10) -- top-right corner
+	FpsPingLabel.AnchorPoint = Vector2.new(1, 0) 
+	FpsPingLabel.BackgroundTransparency = 1
+	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	FpsPingLabel.Font = Enum.Font.SourceSansBold
+	FpsPingLabel.TextSize = 18
+	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right
+	FpsPingLabel.RichText = true -- allow color tags
+	FpsPingLabel.Parent = ScreenGui
 end
 
 local lastTime = tick()
@@ -45,66 +44,68 @@ local frameCount = 0
 local fps = 0
 
 RunService.RenderStepped:Connect(function(deltaTime)
-    if not PingsOrFpsEnabled then
-        if ScreenGui then ScreenGui.Enabled = false end
-        return
-    end
+	if not PingsOrFpsEnabled then
+		if ScreenGui then
+			ScreenGui.Enabled = false
+		end
+		return
+	end
 
-    createGui()
-    ScreenGui.Enabled = true
+	createGui()
+	ScreenGui.Enabled = true
 
-    frameCount = frameCount + 1
-    if tick() - lastTime >= 1 then
-        fps = frameCount
-        frameCount = 0
-        lastTime = tick()
-    end
+	frameCount = frameCount + 1
+	if tick() - lastTime >= 1 then
+		fps = frameCount
+		frameCount = 0
+		lastTime = tick()
+	end
 
-    local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000) -- GetNetworkPing returns seconds; convert to ms
-    local fpsColor
-    if fps >= 50 then
-        fpsColor = "00FF00" -- Green
-    elseif fps >= 30 then
-        fpsColor = "FFA500" -- Orange
-    else
-        fpsColor = "FF0000" -- Red
-    end
+	local ping = math.floor(LocalPlayer:GetNetworkPing() * 2000)
 
-    local pingColor
-    if ping <= 80 then
-        pingColor = "00FF00" -- Green
-    elseif ping <= 150 then
-        pingColor = "FFFF00" -- Yellow
-    else
-        pingColor = "FF0000" -- Red
-    end
+	local fpsColor
+	if fps >= 50 then
+		fpsColor = "00FF00" -- Green
+	elseif fps >= 30 then
+		fpsColor = "FFA500" -- Orange
+	else
+		fpsColor = "FF0000" -- Red
+	end
 
-    FpsPingLabel.Text = string.format(
-        '<font color="#%s">FPS: %d</font>  |  <font color="#%s">Ping: %dms</font>',
-        fpsColor, fps, pingColor, ping
-    )
+	local pingColor
+	if ping <= 80 then
+		pingColor = "00FF00" -- Green
+	elseif ping <= 150 then
+		pingColor = "FFFF00" -- Yellow
+	else
+		pingColor = "FF0000" -- Red
+	end
+
+	FpsPingLabel.Text = string.format(
+		'<font color="#%s">FPS: %d</font>  |  <font color="#%s">Ping: %dms</font>',
+		fpsColor, fps, pingColor, ping
+	)
 end)
 
--- Optimize generic Instances
 local function optimizeInstance(v)
-    if v:IsA("Part") or v:IsA("MeshPart") then
-        v.Material = Enum.Material.Plastic
-        v.Reflectance = 0
-    elseif v:IsA("Decal") or v:IsA("Texture") then
-        v.Transparency = 1
-    elseif v:IsA("ParticleEmitter") then
-        v.Lifetime = NumberRange.new(0, 0)
-    elseif v:IsA("Trail") then
-        v.Lifetime = 0
-    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-        v.Enabled = false
-    end
+	if v:IsA("Part") or v:IsA("MeshPart") then
+		v.Material = Enum.Material.Plastic
+		v.Reflectance = 0
+	elseif v:IsA("Decal") or v:IsA("Texture") then
+		v.Transparency = 1
+	elseif v:IsA("ParticleEmitter") then
+		v.Lifetime = NumberRange.new(0, 0)
+	elseif v:IsA("Trail") then
+		v.Lifetime = 0
+	elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+		v.Enabled = false
+	end
 end
 
--- Optimize UI elements
 local function optimizeUI(instance)
     if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
         instance.ImageTransparency = 0
+        
     elseif instance:IsA("TextLabel") or instance:IsA("TextButton") then
         instance.RichText = false -- turn off rich text if not needed
         instance.TextStrokeTransparency = 1 -- disable stroke
@@ -113,13 +114,8 @@ local function optimizeUI(instance)
     end
 end
 
--- Infinite stamina/energy handler
 local function infinitestam()
-    local character = LocalPlayer.Character
-    if not character then return end
-    local energy = character:FindFirstChild("Energy")
-    if not energy then return end
-
+    local energy = LocalPlayer.Character:WaitForChild("Energy")
     energy.Changed:Connect(function()
         if InfiniteEnergy then
             energy.Value = energy.MaxValue or 100
@@ -132,74 +128,74 @@ LocalPlayer.CharacterAdded:Connect(function()
     infinitestam()
 end)
 
-if LocalPlayer.Character then infinitestam() end
+if LocalPlayer.Character then
+    infinitestam()
+end
 
--- Hop (server hop) function (fixed HttpGet urls)
 function Hop()
     local PlaceID = game.PlaceId
     local AllIDs = {}
     local foundAnything = ""
     local actualHour = os.date("!*t").hour
     local Deleted = false
-
-    local HttpService = game:GetService("HttpService")
-    local TeleportService = game:GetService("TeleportService")
-    local Players = game:GetService("Players")
-
-    local function TPReturner()
-        local Site
-        local baseUrl = "https://games.roblox.com/v1/games/"
-        local url
+    function TPReturner()
+        local Site;
         if foundAnything == "" then
-            url = baseUrl .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'
+            Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
         else
-            url = baseUrl .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything
+            Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
         end
-
-        local ok, res = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(url))
-        end)
-        if not ok or not res then return end
-
-        if res.nextPageCursor and res.nextPageCursor ~= "null" and res.nextPageCursor ~= nil then
-            foundAnything = res.nextPageCursor
+        local ID = ""
+        if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+            foundAnything = Site.nextPageCursor
         end
-
-        for i, v in pairs(res.data or {}) do
+        local num = 0;
+        for i,v in pairs(Site.data) do
             local Possible = true
-            local ID = tostring(v.id)
+            ID = tostring(v.id)
             if tonumber(v.maxPlayers) > tonumber(v.playing) then
-                for _, Existing in pairs(AllIDs) do
-                    if ID == tostring(Existing) then
-                        Possible = false
-                        break
+                for _,Existing in pairs(AllIDs) do
+                    if num ~= 0 then
+                        if ID == tostring(Existing) then
+                            Possible = false
+                        end
+                    else
+                        if tonumber(actualHour) ~= tonumber(Existing) then
+                            local delFile = pcall(function()
+                                -- delfile("NotSameServers.json")
+                                AllIDs = {}
+                                table.insert(AllIDs, actualHour)
+                            end)
+                        end
                     end
+                    num = num + 1
                 end
-                if Possible then
+                if Possible == true then
                     table.insert(AllIDs, ID)
                     wait(.1)
                     pcall(function()
-                        TeleportService:TeleportToPlaceInstance(PlaceID, ID, Players.LocalPlayer)
+                        -- writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+                        wait()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
                     end)
                     wait(.1)
                 end
             end
         end
     end
-
-    local function TeleportLoop()
+    function Teleport() 
         while wait(.1) do
             pcall(function()
                 TPReturner()
-                if foundAnything ~= "" then TPReturner() end
+                if foundAnything ~= "" then
+                    TPReturner()
+                end
             end)
         end
     end
-
-    TeleportLoop()
+    Teleport()
 end
 
--- Environment / loader section (safe wait functions + setup)
 do
     local _ENV = (getgenv or getrenv or getfenv)()
 
@@ -208,7 +204,7 @@ do
             return parent:WaitForChild(childName)
         end)
         if not success or not result then
-            warn("SafeWaitForChild failed for: " .. tostring(childName))
+            warn("noooooo: " .. childName)
         end
         return result
     end
@@ -231,7 +227,7 @@ do
     local Player = Players.LocalPlayer
 
     if not Player then
-        warn("Local player not found.")
+        warn("Không tìm thấy người chơi cục bộ.")
         return
     end
 
@@ -248,15 +244,15 @@ do
     local Enemies = SafeWaitForChild(workspace, "Enemies")
     local Map = SafeWaitForChild(workspace, "Map")
 
-    local EnemySpawns = WorldOrigin and SafeWaitForChild(WorldOrigin, "EnemySpawns")
-    local Locations = WorldOrigin and SafeWaitForChild(WorldOrigin, "Locations")
+    local EnemySpawns = SafeWaitForChild(WorldOrigin, "EnemySpawns")
+    local Locations = SafeWaitForChild(WorldOrigin, "Locations")
 
     local RenderStepped = RunService.RenderStepped
     local Heartbeat = RunService.Heartbeat
     local Stepped = RunService.Stepped
 
     local Modules = SafeWaitForChild(ReplicatedStorage, "Modules")
-    local Net = Modules and SafeWaitForChild(Modules, "Net")
+    local Net = SafeWaitForChild(Modules, "Net")
 
     local sethiddenproperty = sethiddenproperty or function(...) return ... end
     local setupvalue = setupvalue or (debug and debug.setupvalue)
@@ -281,21 +277,20 @@ do
             Equipped = nil
         }
 
-        local RegisterAttack = Net and SafeWaitForChild(Net, "RE/RegisterAttack")
-        local RegisterHit = Net and SafeWaitForChild(Net, "RE/RegisterHit")
+        local RegisterAttack = SafeWaitForChild(Net, "RE/RegisterAttack")
+        local RegisterHit = SafeWaitForChild(Net, "RE/RegisterHit")
 
         local function IsAlive(character)
-            return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
+        return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
         end
 
         local function ProcessEnemies(OthersEnemies, Folder)
             local BasePart = nil
-            if not Folder then return nil end
-            for _, Enemy in ipairs(Folder:GetChildren()) do
+            for _, Enemy in Folder:GetChildren() do
                 local Head = Enemy:FindFirstChild("Head")
                 if Head and IsAlive(Enemy) and Player:DistanceFromCharacter(Head.Position) < FastAttack.Distance then
                     if Enemy ~= Player.Character then
-                        table.insert(OthersEnemies, {Enemy, Head})
+                        table.insert(OthersEnemies, { Enemy, Head })
                         BasePart = Head
                     end
                 end
@@ -305,8 +300,8 @@ do
 
         function FastAttack:Attack(BasePart, OthersEnemies)
             if not BasePart or #OthersEnemies == 0 then return end
-            if RegisterAttack then RegisterAttack:FireServer(Settings.ClickDelay or 0) end
-            if RegisterHit then RegisterHit:FireServer(BasePart, OthersEnemies) end
+            RegisterAttack:FireServer(Settings.ClickDelay or 0)
+            RegisterHit:FireServer(BasePart, OthersEnemies)
         end
 
         function FastAttack:AttackNearest()
@@ -342,285 +337,269 @@ do
     end)()
 end
 
--- applyFpsBoost: central function to enable the optimizations
 local function applyFpsBoost()
-    if not _G.Ignore then _G.Ignore = {} end
+	if not _G.Ignore then
+	    _G.Ignore = {}
+	end
 
-    if not _G.Settings then
-        _G.Settings = {
-            Players = {
-                ["Ignore Me"] = true,
-                ["Ignore Others"] = true,
-                ["Ignore Tools"] = true
-            },
-            Meshes = {
-                NoMesh = false,
-                NoTexture = false,
-                Destroy = false
-            },
-            Images = {
-                Invisible = true,
-                Destroy = false
-            },
-            Explosions = {
-                Smaller = true,
-                Invisible = false,
-                Destroy = false
-            },
-            Particles = {
-                Invisible = true,
-                Destroy = false
-            },
-            TextLabels = {
-                LowerQuality = false,
-                Invisible = false,
-                Destroy = false
-            },
-            MeshParts = {
-                LowerQuality = true,
-                Invisible = false,
-                NoTexture = false,
-                NoMesh = false,
-                Destroy = false
-            },
-            Other = {
-                ["FPS Cap"] = true,
-                ["No Camera Effects"] = true,
-                ["No Clothes"] = true,
-                ["Low Water Graphics"] = true,
-                ["No Shadows"] = true,
-                ["Low Rendering"] = true,
-                ["Low Quality Parts"] = true,
-                ["Low Quality Models"] = true,
-                ["Reset Materials"] = true,
-                ["Lower Quality MeshParts"] = true,
-                ClearNilInstances = false
-            }
-        }
-    end
+	if not _G.Settings then
+	    _G.Settings = {
+	        Players = {
+	            ["Ignore Me"] = true,
+	            ["Ignore Others"] = true,
+	            ["Ignore Tools"] = true
+	        },
+	        Meshes = {
+	            NoMesh = false,
+	            NoTexture = false,
+	            Destroy = false
+	        },
+	        Images = {
+	            Invisible = true,
+	            Destroy = false
+	        },
+	        Explosions = {
+	            Smaller = true,
+	            Invisible = false,
+	            Destroy = false
+	        },
+	        Particles = {
+	            Invisible = true,
+	            Destroy = false
+	        },
+	        TextLabels = {
+	            LowerQuality = false,
+	            Invisible = false,
+	            Destroy = false
+	        },
+	        MeshParts = {
+	            LowerQuality = true,
+	            Invisible = false,
+	            NoTexture = false,
+	            NoMesh = false,
+	            Destroy = false
+	        },
+	        Other = {
+	            ["FPS Cap"] = true,
+	            ["No Camera Effects"] = true,
+	            ["No Clothes"] = true,
+	            ["Low Water Graphics"] = true,
+	            ["No Shadows"] = true,
+	            ["Low Rendering"] = true,
+	            ["Low Quality Parts"] = true,
+	            ["Low Quality Models"] = true,
+	            ["Reset Materials"] = true,
+	            ["Lower Quality MeshParts"] = true,
+	            ClearNilInstances = false
+	        }
+	    }
+	end
+	local Players, Lighting, StarterGui, MaterialService = game:GetService("Players"), game:GetService("Lighting"), game:GetService("StarterGui"), game:GetService("MaterialService")
+	local ME, CanBeEnabled = Players.LocalPlayer, {"ParticleEmitter", "Trail", "Smoke", "Fire", "Sparkles"}
+	local function PartOfCharacter(Inst)
+	    for i, v in pairs(Players:GetPlayers()) do
+	        if v ~= ME and v.Character and Inst:IsDescendantOf(v.Character) then
+	            return true
+	        end
+	    end
+	    return false
+	end
+	local function DescendantOfIgnore(Inst)
+	    for i, v in pairs(_G.Ignore) do
+	        if Inst:IsDescendantOf(v) then
+	            return true
+	        end
+	    end
+	    return false
+	end
+	local function CheckIfBad(Inst)
+	    if not Inst:IsDescendantOf(Players) and (_G.Settings.Players["Ignore Others"] and not PartOfCharacter(Inst) 
+	    or not _G.Settings.Players["Ignore Others"]) and (_G.Settings.Players["Ignore Me"] and ME.Character and not Inst:IsDescendantOf(ME.Character) 
+	    or not _G.Settings.Players["Ignore Me"]) and (_G.Settings.Players["Ignore Tools"] and not Inst:IsA("BackpackItem") and not Inst:FindFirstAncestorWhichIsA("BackpackItem") 
+	    or not _G.Settings.Players["Ignore Tools"]) and (_G.Ignore and not table.find(_G.Ignore, Inst) and not DescendantOfIgnore(Inst) 
+	    or (not _G.Ignore or type(_G.Ignore) ~= "table" or #_G.Ignore <= 0)) then
+	        if Inst:IsA("DataModelMesh") then
+	            if Inst:IsA("SpecialMesh") then
+	                if _G.Settings.Meshes.NoMesh then
+	                    Inst.MeshId = ""
+	                end
+	                if _G.Settings.Meshes.NoTexture then
+	                    Inst.TextureId = ""
+	                end
+	            end
+	            if _G.Settings.Meshes.Destroy or _G.Settings["No Meshes"] then
+	                Inst:Destroy()
+	            end
+	        elseif Inst:IsA("FaceInstance") then
+		        if _G.Settings.Images.Invisible then
+	                Inst.Transparency = 1
+	                Inst.Shiny = 1
+	            end
+	            if _G.Settings.Images.LowDetail then
+	                Inst.Shiny = 1
+	            end
+	            if _G.Settings.Images.Destroy then
+	                Inst:Destroy()
+	            end
+	        elseif Inst:IsA("ShirtGraphic") then
+	            if _G.Settings.Images.Invisible then
+	                Inst.Graphic = ""
+	            end
+	            if _G.Settings.Images.Destroy then
+	                Inst:Destroy()
+	            end
+	        elseif table.find(CanBeEnabled, Inst.ClassName) then
+	            if _G.Settings["Invisible Particles"] or _G.Settings["No Particles"] or (_G.Settings.Other and _G.Settings.Other["Invisible Particles"]) or (_G.Settings.Particles and _G.Settings.Particles.Invisible) then
+	                Inst.Enabled = false
+	            end
+	            if (_G.Settings.Other and _G.Settings.Other["No Particles"]) or (_G.Settings.Particles and _G.Settings.Particles.Destroy) then
+	                Inst:Destroy()
+	            end
+	        elseif Inst:IsA("PostEffect") and (_G.Settings["No Camera Effects"] or (_G.Settings.Other and _G.Settings.Other["No Camera Effects"])) then
+	            Inst.Enabled = false
+	        elseif Inst:IsA("Explosion") then
+	            if _G.Settings["Smaller Explosions"] or (_G.Settings.Other and _G.Settings.Other["Smaller Explosions"]) or (_G.Settings.Explosions and _G.Settings.Explosions.Smaller) then
+	                Inst.BlastPressure = 1
+	                Inst.BlastRadius = 1
+	            end
+	            if _G.Settings["Invisible Explosions"] or (_G.Settings.Other and _G.Settings.Other["Invisible Explosions"]) or (_G.Settings.Explosions and _G.Settings.Explosions.Invisible) then
+	                Inst.BlastPressure = 1
+	                Inst.BlastRadius = 1
+	                Inst.Visible = false
+	            end
+	            if _G.Settings["No Explosions"] or (_G.Settings.Other and _G.Settings.Other["No Explosions"]) or (_G.Settings.Explosions and _G.Settings.Explosions.Destroy) then
+	                Inst:Destroy()
+	            end
+	        elseif Inst:IsA("Clothing") or Inst:IsA("SurfaceAppearance") or Inst:IsA("BaseWrap") then
+	            if _G.Settings["No Clothes"] or (_G.Settings.Other and _G.Settings.Other["No Clothes"]) then
+	                Inst:Destroy()
+	            end
+	        elseif Inst:IsA("BasePart") and not Inst:IsA("MeshPart") then
+	            if _G.Settings["Low Quality Parts"] or (_G.Settings.Other and _G.Settings.Other["Low Quality Parts"]) then
+	                Inst.Material = Enum.Material.Plastic
+	                Inst.Reflectance = 0
+	            end
+	        elseif Inst:IsA("TextLabel") and Inst:IsDescendantOf(workspace) then
+	            if _G.Settings["Lower Quality TextLabels"] or (_G.Settings.Other and _G.Settings.Other["Lower Quality TextLabels"]) or (_G.Settings.TextLabels and _G.Settings.TextLabels.LowerQuality) then
+	                Inst.Font = Enum.Font.SourceSans
+	                Inst.TextScaled = false
+		            Inst.RichText = false
+	                Inst.TextSize = 14
+	            end
+	            if _G.Settings["Invisible TextLabels"] or (_G.Settings.Other and _G.Settings.Other["Invisible TextLabels"]) or (_G.Settings.TextLabels and _G.Settings.TextLabels.Invisible) then
+	                Inst.Visible = false
+	            end
+	            if _G.Settings["No TextLabels"] or (_G.Settings.Other and _G.Settings.Other["No TextLabels"]) or (_G.Settings.TextLabels and _G.Settings.TextLabels.Destroy) then
+	                Inst:Destroy()
+	            end
+	        elseif Inst:IsA("Model") then
+	            if _G.Settings["Low Quality Models"] or (_G.Settings.Other and _G.Settings.Other["Low Quality Models"]) then
+	                Inst.LevelOfDetail = 1
+	            end
+	        elseif Inst:IsA("MeshPart") then
+	            if _G.Settings["Low Quality MeshParts"] or (_G.Settings.Other and _G.Settings.Other["Low Quality MeshParts"]) or (_G.Settings.MeshParts and _G.Settings.MeshParts.LowerQuality) then
+	                Inst.RenderFidelity = 2
+	                Inst.Reflectance = 0
+	                Inst.Material = Enum.Material.Plastic
+	            end
+	            if _G.Settings["Invisible MeshParts"] or (_G.Settings.Other and _G.Settings.Other["Invisible MeshParts"]) or (_G.Settings.MeshParts and _G.Settings.MeshParts.Invisible) then
+	                Inst.Transparency = 1
+	                Inst.RenderFidelity = 2
+	                Inst.Reflectance = 0
+	                Inst.Material = Enum.Material.Plastic
+	            end
+	            if _G.Settings.MeshParts and _G.Settings.MeshParts.NoTexture then
+	                Inst.TextureID = ""
+	            end
+	            if _G.Settings.MeshParts and _G.Settings.MeshParts.NoMesh then
+	                Inst.MeshId = ""
+	            end
+	            if _G.Settings["No MeshParts"] or (_G.Settings.Other and _G.Settings.Other["No MeshParts"]) or (_G.Settings.MeshParts and _G.Settings.MeshParts.Destroy) then
+	                Inst:Destroy()
+	            end
+	        end
+	    end
+	end
 
-    local Players = game:GetService("Players")
-    local Lighting = game:GetService("Lighting")
-    local StarterGui = game:GetService("StarterGui")
-    local MaterialService = game:GetService("MaterialService")
-    local ME = Players.LocalPlayer
-    local CanBeEnabled = {"ParticleEmitter", "Trail", "Smoke", "Fire", "Sparkles"}
+	coroutine.wrap(pcall)(function()
+	    if (_G.Settings["Low Water Graphics"] or (_G.Settings.Other and _G.Settings.Other["Low Water Graphics"])) then
+	        local terrain = workspace:FindFirstChildOfClass("Terrain")
+	        if not terrain then
+	            repeat
+	                task.wait()
+	            until workspace:FindFirstChildOfClass("Terrain")
+	            terrain = workspace:FindFirstChildOfClass("Terrain")
+	        end
+	        terrain.WaterWaveSize = 0
+	        terrain.WaterWaveSpeed = 0
+	        terrain.WaterReflectance = 0
+	        terrain.WaterTransparency = 0
+	        if sethiddenproperty then
+	            sethiddenproperty(terrain, "Decoration", false)
+	        end
+	    end
+	end)
+	coroutine.wrap(pcall)(function()
+	    if _G.Settings["No Shadows"] or (_G.Settings.Other and _G.Settings.Other["No Shadows"]) then
+	        Lighting.GlobalShadows = false
+	        Lighting.FogEnd = 9e9
+	        Lighting.ShadowSoftness = 0
+	        if sethiddenproperty then
+	            sethiddenproperty(Lighting, "Technology", 2)
+	        end
+	    end
+	end)
+	coroutine.wrap(pcall)(function()
+	    if _G.Settings["Low Rendering"] or (_G.Settings.Other and _G.Settings.Other["Low Rendering"]) then
+	        settings().Rendering.QualityLevel = 1
+	        settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level04
+	    end
+	end)
+	coroutine.wrap(pcall)(function()
+	    if _G.Settings["Reset Materials"] or (_G.Settings.Other and _G.Settings.Other["Reset Materials"]) then
+	        for i, v in pairs(MaterialService:GetChildren()) do
+	            v:Destroy()
+	        end
+	        MaterialService.Use2022Materials = false
+	        end
+	    end
+	end)
+	coroutine.wrap(pcall)(function()
+	    if _G.Settings["FPS Cap"] or (_G.Settings.Other and _G.Settings.Other["FPS Cap"]) then
+	        if setfpscap then
+	            if type(_G.Settings["FPS Cap"] or (_G.Settings.Other and _G.Settings.Other["FPS Cap"])) == "string" or type(_G.Settings["FPS Cap"] or (_G.Settings.Other and _G.Settings.Other["FPS Cap"])) == "number" then
+	                setfpscap(tonumber(_G.Settings["FPS Cap"] or (_G.Settings.Other and _G.Settings.Other["FPS Cap"])))
+	            elseif _G.Settings["FPS Cap"] or (_G.Settings.Other and _G.Settings.Other["FPS Cap"]) == true then
+	                setfpscap(1e6)
+	            end
+	        end
+	    end
+	end)
+	coroutine.wrap(pcall)(function()
+	    if _G.Settings.Other["ClearNilInstances"] then
+	        if getnilinstances then
+	            for _, v in pairs(getnilinstances()) do
+	                pcall(v.Destroy, v)
+	            end
+	        end
+	    end
+	end)
+	local Descendants = game:GetDescendants()
 
-    local function PartOfCharacter(Inst)
-        for i, v in pairs(Players:GetPlayers()) do
-            if v ~= ME and v.Character and Inst:IsDescendantOf(v.Character) then
-                return true
-            end
-        end
-        return false
-    end
+	for i, v in pairs(Descendants) do
+	    CheckIfBad(v)
+	end
 
-    local function DescendantOfIgnore(Inst)
-        for i, v in pairs(_G.Ignore) do
-            if Inst:IsDescendantOf(v) then
-                return true
-            end
-        end
-        return false
-    end
-
-    local function CheckIfBad(Inst)
-        if not Inst then return end
-
-        -- many of your condition checks simplified for readability
-        if Inst:IsA("DataModelMesh") then
-            if Inst:IsA("SpecialMesh") then
-                if _G.Settings.Meshes.NoMesh then
-                    Inst.MeshId = ""
-                end
-                if _G.Settings.Meshes.NoTexture then
-                    Inst.TextureId = ""
-                end
-            end
-            if _G.Settings.Meshes.Destroy then
-                Inst:Destroy()
-            end
-        elseif Inst:IsA("FaceInstance") then
-            if _G.Settings.Images.Invisible then
-                Inst.Transparency = 1
-                Inst.Shiny = 1
-            end
-            if _G.Settings.Images.Destroy then
-                Inst:Destroy()
-            end
-        elseif Inst:IsA("ShirtGraphic") then
-            if _G.Settings.Images.Invisible then
-                Inst.Graphic = ""
-            end
-            if _G.Settings.Images.Destroy then
-                Inst:Destroy()
-            end
-        elseif table.find(CanBeEnabled, Inst.ClassName) then
-            if _G.Settings.ParticesInvisible or (_G.Settings.Particles and _G.Settings.Particles.Invisible) then
-                pcall(function() Inst.Enabled = false end)
-            end
-            if _G.Settings.ParticesDestroy or (_G.Settings.Particles and _G.Settings.Particles.Destroy) then
-                pcall(function() Inst:Destroy() end)
-            end
-        elseif Inst:IsA("PostEffect") and (_G.Settings["No Camera Effects"] or (_G.Settings.Other and _G.Settings.Other["No Camera Effects"])) then
-            Inst.Enabled = false
-        elseif Inst:IsA("Explosion") then
-            if _G.Settings["Smaller Explosions"] or (_G.Settings.Explosions and _G.Settings.Explosions.Smaller) then
-                Inst.BlastPressure = 1
-                Inst.BlastRadius = 1
-            end
-            if _G.Settings["Invisible Explosions"] or (_G.Settings.Explosions and _G.Settings.Explosions.Invisible) then
-                Inst.BlastPressure = 1
-                Inst.BlastRadius = 1
-                Inst.Visible = false
-            end
-            if _G.Settings["No Explosions"] or (_G.Settings.Explosions and _G.Settings.Explosions.Destroy) then
-                pcall(function() Inst:Destroy() end)
-            end
-        elseif Inst:IsA("Clothing") or Inst:IsA("SurfaceAppearance") or Inst:IsA("BaseWrap") then
-            if _G.Settings["No Clothes"] then
-                pcall(function() Inst:Destroy() end)
-            end
-        elseif Inst:IsA("BasePart") and not Inst:IsA("MeshPart") then
-            if _G.Settings["Low Quality Parts"] then
-                Inst.Material = Enum.Material.Plastic
-                Inst.Reflectance = 0
-            end
-        elseif Inst:IsA("TextLabel") and Inst:IsDescendantOf(workspace) then
-            if _G.Settings["Lower Quality TextLabels"] or (_G.Settings.TextLabels and _G.Settings.TextLabels.LowerQuality) then
-                Inst.Font = Enum.Font.SourceSans
-                Inst.TextScaled = false
-                Inst.RichText = false
-                Inst.TextSize = 14
-            end
-            if _G.Settings["Invisible TextLabels"] or (_G.Settings.TextLabels and _G.Settings.TextLabels.Invisible) then
-                Inst.Visible = false
-            end
-            if _G.Settings["No TextLabels"] or (_G.Settings.TextLabels and _G.Settings.TextLabels.Destroy) then
-                pcall(function() Inst:Destroy() end)
-            end
-        elseif Inst:IsA("Model") then
-            if _G.Settings["Low Quality Models"] then
-                Inst.LevelOfDetail = 1
-            end
-        elseif Inst:IsA("MeshPart") then
-            if _G.Settings["Low Quality MeshParts"] or (_G.Settings.MeshParts and _G.Settings.MeshParts.LowerQuality) then
-                Inst.RenderFidelity = 2
-                Inst.Reflectance = 0
-                Inst.Material = Enum.Material.Plastic
-            end
-            if _G.Settings.MeshParts and _G.Settings.MeshParts.NoTexture then
-                Inst.TextureID = ""
-            end
-            if _G.Settings.MeshParts and _G.Settings.MeshParts.NoMesh then
-                Inst.MeshId = ""
-            end
-            if _G.Settings.MeshParts and _G.Settings.MeshParts.Destroy then
-                pcall(function() Inst:Destroy() end)
-            end
-        end
-    end
-
-    -- low water graphics
-    task.spawn(function()
-        pcall(function()
-            if _G.Settings["Low Water Graphics"] then
-                local terrain = workspace:FindFirstChildOfClass("Terrain")
-                if not terrain then
-                    repeat task.wait() until workspace:FindFirstChildOfClass("Terrain")
-                    terrain = workspace:FindFirstChildOfClass("Terrain")
-                end
-                terrain.WaterWaveSize = 0
-                terrain.WaterWaveSpeed = 0
-                terrain.WaterReflectance = 0
-                terrain.WaterTransparency = 0
-                if sethiddenproperty then
-                    pcall(function() sethiddenproperty(terrain, "Decoration", false) end)
-                end
-            end
-        end)
-    end)
-
-    -- no shadows
-    task.spawn(function()
-        pcall(function()
-            if _G.Settings["No Shadows"] then
-                Lighting.GlobalShadows = false
-                Lighting.FogEnd = 9e9
-                Lighting.ShadowSoftness = 0
-                if sethiddenproperty then
-                    pcall(function() sethiddenproperty(Lighting, "Technology", 2) end)
-                end
-            end
-        end)
-    end)
-
-    -- low rendering
-    task.spawn(function()
-        pcall(function()
-            if _G.Settings["Low Rendering"] then
-                settings().Rendering.QualityLevel = 1
-                settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level04
-            end
-        end)
-    end)
-
-    -- reset materials
-    task.spawn(function()
-        pcall(function()
-            if _G.Settings["Reset Materials"] then
-                for i, v in pairs(MaterialService:GetChildren()) do
-                    pcall(function() v:Destroy() end)
-                end
-                MaterialService.Use2022Materials = false
-            end
-        end)
-    end)
-
-    -- FPS cap
-    task.spawn(function()
-        pcall(function()
-            if _G.Settings["FPS Cap"] then
-                if setfpscap then
-                    if type(_G.Settings["FPS Cap"]) == "string" or type(_G.Settings["FPS Cap"]) == "number" then
-                        setfpscap(tonumber(_G.Settings["FPS Cap"]))
-                    elseif _G.Settings["FPS Cap"] == true then
-                        setfpscap(1e6)
-                    end
-                end
-            end
-        end)
-    end)
-
-    -- clear nil instances (if available)
-    task.spawn(function()
-        pcall(function()
-            if _G.Settings.Other and _G.Settings.Other.ClearNilInstances then
-                if getnilinstances then
-                    for _, v in pairs(getnilinstances()) do
-                        pcall(function() v:Destroy() end)
-                    end
-                end
-            end
-        end)
-    end)
-
-    -- process current descendants
-    for i, v in pairs(game:GetDescendants()) do
-        pcall(function() CheckIfBad(v) end)
-    end
-
-    game.DescendantAdded:Connect(function(value)
-        wait(_G.LoadedWait or 1)
-        pcall(function() CheckIfBad(value) end)
-    end)
+	game.DescendantAdded:Connect(function(value)
+	    wait(_G.LoadedWait or 1)
+	    CheckIfBad(value)
+	end)
 end
 
--- Public API
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
-        _G.Settings = {
+	    _G.Settings = {
             Players = { ["Ignore Me"] = true, ["Ignore Others"] = true },
             Meshes = { Destroy = true, LowDetail = true },
             Images = { Invisible = false, LowDetail = true, Destroy = false },
@@ -641,11 +620,11 @@ function StuffsModule:SetINFEnergy(state)
     InfiniteEnergy = state
 end
 
-function StuffsModule:SetHopServer()
+function StuffsModule:SetHopServer(state)
     Hop()
 end
 
-function StuffsModule:SetRejoinServer()
+function StuffsModule:SetRejoinServer(state)
     game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
 end
 
@@ -655,18 +634,18 @@ end
 
 function StuffsModule:SetWalkWater(state)
     WalkWaterEnabled = state
-    if waterPart then
-        if WalkWaterEnabled then
-            waterPart.Size = Vector3.new(1000, 110, 1000)
-        else
-            waterPart.Size = Vector3.new(1000, 80, 1000)
-        end
+    if WalkWaterEnabled then
+        waterPart.Size = Vector3.new(1000,110,1000)
+    else
+        waterPart.Size = Vector3.new(1000,80,1000)
     end
 end
 
 function StuffsModule:SetPingsOrFps(state)
-    PingsOrFpsEnabled = state
-    if ScreenGui then ScreenGui.Enabled = state end
+	PingsOrFpsEnabled = state
+	if ScreenGui then
+		ScreenGui.Enabled = state
+	end
 end
 
 return StuffsModule
