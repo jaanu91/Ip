@@ -341,19 +341,9 @@ function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
         _G.Settings = {
-            Players = {
-                ["Ignore Me"] = true,
-                ["Ignore Others"] = true
-            },
-            Meshes = {
-                Destroy = true,
-                LowDetail = true
-            },
-            Images = {
-                Invisible = false,
-                LowDetail = true,
-                Destroy = false,
-            },
+            Players = { ["Ignore Me"] = true, ["Ignore Others"] = true },
+            Meshes = { Destroy = true, LowDetail = true },
+            Images = { Invisible = false, LowDetail = true, Destroy = false },
             ["No Particles"] = true,
             ["No Camera Effects"] = true,
             ["No Explosions"] = true,
@@ -365,22 +355,52 @@ function StuffsModule:SetFpsBoost(state)
         }
 
         if not fpsBoostLoaded then
-            pcall(function()
-                local ok, res = pcall(function()
-                    local scriptCode = game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi")
-                    local func = loadstring(scriptCode)
-                    if func then
-                        func()
-                    else
-                        warn("Failed to compile Didi script")
-                    end
-                end)
-                if ok then
-                    fpsBoostLoaded = true
-                else
-                    warn("Failed to load remote fps boost script:", res)
-                end
+            -- Try to fetch + compile + run the remote script robustly
+            local url = "https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Didi"
+            local okHttp, scriptCode = pcall(function()
+                return game:HttpGet(url)
             end)
+
+            if not okHttp or not scriptCode or scriptCode == "" then
+                warn("Failed to fetch Didi script. HTTP error or empty response. HttpGet success:", okHttp)
+                return
+            end
+
+            -- prefer loadstring if present, otherwise try load()
+            local loader = loadstring or load
+            if not loader then
+                warn("No loadstring/load available in this environment. Cannot compile remote script.")
+                return
+            end
+
+            local okCompile, compiledOrErr = pcall(function()
+                return loader(scriptCode)
+            end)
+
+            if not okCompile then
+                warn("Compilation error when trying to load Didi script:", compiledOrErr)
+                return
+            end
+
+            local func = compiledOrErr
+            if type(func) ~= "function" then
+                warn("Didi script did not return an executable function after compilation.")
+                return
+            end
+
+            -- execute in protected call to capture runtime errors
+            local okRun, runErr = pcall(function()
+                func()
+            end)
+
+            if not okRun then
+                warn("Runtime error while executing Didi script:", runErr)
+                return
+            end
+
+            -- success
+            fpsBoostLoaded = true
+            print("Didi script loaded and executed successfully.")
         end
     end
 end
