@@ -159,7 +159,7 @@ local FruitsToCheck = {
     "Buddha Fruit","Love Fruit","Spider Fruit","Sound Fruit","Phoenix Fruit","Portal Fruit",
     "Pain Fruit","Blizzard Fruit","Gravity Fruit","Mammoth Fruit","T-Rex Fruit","Yeti Fruit",
     "Dough Fruit","Shadow Fruit","Venom Fruit","Control Fruit","Gas Fruit","Spirit Fruit",
-    "Dragon Fruit","Leopard Fruit","Kitsune Fruit","Lightning Fruit"
+    "Dragon Fruit","Leopard Fruit","Kitsune Fruit"
 }
 
 local SeaNames = {
@@ -172,21 +172,35 @@ local function get_request()
     return (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
 end
 
-local function send_webhook(content)
+local serverFruits = {}
+local notified = {}
+
+local function send_webhook_embed(fruitList, seaName, jobId)
     local req = get_request()
     if not req then return end
 
-    local payload = HttpService:JSONEncode({content = content})
+    local embed = {
+        embeds = {{
+            title = "🍏 Fruit Spawned!",
+            description = "New fruit has spawned in the game!",
+            color = 65280, 
+            fields = {
+                {name = "Fruits", value = fruitList, inline = false},
+                {name = "Sea", value = seaName, inline = true},
+                {name = "Job ID", value = "```"..jobId.."```", inline = true},
+                {name = "Mobile Copy JobId", value = "`"..jobId.."`", inline = false},
+            },
+            footer = {text = "BloxFruits Notifier"}
+        }}
+    }
+
     req({
         Url = WEBHOOK_URL,
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
-        Body = payload
+        Body = HttpService:JSONEncode(embed)
     })
 end
-
-local serverFruits = {}
-local notified = {}
 
 local function notify_server(jobId)
     local fruits = serverFruits[jobId]
@@ -194,12 +208,8 @@ local function notify_server(jobId)
         local seaName = SeaNames[game.PlaceId] or "Unknown Sea"
         local fruitList = table.concat(fruits, ", ")
 
-        local msg = string.format(
-            "🍏 Fruit Spawned: **%s**\n🌊 Sea: %s\n🆔 JobId: ```%s```\n📱 Mobile Copy JobId:\n`%s`",
-            fruitList, seaName, jobId, jobId
-        )
+        send_webhook_embed(fruitList, seaName, jobId)
 
-        send_webhook(msg)
         serverFruits[jobId] = nil
         notified[jobId] = false
     end
