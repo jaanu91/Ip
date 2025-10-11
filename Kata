@@ -7,7 +7,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local currentTool = nil
 local lastTool = nil
-local sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
+local tapActive = true
+local sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchActive = false
