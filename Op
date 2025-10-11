@@ -241,6 +241,7 @@ spawn(function()
         OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
             local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
 
+            -- 🔹 Fireserver hook (Silent Aim redirect)
             if tostring(self) == "RemoteEvent" and Method == "fireserver" then
                 if typeof(V1) == "Vector3" then
                     if SilentAimPlayersEnabled and PlayersPosition then
@@ -249,15 +250,27 @@ spawn(function()
                         return OldHook(self, NPCPosition, V2, ...)
                     end
                 end
-            elseif Method == "invokeserver" then
-                if typeof(V2) == "Vector3" then
-                    if SilentAimPlayersEnabled and PlayersPosition then
-                        return OldHook(self, PlayersPosition, nil, ...)
-                    elseif SilentAimNPCsEnabled and NPCPosition then
-                        return OldHook(self, NPCPosition, nil, ...)
+            end
+
+            -- 🔹 Invokeserver hook (add Tap ignore check)
+            if Method == "invokeserver" then
+                -- ✅ Ignore Tap calls completely (no modification)
+                if type(V1) == "string" and V1:lower() == "tap" then
+                    return OldHook(self, V1, V2, ...)
+                end
+
+                -- Regular invokeserver handling (non-Tap)
+                if type(V1) == "string" then
+                    if typeof(V2) == "Vector3" then
+                        if SilentAimPlayersEnabled and PlayersPosition then
+                            return OldHook(self, V1, PlayersPosition, nil, ...)
+                        elseif SilentAimNPCsEnabled and NPCPosition then
+                            return OldHook(self, V1, NPCPosition, nil, ...)
+                        end
                     end
                 end
             end
+
             return OldHook(self, V1, V2, ...)
         end)
         setreadonly(hookMeta, true)
