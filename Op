@@ -267,22 +267,24 @@ spawn(function()
                     end
                 end
             elseif Method == "invokeserver" then
-			    if currentTool and currentTool.Name == "Buddy Sword" then
-			        local success, err = pcall(function()
-			            if typeof(V2) == "Vector3" then
-			                if SilentAimPlayersEnabled and PlayersPosition then
-			                    return OldHook(self, PlayersPosition, ...)
-			                elseif SilentAimNPCsEnabled and NPCPosition then
-			                    return OldHook(self, NPCPosition, ...)
-			                end
-						end
-			        end)
-
-			        if not success then
-			            warn("[Buddy Sword InvokeServer Error]:", err)
-			        end
-			    end
-			end
+	            if currentTool and currentTool.Name == "Buddy Sword" then
+	                if type(V1) == "string" then
+	                    if V1 == "TAP" and typeof(V2) == "Vector3" then
+	                        if SilentAimPlayersEnabled and PlayersPosition then
+	                            return OldHook(self, "TAP", PlayersPosition, ...)
+	                        elseif SilentAimNPCsEnabled and NPCPosition then
+	                            return OldHook(self, "TAP", NPCPosition, ...)
+	                        end
+	                    elseif typeof(V2) == "Vector3" then
+	                        if SilentAimPlayersEnabled and PlayersPosition then
+	                            return OldHook(self, V1, PlayersPosition, nil, ...)
+	                        elseif SilentAimNPCsEnabled and NPCPosition then
+	                            return OldHook(self, V1, NPCPosition, nil, ...)
+	                        end
+	                    end
+					end
+                end
+            end
 
             return OldHook(self, V1, V2, ...)
         end)
