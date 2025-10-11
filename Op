@@ -44,6 +44,7 @@ local function getHRP(model)
 	return model.HumanoidRootPart
 end
 
+
 local function getPredictedPosition(hrp)
 	if not hrp then return nil end
 
@@ -58,6 +59,7 @@ local function getPredictedPosition(hrp)
 
 	return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
+
 -- =========================
 -- Team Check
 -- =========================
@@ -249,13 +251,7 @@ spawn(function()
                 end
             elseif Method == "invokeserver" then
                 if type(V1) == "string" then
-                    if V1 == "TAP" and typeof(V2) == "Vector3" then
-                        if SilentAimPlayersEnabled and PlayersPosition then
-                            return OldHook(self, "TAP", PlayersPosition, ...)
-                        elseif SilentAimNPCsEnabled and NPCPosition then
-                            return OldHook(self, "TAP", NPCPosition, ...)
-                        end
-                    elseif typeof(V2) == "Vector3" then
+                    if typeof(V2) == "Vector3" then
                         if SilentAimPlayersEnabled and PlayersPosition then
                             return OldHook(self, V1, PlayersPosition, nil, ...)
                         elseif SilentAimNPCsEnabled and NPCPosition then
