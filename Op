@@ -268,20 +268,12 @@ spawn(function()
                 end
             elseif Method == "invokeserver" then
 	            if currentTool and currentTool.Name == "Buddy Sword" then
-	                if type(V1) == "string" then
-	                    if V1 == "TAP" and typeof(V2) == "Vector3" then
-	                        if SilentAimPlayersEnabled and PlayersPosition then
-	                            return OldHook(self, "TAP", PlayersPosition, ...)
-	                        elseif SilentAimNPCsEnabled and NPCPosition then
-	                            return OldHook(self, "TAP", NPCPosition, ...)
-	                        end
-	                    elseif typeof(V2) == "Vector3" then
-	                        if SilentAimPlayersEnabled and PlayersPosition then
-	                            return OldHook(self, V1, PlayersPosition, nil, ...)
-	                        elseif SilentAimNPCsEnabled and NPCPosition then
-	                            return OldHook(self, V1, NPCPosition, nil, ...)
-	                        end
-	                    end
+                    if typeof(V2) == "Vector3" then
+                        if SilentAimPlayersEnabled and PlayersPosition then
+                            return OldHook(self, V1, PlayersPosition, nil, ...)
+                        elseif SilentAimNPCsEnabled and NPCPosition then
+                            return OldHook(self, V1, NPCPosition, nil, ...)
+                        end
 					end
                 end
             end
