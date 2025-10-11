@@ -7,10 +7,11 @@ local UserInputService = game:GetService("UserInputService")
 
 local currentTool = nil
 local lastTool = nil
-local sharkZActive, vActive, cursedZActive = false, false, false
+local sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchActive = false
+local keyHoldingActive = false
 local SilentAimModuleRef = nil
 
 local function clearConnections()
@@ -45,7 +46,7 @@ local function hookTool(tool)
         if not parent then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive = false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
             rightTouchActive = false
             EnableSilentAimbot()
         end
@@ -59,7 +60,7 @@ local function isValidStopCondition()
 end
 
 -- =========================
--- Touch Control
+-- Touch Control (Mobile)
 -- =========================
 UserInputService.TouchStarted:Connect(function(touch)
     local camera = workspace.CurrentCamera
@@ -84,6 +85,66 @@ UserInputService.TouchEnded:Connect(function(touch)
     end
 end)
 
+-- =========================
+-- Keyboard Control (PC)
+-- =========================
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.V then
+            if lastTool == "Dough-Dough" then
+                vActive = true
+                keyHoldingActive = true
+                DisableSilentAimbot()
+            end
+        elseif input.KeyCode == Enum.KeyCode.Z then
+            if currentTool and currentTool.Name == "Shark Anchor" then
+                sharkZActive = true
+                keyHoldingActive = true
+                DisableSilentAimbot()
+            elseif currentTool and currentTool.Name == "Cursed Dual Katana" then
+                cursedZActive = true
+                keyHoldingActive = true
+                DisableSilentAimbot()
+            end
+        elseif input.KeyCode == Enum.KeyCode.F then
+		    if currentTool and currentTool.Name == "Lightning-Lightning" then
+		        lightningFActive = true
+		        keyHoldingActive = true
+		        DisableSilentAimbot()
+		    end
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.V then
+            if vActive then
+                vActive = false
+                keyHoldingActive = false
+                EnableSilentAimbot()
+            end
+        elseif input.KeyCode == Enum.KeyCode.Z then
+            if sharkZActive then
+                sharkZActive = false
+                keyHoldingActive = false
+                EnableSilentAimbot()
+            elseif cursedZActive then
+                cursedZActive = false
+                keyHoldingActive = false
+                EnableSilentAimbot()
+            end
+        elseif input.KeyCode == Enum.KeyCode.F then
+		    if lightningFActive then
+		        lightningFActive = false
+		        keyHoldingActive = false
+		        EnableSilentAimbot()
+		    end
+        end
+    end
+end)
 -- =========================
 -- Damage Counter Watch
 -- =========================
@@ -117,13 +178,13 @@ local function watchDamageCounter()
     end
 
     dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-        local dmgText = tonumber(dmgTextLabel.Text) or 0
-        if dmgText > 0 and isValidStopCondition() and rightTouchActive then
-            DisableSilentAimbot()
-        elseif not rightTouchActive then
-            EnableSilentAimbot()
-        end
-    end)
+	    local dmgText = tonumber(dmgTextLabel.Text) or 0
+	    if dmgText > 0 and isValidStopCondition() and (rightTouchActive or keyHoldingActive) then
+	        DisableSilentAimbot()
+	    elseif not rightTouchActive and not keyHoldingActive then
+	        EnableSilentAimbot()
+	    end
+	end)
 
     table.insert(characterConnections, dmgConn)
 end
@@ -144,29 +205,41 @@ if not getgenv().VSkillHooked then
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Shark Anchor" then
 	                sharkZActive = true
-	                task.delay(2, function()
-	                    sharkZActive = false
-	                end)
+					keyHoldingActive = true
+					DisableSilentAimbot()
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "V" then
 	            if lastTool == "Dough-Dough" then
 	                vActive = true
-	                task.delay(2, function()
-		                vActive = false
-					end)
+					keyHoldingActive = true
+					DisableSilentAimbot()
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Cursed Dual Katana" then
 	                cursedZActive = true
-	                task.delay(2, function()
-	                    cursedZActive = false
-	                end)
+					keyHoldingActive = true
+					DisableSilentAimbot()
 	            end
 	        end
+	
+			if typeof(a1) == "string" and a1:upper() == "F" then
+			    if currentTool and currentTool.Name == "Lightning-Lightning" then
+			        lightningFActive = true
+			        keyHoldingActive = true
+			        DisableSilentAimbot()
+			    end
+			end
+			
+			if typeof(a1) == "string" and a1:upper() == "TAP" then
+			    if currentTool and currentTool.Name == "Portal-Portal" then
+			        tapActive = true
+			        DisableSilentAimbot()
+			    end
+			end
 	    end
 	    return old(self, ...)
 	end)
@@ -178,8 +251,9 @@ end
 local function onCharacterAdded(char)
     clearConnections()
     
-    sharkZActive, vActive, cursedZActive = false, false, false
+    sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
     rightTouchActive = false
+    keyHoldingActive = false
     EnableSilentAimbot()
 
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
@@ -190,8 +264,9 @@ local function onCharacterAdded(char)
         if child == currentTool and lastTool then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive = false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
             rightTouchActive = false
+            keyHoldingActive = false
             EnableSilentAimbot()
         end
     end))
