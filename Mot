@@ -83,6 +83,21 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.ESP:SetESP(Settings["ESPPlayers"])
         Toggles.ESPPlayers:UpdateToggle(nil, Settings["ESPPlayers"])
     end
+    
+    if Settings["BunnyHop"] ~= nil then
+        Modules.ESP:SetBunnyhop(Settings["BunnyHop"])
+        Toggles.BunnyHop:UpdateToggle(nil, Settings["BunnyHop"])
+    end
+    
+    if Settings["V3Skill"] ~= nil then
+        Modules.ESP:SetV3(Settings["V3Skill"])
+        Toggles.V3Skill:UpdateToggle(nil, Settings["V3Skill"])
+    end
+    
+    if Settings["AuraSkill"] ~= nil then
+        Modules.ESP:SetBuso(Settings["AuraSkill"])
+        Toggles.AuraSkill:UpdateToggle(nil, Settings["AuraSkill"])
+    end
 
     if Settings["AntiAFK"] ~= nil then
         Modules.ESP:SetAntiAfk(Settings["AntiAFK"])
@@ -137,18 +152,6 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
     if Settings["ZSkills"] ~= nil then
         Modules.Zskill:SetZSkills(Settings["ZSkills"])
         Toggles.ZSkills:UpdateToggle(nil, Settings["ZSkills"])
-    end
-
-    if Settings["SpeedHack"] then
-        local Player = game:GetService("Players").LocalPlayer
-        local Humanoid = Player.Character and Player.Character:FindFirstChild("Humanoid")
-        if Humanoid then
-            getgenv().WalkSpeedValue = Settings["SpeedHack"]
-            Humanoid.WalkSpeed = getgenv().WalkSpeedValue
-            Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-                Humanoid.WalkSpeed = getgenv().WalkSpeedValue
-            end)
-        end
     end
 end
 
