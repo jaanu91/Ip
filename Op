@@ -276,14 +276,13 @@ spawn(function()
 	                            return OldHook(self, V1, NPCPosition, nil, ...)
 	                        end
 						end
-	                end
+					end
+				elseif typeof(V1) == "string" and V1:upper() == "TAP" then
+				    if currentTool and currentTool.Name == "Portal-Portal" then
+				        SilentAimNPCsEnabled = false
+				    end
 				end
             end
-            if typeof(V1) == "string" and V1:upper() == "TAP" then
-			    if currentTool and currentTool.Name == "Portal-Portal" then
-			        SilentAimNPCsEnabled = false
-			    end
-			end
 
             return OldHook(self, V1, V2, ...)
         end)
