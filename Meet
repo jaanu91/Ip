@@ -2,75 +2,75 @@ local JakeModule = {}
 
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local Mouse = RS:FindFirstChild("Mouse")
+local Mouse = RS:FindFirstChild("Mouse") 
+local Skills = {"X"}
 
 local realMouseHit = nil
 local realMouseTarget = nil
 
 if Mouse then
-	pcall(function()
-		realMouseHit = Mouse.Hit
-		realMouseTarget = Mouse.Target
-	end)
+    pcall(function()
+        realMouseHit = Mouse.Hit and Mouse.Hit
+        realMouseTarget = Mouse.Target and Mouse.Target
+    end)
 end
 
 RunService.Heartbeat:Connect(function()
-	if Mouse then
-		pcall(function()
-			realMouseHit = Mouse.Hit or realMouseHit
-			realMouseTarget = Mouse.Target or realMouseTarget
-		end)
+    if Mouse then
+        pcall(function()
+            realMouseHit = Mouse.Hit or realMouseHit
+            realMouseTarget = Mouse.Target or realMouseTarget
+        end)
 
-		local gp = getgenv()
-		if gp and gp.NPCPosition then
-			pcall(function() Mouse.Hit = CFrame.new(gp.NPCPosition) end)
-		elseif gp and gp.PlayersPosition then
-			pcall(function() Mouse.Hit = CFrame.new(gp.PlayersPosition) end)
-		end
-	end
+        local gp = getgenv()
+        if gp and gp.NPCPosition then
+            pcall(function() Mouse.Hit = CFrame.new(gp.NPCPosition) end)
+        elseif gp and gp.PlayersPosition then
+            pcall(function() Mouse.Hit = CFrame.new(gp.PlayersPosition) end)
+        end
+    end
 end)
 
 spawn(function()
-	local success, mt = pcall(function() return getrawmetatable(game) end)
-	if not success or not mt then return end
+    local success, gg = pcall(function() return getrawmetatable(game) end)
+    if not success or not gg then return end
+    local old = gg.__namecall
+    if not old then return end
 
-	local oldNamecall = mt.__namecall
-	if not oldNamecall then return end
+    setreadonly(gg, false)
+    gg.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod and getnamecallmethod() or ""
+        local args = {...}
 
-	setreadonly(mt, false)
-	mt.__namecall = newcclosure(function(self, ...)
-		local method = getnamecallmethod and getnamecallmethod() or ""
-		local args = {...}
+        local gp = getgenv()
+        local targetPos = nil
+        if gp and gp.SilentAimPlayersEnabled and gp.PlayersPosition then
+            targetPos = gp.PlayersPosition
+        elseif gp and gp.SilentAimNPCsEnabled and gp.NPCPosition then
+            targetPos = gp.NPCPosition
+        end
 
-		if tostring(method) == "InvokeServer" and typeof(args[1]) == "string" then
-			local skill = args[1]:upper()
+        if tostring(method) == "InvokeServer" then
+            if typeof(args[1]) == "string" then
+                local skill = args[1]:upper()
 
-			-- Only hook X skill when Buddy Sword is equipped
-			if skill == "X" then
-				local player = game.Players.LocalPlayer
-				local char = player.Character
-				if char and char:FindFirstChild("Buddy Sword") then
-					local gp = getgenv()
-					local targetPos = nil
+                if skill == "TAP" then
+                    args[2] = (realMouseHit and realMouseHit.p) or args[2]
+                    return old(self, unpack(args))
+                end
 
-					if gp and gp.SilentAimPlayersEnabled and gp.PlayersPosition then
-						targetPos = gp.PlayersPosition
-					elseif gp and gp.SilentAimNPCsEnabled and gp.NPCPosition then
-						targetPos = gp.NPCPosition
-					end
+                if table.find(Skills, skill) then
+                    if targetPos then
+                        args[2] = targetPos
+                    end
+                    return old(self, unpack(args))
+                end
+            end
+        end
 
-					if targetPos then
-						args[2] = targetPos
-					end
-
-					return oldNamecall(self, unpack(args))
-				end
-			end
-		end
-
-		return oldNamecall(self, ...)
-	end)
-	setreadonly(mt, true)
+        return old(self, ...)
+    end)
+    setreadonly(gg, true)
 end)
 
 return JakeModule
