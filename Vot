@@ -189,6 +189,30 @@ spawn(function()
 	end
 end)
 
+function UiSettingsModule:SetWalkSpeed(value)
+    getgenv().WalkSpeedValue = value
+    local player = game:GetService("Players").LocalPlayer
+
+    local function applySpeed(char)
+        local humanoid = char:WaitForChild("Humanoid")
+        humanoid.WalkSpeed = value
+        humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if humanoid.WalkSpeed ~= value then
+                humanoid.WalkSpeed = value
+            end
+        end)
+    end
+
+    if player.Character then
+        applySpeed(player.Character)
+    end
+
+    player.CharacterAdded:Connect(function(char)
+        char:WaitForChild("Humanoid")
+        applySpeed(char)
+    end)
+end
+
 function UiSettingsModule:SetV4(state)
     V4Enabled = state
     
