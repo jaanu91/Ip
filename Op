@@ -37,6 +37,11 @@ local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 local Selectedplayer = nil
+getgenv().PlayersPosition = nil
+getgenv().NPCPosition = nil
+getgenv().SilentAimPlayersEnabled = false
+getgenv().SilentAimNPCsEnabled = false
+
 local characterConnections = {}
 
 local PredictionAmount = 0.1
@@ -208,11 +213,13 @@ RunService.Heartbeat:Connect(function()
     local targetModel = nil
 
     if SilentAimPlayersEnabled then
+	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
 		local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
 		if targetplayer and targetplayer ~= player and targetplayer.Character then
 			playersaimbot = targetplayer.Name
 			local hrp = getHRP(targetplayer.Character)
 			PlayersPosition = getPredictedPosition(hrp)
+			getgenv().PlayersPosition = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
 		else
@@ -224,11 +231,13 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	if SilentAimNPCsEnabled then  
+		getgenv().SilentAimNPCsEnabled = SilentAimNPCsEnabled
 	    local closestNPC = getClosestNPC(lpHRP)  
 	    if closestNPC then  
 	        NPCaimbot = closestNPC.Name  
 	        local hrp = getHRP(closestNPC)  
 	        NPCPosition = getPredictedPosition(hrp)  
+			getgenv().NPCPosition = NPCPosition
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
@@ -327,6 +336,7 @@ end
 function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsplayerAim = state
 	SilentAimPlayersEnabled = state
+	getgenv().SilentAimPlayersEnabled = state
 
 	if state then
 		ActivateJakeHook()
@@ -340,6 +350,7 @@ end
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
+	getgenv().SilentAimNPCsEnabled = state
 
 	if state then
 		ActivateJakeHook()
