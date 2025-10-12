@@ -251,7 +251,7 @@ spawn(function()
     if not old then return end
 
     setreadonly(gg, false)
-    gg.__namecall = newcclosure(function(self, ...)
+    gg.__namecall = newcclosure(function(...)
         local method = getnamecallmethod()
         local args = {...}
 
@@ -266,12 +266,11 @@ spawn(function()
             if tostring(args[1]) == "RemoteEvent" then
                 if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
                     args[2] = targetPos
-                    return old(self, unpack(args))
+                    return old(unpack(args))
                 end
             end
         end
-        
-        return old(self, ...)
+        return old(...)
     end)
     setreadonly(gg, true)
 end)
