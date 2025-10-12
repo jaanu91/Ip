@@ -9,7 +9,6 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
-local MouseModule = RS:FindFirstChild("Mouse")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 
 local Services = setmetatable({}, {
@@ -274,37 +273,6 @@ spawn(function()
     end)
     setreadonly(gg, true)
 end)
-
-if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
-    if ok2 and Mouse then
-        local RootPart = Character:FindFirstChild("HumanoidRootPart")
-        if RootPart then
-            pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
-            end)
-        else
-            task.spawn(function()
-                local RootPart = Character:WaitForChild("HumanoidRootPart")
-                pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
-                end)
-            end)
-        end
-
-        RunService.Heartbeat:Connect(function()
-            if Mouse then
-                if NPCPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-                elseif PlayersPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
-                end
-            end
-        end)
-    end
-end
 
 local HasTag = function(tagName)
   local char = player.Character
