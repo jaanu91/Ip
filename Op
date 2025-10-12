@@ -280,6 +280,12 @@ spawn(function()
 				elseif typeof(V1) == "string" and V1:upper() == "TAP" then
 				    if currentTool and currentTool.Name == "Portal-Portal" then
 				        SilentAimNPCsEnabled = false
+						SilentAimPlayersEnabled = false
+						
+						task.delay(1, function()
+				            SilentAimPlayersEnabled = UserWantsplayerAim
+				            SilentAimNPCsEnabled = UserWantsNPCAim
+				        end)
 				    end
 				end
             end
