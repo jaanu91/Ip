@@ -5,6 +5,7 @@ local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local Character = player.Character or player.CharacterAdded:Wait()
+local UserInputService = game:GetService("UserInputService")  
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
@@ -37,7 +38,10 @@ local currentTargetType = nil
 local Selectedplayer = nil
 local currentTool = nil
 
+local Skills = {"Z", "X", "C", "V", "F"}
+local ActiveSkills = {}
 local characterConnections = {}
+
 local PredictionAmount = 0.1
 local maxRange = 1000
 
@@ -267,28 +271,67 @@ spawn(function()
                     end
                 end
             elseif Method == "invokeserver" then
-	            if typeof(V1) == "string" and V1:upper() == "X" then
-		            if currentTool and currentTool.Name == "Buddy Sword" then
-	                    if typeof(V2) == "Vector3" then
-	                        if SilentAimPlayersEnabled and PlayersPosition then
-	                            return OldHook(self, V1, PlayersPosition, nil, ...)
-	                        elseif SilentAimNPCsEnabled and NPCPosition then
-	                            return OldHook(self, V1, NPCPosition, nil, ...)
-	                        end
+	            if type(V1) == "string" and table.find(Skills, V1) then  
+	                if ActiveSkills[V1] then
+	                    if SilentAimPlayersEnabled and PlayersPosition then
+	                        return OldHook(self, V1, PlayersPosition, nil, ...)
+	                    elseif SilentAimNPCsEnabled and NPCPosition then
+	                        return OldHook(self, V1, NPCPosition, nil, ...)
+	                    end
+					end
+	            end
+			end
+            
+            UserInputService.InputBegan:Connect(function(input, gameProcessed)  
+                if gameProcessed then return end  
+                if table.find(Skills, input.KeyCode.Name) then  
+                    ActiveSkills[input.KeyCode.Name] = true
+                end  
+            end)  
+
+            UserInputService.InputEnded:Connect(function(input, gameProcessed)  
+                if gameProcessed then return end  
+                if table.find(Skills, input.KeyCode.Name) then  
+                    ActiveSkills[input.KeyCode.Name] = false
+                end  
+            end)
+            
+            local function connectSkillButton(button, keyName)
+			if not button then return end
+	
+			button.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+					ActiveSkills[keyName] = true
+				end
+			end)
+	
+			button.InputEnded:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+					ActiveSkills[keyName] = false
+				end
+			end)
+
+			local function scanSkills()
+				for _, toolFolder in pairs(SkillsFolder:GetChildren()) do
+					for _, key in ipairs(Skills) do
+						local frame = toolFolder:FindFirstChild(key)
+						if frame and frame:FindFirstChild("Mobile") then
+							local button = frame.Mobile
+							if not button:GetAttribute("Connected") then
+								connectSkillButton(button, key)
+								button:SetAttribute("Connected", true)
+							end
 						end
 					end
-				elseif typeof(V1) == "string" and V1:upper() == "TAP" then
-				    if currentTool and currentTool.Name == "Portal-Portal" then
-				        SilentAimNPCsEnabled = false
-						SilentAimPlayersEnabled = false
-						
-						task.delay(1, function()
-				            SilentAimPlayersEnabled = UserWantsplayerAim
-				            SilentAimNPCsEnabled = UserWantsNPCAim
-				        end)
-				    end
 				end
-            end
+			end
+
+			SkillsFolder.ChildAdded:Connect(function(child)
+				task.wait(0.2)
+				scanSkills()
+			end)
+
+			scanSkills()
                 
             return OldHook(self, V1, V2, ...)
         end)
