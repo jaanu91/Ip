@@ -69,12 +69,6 @@ UserInputService.TouchStarted:Connect(function(touch)
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = true
         
-        tapActive = true
-        if currentTool and currentTool.Name == "Portal-Portal" and tapActive then           
-            DisableSilentAimbot()
-            return
-        end
-        
         if currentTool and currentTool.Name == "Lightning-Lightning" then
             lightningFActive = true
             DisableSilentAimbot()
