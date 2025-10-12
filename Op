@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
+local Mouse = RS:FindFirstChild("Mouse")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 
 local Services = setmetatable({}, {
@@ -28,6 +29,8 @@ local UserWantsNPCAim = false
 local PredictionEnabled = false
 local AutoKen = false
 
+local realMouseHit = nil
+local realMouseTarget = nil
 local playersaimbot = nil
 local PlayersPosition = nil
 local NPCaimbot = nil
@@ -243,35 +246,57 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-spawn(function()
-    local success, gg = pcall(function() return getrawmetatable(game) end)
-    if not success or not gg then return end
-    local old = gg.__namecall
-    if not old then return end
+if Mouse then
+    pcall(function()
+        realMouseHit = Mouse.Hit and Mouse.Hit
+        realMouseTarget = Mouse.Target and Mouse.Target
+    end)
+end
 
-    setreadonly(gg, false)
-    gg.__namecall = newcclosure(function(...)
-        local method = getnamecallmethod()
-        local args = {...}
+RunService.Heartbeat:Connect(function()
+    if Mouse then
+        pcall(function()
+            realMouseHit = Mouse.Hit or realMouseHit
+            realMouseTarget = Mouse.Target or realMouseTarget
+        end)
 
-        local targetPos = nil
-        if SilentAimPlayersEnabled and PlayersPosition then
-            targetPos = PlayersPosition
-        elseif SilentAimNPCsEnabled and NPCPosition then
-            targetPos = NPCPosition
+        if NPCPosition then
+            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+        elseif PlayersPosition then
+            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
         end
+    end
+end)
 
-        if targetPos and tostring(method) == "FireServer" then
-            if tostring(args[1]) == "RemoteEvent" then
-                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                    args[2] = targetPos
-                    return old(unpack(args))
-                end
+local old = gg.__namecall
+gg.__namecall = newcclosure(function(...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    local targetPos = nil
+    if SilentAimPlayersEnabled and PlayersPosition then
+        targetPos = PlayersPosition
+    elseif SilentAimNPCsEnabled and NPCPosition then
+        targetPos = NPCPosition
+    end
+
+    if targetPos and tostring(method) == "FireServer" then
+        if tostring(args[1]) == "RemoteEvent" then
+            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                args[2] = targetPos
+                return old(unpack(args))
             end
         end
-        return old(...)
-    end)
-    setreadonly(gg, true)
+    end
+
+    if tostring(method) == "InvokeServer" then
+	    if typeof(args[1]) == "string" and args[1]:upper() == "TAP" then
+	        args[2] = realMouseHit and realMouseHit.p or args[2]
+	        return old(unpack(args))
+	    end
+	end
+
+    return old(...)
 end)
 
 local HasTag = function(tagName)
