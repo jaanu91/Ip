@@ -4,6 +4,8 @@ local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local SkillsFolder = PlayerGui:WaitForChild("Main"):WaitForChild("Skills")
 local Character = player.Character or player.CharacterAdded:Wait()
 local UserInputService = game:GetService("UserInputService")  
 local RunService = game:GetService("RunService")
