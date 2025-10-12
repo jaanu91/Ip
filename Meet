@@ -3,7 +3,7 @@ local JakeModule = {}
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Mouse = RS:FindFirstChild("Mouse") 
-local Skills = {"Z", "X", "C", "V", "F"}
+local Skills = {"X"}
 
 local realMouseHit = nil
 local realMouseTarget = nil
