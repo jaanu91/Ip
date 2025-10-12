@@ -46,7 +46,7 @@ local function hookTool(tool)
         if not parent then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false 
             rightTouchActive = false
             EnableSilentAimbot()
         end
@@ -87,9 +87,9 @@ UserInputService.TouchEnded:Connect(function(touch)
     
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = false
-            EnableSilentAimbot()
-            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false 
-        end
+
+        EnableSilentAimbot()
+        sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false 
     end
 end)
 
@@ -153,6 +153,7 @@ UserInputService.InputEnded:Connect(function(input, gp)
         end
     end
 end)
+
 -- =========================
 -- Damage Counter Watch
 -- =========================
