@@ -7,6 +7,7 @@ local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubuserconten
 local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
 local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer 
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local PlayerList = {"None"}
@@ -212,11 +213,36 @@ local FpsOrPingsToggle = Section:NewToggle("・Fps Or Pings", "Display Ping or F
     Settings["FpsOrPings"] = state
 end)
 
-Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
+local SpeedBox = Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
     local num = tonumber(speedfunc)
     if num then
         getgenv().WalkSpeedValue = num
         UiSettingsModule:SetWalkSpeed(num)
+        Settings["WalkSpeedValue"] = num
+        OthersStuffsModule.SaveSettings(Settings)
+
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = num
+        end
+    end
+end)
+
+player.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
+    task.wait(1)
+    if Settings["WalkSpeedValue"] then
+        char.Humanoid.WalkSpeed = Settings["WalkSpeedValue"]
+    end
+end)
+
+if player.Character and player.Character:FindFirstChild("Humanoid") and Settings["WalkSpeedValue"] then
+    player.Character.Humanoid.WalkSpeed = Settings["WalkSpeedValue"]
+end
+
+task.defer(function()
+    if Settings["WalkSpeedValue"] then
+        SpeedBox:Set(Settings["WalkSpeedValue"])
     end
 end)
 
