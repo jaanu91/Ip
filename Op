@@ -4,8 +4,6 @@ local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-local SkillsFolder = PlayerGui:WaitForChild("Main"):WaitForChild("Skills")
 local Character = player.Character or player.CharacterAdded:Wait()
 local UserInputService = game:GetService("UserInputService")  
 local RunService = game:GetService("RunService")
@@ -286,47 +284,8 @@ spawn(function()
                 if table.find(Skills, input.KeyCode.Name) then  
                     ActiveSkills[input.KeyCode.Name] = false
                 end  
-            end)
-            
-            local function connectSkillButton(button, keyName)
-			if not button then return end
-	
-			button.InputBegan:Connect(function(input, gameProcessed)
-				if gameProcessed then return end  
-				if table.find(Skills, input.keyName) then  
-					ActiveSkills[input.keyName] = true
-				end
-			end)
-	
-			button.InputEnded:Connect(function(input, gameProcessed)
-				if gameProcessed then return end  
-				if table.find(Skills, input.keyName) then  
-					ActiveSkills[input.keyName] = false
-				end
-			end)
-
-			local function scanSkills()
-				for _, toolFolder in pairs(SkillsFolder:GetChildren()) do
-					for _, key in ipairs(Skills) do
-						local frame = toolFolder:FindFirstChild(key)
-						if frame and frame:FindFirstChild("Mobile") then
-							local button = frame.Mobile
-							if not button:GetAttribute("Connected") then
-								connectSkillButton(button, key)
-								button:SetAttribute("Connected", true)
-							end
-						end
-					end
-				end
-			end
-
-			SkillsFolder.ChildAdded:Connect(function(child)
-				task.wait(0.2)
-				scanSkills()
-			end)
-
-			scanSkills()
-                
+            end)  
+              
             return OldHook(self, V1, V2, ...)
         end)
         setreadonly(hookMeta, true)
