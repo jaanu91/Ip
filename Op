@@ -289,7 +289,7 @@ spawn(function()
             if tostring(args[1]) == "RemoteEvent" then
                 if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
                     args[2] = targetPos
-                    return old(unpack(args))
+                    return old(self, unpack(args))
                 end
             end
         end
