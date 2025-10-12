@@ -213,21 +213,6 @@ local FpsOrPingsToggle = Section:NewToggle("・Fps Or Pings", "Display Ping or F
     Settings["FpsOrPings"] = state
 end)
 
-local SpeedBox = Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
-    local num = tonumber(speedfunc)
-    if num then
-        getgenv().WalkSpeedValue = num
-        UiSettingsModule:SetWalkSpeed(num)
-        Settings["WalkSpeedValue"] = num
-        OthersStuffsModule.SaveSettings(Settings)
-
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.WalkSpeed = num
-        end
-    end
-end)
-
 player.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid")
     task.wait(1)
@@ -240,9 +225,18 @@ if player.Character and player.Character:FindFirstChild("Humanoid") and Settings
     player.Character.Humanoid.WalkSpeed = Settings["WalkSpeedValue"]
 end
 
-task.defer(function()
-    if Settings["WalkSpeedValue"] then
-        SpeedBox:Set(Settings["WalkSpeedValue"])
+Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
+    local num = tonumber(speedfunc)
+    if num then
+        getgenv().WalkSpeedValue = num
+        UiSettingsModule:SetWalkSpeed(num)
+        Settings["WalkSpeedValue"] = num
+        OthersStuffsModule.SaveSettings(Settings)
+
+        local char = Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = num
+        end
     end
 end)
 
