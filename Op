@@ -286,10 +286,10 @@ spawn(function()
         end
 
         if targetPos and tostring(method) == "FireServer" then
-            if typeof(args[1]) == "string" or typeof(args[1]) == "Instance" then
+            if tostring(args[1]) == "RemoteEvent" then
                 if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
                     args[2] = targetPos
-                    return old(self, unpack(args))
+                    return old(unpack(args))
                 end
             end
         end
