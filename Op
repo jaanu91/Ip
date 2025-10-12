@@ -9,7 +9,6 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
-local Mouse = RS:FindFirstChild("Mouse")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 
 local Services = setmetatable({}, {
@@ -245,28 +244,6 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-if Mouse then
-    pcall(function()
-        realMouseHit = Mouse.Hit and Mouse.Hit
-        realMouseTarget = Mouse.Target and Mouse.Target
-    end)
-end
-
-RunService.Heartbeat:Connect(function()
-    if Mouse then
-        pcall(function()
-            realMouseHit = Mouse.Hit or realMouseHit
-            realMouseTarget = Mouse.Target or realMouseTarget
-        end)
-
-        if NPCPosition then
-            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-        elseif PlayersPosition then
-            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
-        end
-    end
-end)
-
 spawn(function()
     local success, gg = pcall(function() return getrawmetatable(game) end)
     if not success or not gg then return end
@@ -293,25 +270,7 @@ spawn(function()
                 end
             end
         end
-
-        if tostring(method) == "InvokeServer" then
-            if typeof(args[1]) == "string" then
-                local skill = args[1]:upper()
-
-                if skill == "TAP" then
-                    args[2] = realMouseHit and realMouseHit.p or args[2]
-                    return old(self, unpack(args))
-                end
-
-                if table.find(Skills, skill) then
-                    if targetPos then
-                        args[2] = targetPos
-                    end
-                    return old(self, unpack(args))
-                end
-            end
-        end
-
+        
         return old(self, ...)
     end)
     setreadonly(gg, true)
