@@ -7,7 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local currentTool = nil
 local lastTool = nil
-local sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
+local sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
 local dmgConn = nil
 local characterConnections = {}
 local rightTouchActive = false
@@ -46,7 +46,7 @@ local function hookTool(tool)
         if not parent then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
             rightTouchActive = false
             EnableSilentAimbot()
         end
@@ -87,11 +87,6 @@ UserInputService.TouchEnded:Connect(function(touch)
     
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = false
-
-        if tapActive then
-            tapActive = false
-            EnableSilentAimbot()
-        else
             EnableSilentAimbot()
             sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false 
         end
@@ -246,13 +241,6 @@ if not getgenv().VSkillHooked then
 			        DisableSilentAimbot()
 			    end
 			end
-			
-			if typeof(a1) == "string" and a1:upper() == "TAP" then
-			    if currentTool and currentTool.Name == "Portal-Portal" then
-			        tapActive = true
-			        DisableSilentAimbot()
-			    end
-			end
 	    end
 	    return old(self, ...)
 	end)
@@ -264,7 +252,7 @@ end
 local function onCharacterAdded(char)
     clearConnections()
     
-    sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
+    sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
     rightTouchActive = false
     keyHoldingActive = false
     EnableSilentAimbot()
@@ -277,7 +265,7 @@ local function onCharacterAdded(char)
         if child == currentTool and lastTool then
             currentTool = nil
             lastTool = nil
-            sharkZActive, vActive, cursedZActive, lightningFActive, tapActive = false, false, false, false, false
+            sharkZActive, vActive, cursedZActive, lightningFActive = false, false, false, false
             rightTouchActive = false
             keyHoldingActive = false
             EnableSilentAimbot()
