@@ -69,7 +69,7 @@ UserInputService.TouchStarted:Connect(function(touch)
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = true
 
-        if currentTool and currentTool.Name == "Portal-Portal" and tapActive then
+        if tapActive then
             tapActive = true
             DisableSilentAimbot()
             return
