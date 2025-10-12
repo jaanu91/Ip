@@ -34,13 +34,35 @@ UiSettingsModule:MakeDraggable(toggleButton)
 
 local Settings = OthersStuffsModule.LoadSettings()
 
-local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂", UiSettingsModule.currentTheme)
+local executor = "Unknown"
+if syn then
+    executor = "Synapse X"
+elseif KRNL_LOADED then
+    executor = "KRNL"
+elseif fluxus then
+    executor = "Fluxus"
+elseif getexecutorname then
+    local success, execName = pcall(getexecutorname)
+    if success and type(execName) == "string" then
+        executor = execName
+    end
+end
+
+local execStatus = (executor == "Xeno" or executor:lower():find("solara") or executor:lower():find("krnl")) and "Not Working" or "Working"
+
+local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂  |  " .. executor, UiSettingsModule.currentTheme)
+
+local Tab = Window:NewTab("◇・Executor Status")
+local Section = Tab:NewSection("◈・Information")
+
+Section:NewLabel("Executor: " .. executor)
+Section:NewLabel("Status: " .. execStatus)
 
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Fixed Buddy Sword X in Silent aimbot ✔")
-Section:NewLabel("• Fixed Sanguine art Z in silent aimbot ✔")
+Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbot ✔")
+Section:NewLabel("• Added Fixed Sanguine art Z in silent aimbot ✔")
 Section:NewLabel("• Added Auto Ken ✔")
 Section:NewLabel("• Added Select Target for Silent aim ✔")
 Section:NewLabel("• Added Bring Fruits ✔")
@@ -170,9 +192,9 @@ local ESPPlayersToggle = Section:NewToggle("・ESP Players", "Toggle Player ESP"
     Settings["ESPPlayers"] = state
 end)
 
-local VSkillToggle = Section:NewToggle("・V3 Skill", "Auto activate V3 ability", function(state)
+local V3SkillToggle = Section:NewToggle("・V3 Skill", "Auto activate V3 ability", function(state)
     ESPModule:SetV3(state)
-    Settings["VSkill"] = state
+    Settings["V3Skill"] = state
 end)
 
 local BunnyHopToggle = Section:NewToggle("・Bunny hop", "Toggle Bunnyhop", function(state)
@@ -191,14 +213,10 @@ local FpsOrPingsToggle = Section:NewToggle("・Fps Or Pings", "Display Ping or F
 end)
 
 Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
-  getgenv().WalkSpeedValue = speedfunc
-    if getgenv().WalkSpeedValue then
-        local Player = game:service'Players'.LocalPlayer
-        Player.Character.Humanoid:GetPropertyChangedSignal'WalkSpeed':Connect(function()
-            Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
-            Settings["SpeedHack"] = getgenv().WalkSpeedValue
-        end)
-        Player.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+    local num = tonumber(speedfunc)
+    if num then
+        getgenv().WalkSpeedValue = num
+        UiSettingsModule:SetWalkSpeed(num)
     end
 end)
 
@@ -337,7 +355,10 @@ OthersStuffsModule:ApplySettings(Settings, {
     FruitCheck = FruitCheckToggle,
     TeleportFruit = TeleportFruitToggle,
     AutoKen = AutoKenToggle,
-    ZSkills = ZSkillToggle
+    ZSkills = ZSkillToggle,
+    BunnyHop = BunnyHopToggle,
+    AuraSkill = AuraSkillToggle,
+    V3Skill = V3SkillToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
