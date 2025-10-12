@@ -1,7 +1,6 @@
 local SilentAimModule = {}
 
 local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
-local JakeModuleSource = "https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Meet"
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -10,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
+local Mouse = RS:FindFirstChild("Mouse")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 
 local Services = setmetatable({}, {
@@ -28,8 +28,9 @@ local UserWantsplayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
 local AutoKen = false
-local JakeHookActive = false
 
+local realMouseHit = nil
+local realMouseTarget = nil
 local playersaimbot = nil
 local PlayersPosition = nil
 local NPCaimbot = nil
@@ -37,11 +38,8 @@ local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 local Selectedplayer = nil
-getgenv().PlayersPosition = nil
-getgenv().NPCPosition = nil
-getgenv().SilentAimPlayersEnabled = false
-getgenv().SilentAimNPCsEnabled = false
 
+local Skills = {"Z", "X", "C", "V", "F"}
 local characterConnections = {}
 
 local PredictionAmount = 0.1
@@ -213,13 +211,11 @@ RunService.Heartbeat:Connect(function()
     local targetModel = nil
 
     if SilentAimPlayersEnabled then
-	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
 		local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
 		if targetplayer and targetplayer ~= player and targetplayer.Character then
 			playersaimbot = targetplayer.Name
 			local hrp = getHRP(targetplayer.Character)
 			PlayersPosition = getPredictedPosition(hrp)
-			getgenv().PlayersPosition = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
 		else
@@ -231,13 +227,11 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	if SilentAimNPCsEnabled then  
-		getgenv().SilentAimNPCsEnabled = SilentAimNPCsEnabled
 	    local closestNPC = getClosestNPC(lpHRP)  
 	    if closestNPC then  
 	        NPCaimbot = closestNPC.Name  
 	        local hrp = getHRP(closestNPC)  
 	        NPCPosition = getPredictedPosition(hrp)  
-			getgenv().NPCPosition = NPCPosition
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
@@ -251,28 +245,57 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-spawn(function()
-    local ok, hookMeta = pcall(getrawmetatable, game)
-    if ok and hookMeta then
-        setreadonly(hookMeta, false)
-        local OldHook
-        OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
-            local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
+if Mouse then
+    pcall(function()
+        realMouseHit = Mouse.Hit and Mouse.Hit
+        realMouseTarget = Mouse.Target and Mouse.Target
+    end)
+end
 
-            if tostring(self) == "RemoteEvent" and Method == "fireserver" then
-                if typeof(V1) == "Vector3" then
-                    if SilentAimPlayersEnabled and PlayersPosition then
-                        return OldHook(self, PlayersPosition, V2, ...)
-                    elseif SilentAimNPCsEnabled and NPCPosition then
-                        return OldHook(self, NPCPosition, V2, ...)
-                    end
+RunService.Heartbeat:Connect(function()
+    if Mouse then
+        pcall(function()
+            realMouseHit = Mouse.Hit or realMouseHit
+            realMouseTarget = Mouse.Target or realMouseTarget
+        end)
+
+        if NPCPosition then
+            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+        elseif PlayersPosition then
+            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+        end
+    end
+end)
+
+spawn(function()
+    local success, gg = pcall(function() return getrawmetatable(game) end)
+    if not success or not gg then return end
+    local old = gg.__namecall
+    if not old then return end
+
+    setreadonly(gg, false)
+    gg.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        local targetPos = nil
+        if SilentAimPlayersEnabled and PlayersPosition then
+            targetPos = PlayersPosition
+        elseif SilentAimNPCsEnabled and NPCPosition then
+            targetPos = NPCPosition
+        end
+
+        if targetPos and tostring(method) == "FireServer" then
+            if tostring(args[1]) == "RemoteEvent" then
+                if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                    args[2] = targetPos
+                    return old(self, unpack(args))
                 end
             end
-
-            return OldHook(self, V1, V2, ...)
-        end)
-        setreadonly(hookMeta, true)
-    end
+        end        
+        return old(self, ...)
+    end)
+    setreadonly(gg, true)
 end)
 
 local HasTag = function(tagName)
@@ -312,23 +335,6 @@ task.spawn(function()
 	end
 end);
 
-local function ActivateJakeHook()
-	if not JakeHookActive then
-		pcall(function()
-			loadstring(game:HttpGet(JakeModuleSource))()
-			JakeHookActive = true
-			warn("[SilentAimModule] JakeModule hook activated.")
-		end)
-	end
-end
-
-local function DeactivateJakeHook()
-	if JakeHookActive then
-		JakeHookActive = false
-		warn("[SilentAimModule] JakeModule hook deactivated.")
-	end
-end
-
 function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
 end
@@ -336,44 +342,21 @@ end
 function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsplayerAim = state
 	SilentAimPlayersEnabled = state
-	getgenv().SilentAimPlayersEnabled = state
-
-	if state then
-		ActivateJakeHook()
-	else
-		if not SilentAimNPCsEnabled then
-			DeactivateJakeHook()
-		end
-	end
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
-	getgenv().SilentAimNPCsEnabled = state
-
-	if state then
-		ActivateJakeHook()
-	else
-		if not SilentAimPlayersEnabled then
-			DeactivateJakeHook()
-		end
-	end
 end
 
 function SilentAimModule:Pause()
-	SilentAimPlayersEnabled = false
-	SilentAimNPCsEnabled = false
-	DeactivateJakeHook()
+    SilentAimPlayersEnabled = false
+    SilentAimNPCsEnabled = false
 end
 
 function SilentAimModule:Restore()
-	SilentAimPlayersEnabled = UserWantsplayerAim
-	SilentAimNPCsEnabled = UserWantsNPCAim
-
-	if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-		ActivateJakeHook()
-	end
+    SilentAimPlayersEnabled = UserWantsplayerAim
+    SilentAimNPCsEnabled = UserWantsNPCAim
 end
 
 function SilentAimModule:IsplayerAimEnabled()
