@@ -1,6 +1,6 @@
 local SilentAimModule = {}
 
-local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
+local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Kata"))()
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -36,7 +36,6 @@ local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 local Selectedplayer = nil
-local currentTool = nil
 
 local Skills = {"Z", "X", "C", "V", "F"}
 local ActiveSkills = {}
@@ -245,15 +244,6 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-local function hookTool(tool)
-    currentTool = tool
-    table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            currentTool = nil
-        end
-    end))
-end
-
 spawn(function()
     local ok, hookMeta = pcall(getrawmetatable, game)
     if ok and hookMeta then
@@ -406,23 +396,6 @@ task.spawn(function()
 		end
 	end
 end);
-
-local function onCharacterAdded(char)
-    clearConnections()
-
-    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then hookTool(child) end
-    end))
-
-    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
-        if child == currentTool then
-            currentTool = nil
-        end
-    end))
-end
-
-player.CharacterAdded:Connect(onCharacterAdded)
-if player.Character then onCharacterAdded(player.Character) end
 
 function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
