@@ -45,17 +45,11 @@ spawn(function()
 		if tostring(method) == "InvokeServer" and typeof(args[1]) == "string" then
 			local skill = args[1]:upper()
 
-			-- Only hook X skill when Buddy Sword is present (equipped or in backpack)
+			-- Only hook X skill when Buddy Sword is equipped
 			if skill == "X" then
 				local player = game.Players.LocalPlayer
 				local char = player.Character
-				local backpack = player:FindFirstChild("Backpack")
-
-				local hasBuddySword = 
-					(char and char:FindFirstChild("Buddy Sword")) or
-					(backpack and backpack:FindFirstChild("Buddy Sword"))
-
-				if hasBuddySword then
+				if char and char:FindFirstChild("Buddy Sword") then
 					local gp = getgenv()
 					local targetPos = nil
 
