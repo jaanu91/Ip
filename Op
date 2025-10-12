@@ -266,8 +266,24 @@ spawn(function()
                         return OldHook(self, NPCPosition, V2, ...)
                     end
                 end
+            elseif Method == "invokeserver" then
+	            if typeof(V1) == "string" and V1:upper() == "X" then
+		            if currentTool and currentTool.Name == "Buddy Sword" then
+	                    if typeof(V2) == "Vector3" then
+	                        if SilentAimPlayersEnabled and PlayersPosition then
+	                            return OldHook(self, V1, PlayersPosition, nil, ...)
+	                        elseif SilentAimNPCsEnabled and NPCPosition then
+	                            return OldHook(self, V1, NPCPosition, nil, ...)
+	                        end
+						end
+					end
+				elseif typeof(V1) == "string" and V1:upper() == "TAP" then
+				    if currentTool and currentTool.Name == "Portal-Portal" then
+				        SilentAimNPCsEnabled = false
+				    end
+				end
             end
-            
+                
             return OldHook(self, V1, V2, ...)
         end)
         setreadonly(hookMeta, true)
