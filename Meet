@@ -1,97 +1,12 @@
 local JakeModule = {}
 
 local RS = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local workspace = game:GetService("Workspace")
-
-local Mouse = RS:FindFirstChild("Mouse")
+local Mouse = RS:FindFirstChild("Mouse") 
 local Skills = {"Z", "X", "C", "V", "F"}
+
 local realMouseHit = nil
 local realMouseTarget = nil
-
-local getGlobal = function(name)
-    local ok, val = pcall(function() return _G and _G[name] or _G and _G[name] end)
-    if ok and val ~= nil then return val end
-    ok, val = pcall(function() return rawget(_G or {}, name) end)
-    if ok and val ~= nil then return val end
-    return _G[name]
-end
-
-local SilentAimPlayersEnabled = getGlobal("SilentAimPlayersEnabled")
-local SilentAimNPCsEnabled = getGlobal("SilentAimNPCsEnabled")
-local PlayersPosition = getGlobal("PlayersPosition")
-local NPCPosition = getGlobal("NPCPosition")
-local PredictionEnabled = getGlobal("PredictionEnabled")
-local PredictionAmount = getGlobal("PredictionAmount") or 0.1
-local maxRange = getGlobal("maxRange") or 1000
-
-local localPlayer = Players.LocalPlayer
-
-local function getHRP(model)
-    if not model or not model.Parent then return nil end
-    return model:FindFirstChild("HumanoidRootPart")
-end
-
-local function findClosestPlayer()
-    if not localPlayer or not localPlayer.Character then return nil end
-    local lpHRP = getHRP(localPlayer.Character)
-    if not lpHRP then return nil end
-
-    local closest = nil
-    local closestDist = math.huge
-    for _, pl in ipairs(Players:GetPlayers()) do
-        if pl ~= localPlayer and pl.Character and pl.Character.Parent then
-            local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
-            local hrp = getHRP(pl.Character)
-            if hum and hum.Health > 0 and hrp then
-                local dist = (hrp.Position - lpHRP.Position).Magnitude
-                if dist <= maxRange and dist < closestDist then
-                    closestDist = dist
-                    closest = {player = pl, hrp = hrp}
-                end
-            end
-        end
-    end
-    return closest
-end
-
-local function findClosestNPC()
-    if not localPlayer or not localPlayer.Character then return nil end
-    local lpHRP = getHRP(localPlayer.Character)
-    if not lpHRP then return nil end
-
-    local enemiesFolder = workspace:FindFirstChild("Enemies")
-    if not enemiesFolder then return nil end
-
-    local closest = nil
-    local closestDist = math.huge
-    for _, npc in ipairs(enemiesFolder:GetChildren()) do
-        if npc:IsA("Model") then
-            local hum = npc:FindFirstChildWhichIsA("Humanoid")
-            local hrp = getHRP(npc)
-            if hum and hum.Health > 0 and hrp then
-                local dist = (hrp.Position - lpHRP.Position).Magnitude
-                if dist <= maxRange and dist < closestDist then
-                    closestDist = dist
-                    closest = {model = npc, hrp = hrp}
-                end
-            end
-        end
-    end
-    return closest
-end
-
-local function predictedPosition(hrp)
-    if not hrp then return nil end
-    if (PredictionEnabled == true) and hrp.Parent and hrp.Parent:FindFirstChildOfClass("Humanoid") then
-        local humanoid = hrp.Parent:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.WalkSpeed >= 5 then
-            return hrp.Position + (hrp.Velocity * (PredictionAmount or 0.1))
-        end
-    end
-    return hrp.Position
-end
 
 if Mouse then
     pcall(function()
@@ -107,39 +22,32 @@ RunService.Heartbeat:Connect(function()
             realMouseTarget = Mouse.Target or realMouseTarget
         end)
 
-        if NPCPosition then
-            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-        elseif PlayersPosition then
-            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+        local gp = getgenv()
+        if gp and gp.NPCPosition then
+            pcall(function() Mouse.Hit = CFrame.new(gp.NPCPosition) end)
+        elseif gp and gp.PlayersPosition then
+            pcall(function() Mouse.Hit = CFrame.new(gp.PlayersPosition) end)
         end
     end
 end)
 
 spawn(function()
-    local success, meta = pcall(function() return getrawmetatable(game) end)
-    if not success or not meta then return end
-    local old = meta.__namecall
+    local success, gg = pcall(function() return getrawmetatable(game) end)
+    if not success or not gg then return end
+    local old = gg.__namecall
     if not old then return end
 
-    setreadonly(meta, false)
-    meta.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
+    setreadonly(gg, false)
+    gg.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod and getnamecallmethod() or ""
         local args = {...}
 
-        SilentAimPlayersEnabled = getGlobal("SilentAimPlayersEnabled") or SilentAimPlayersEnabled
-        SilentAimNPCsEnabled     = getGlobal("SilentAimNPCsEnabled") or SilentAimNPCsEnabled
-        PlayersPosition          = getGlobal("PlayersPosition") or PlayersPosition
-        NPCPosition              = getGlobal("NPCPosition") or NPCPosition
-        PredictionEnabled        = getGlobal("PredictionEnabled") or PredictionEnabled
-        PredictionAmount         = getGlobal("PredictionAmount") or PredictionAmount
-        maxRange                 = getGlobal("maxRange") or maxRange
-
+        local gp = getgenv()
         local targetPos = nil
-
-        if SilentAimPlayersEnabled and PlayersPosition then
-            targetPos = PlayersPosition
-        elseif SilentAimNPCsEnabled and NPCPosition then
-            targetPos = NPCPosition
+        if gp and gp.SilentAimPlayersEnabled and gp.PlayersPosition then
+            targetPos = gp.PlayersPosition
+        elseif gp and gp.SilentAimNPCsEnabled and gp.NPCPosition then
+            targetPos = gp.NPCPosition
         end
 
         if tostring(method) == "InvokeServer" then
@@ -152,42 +60,9 @@ spawn(function()
                 end
 
                 if table.find(Skills, skill) then
-                    if not targetPos then
-                        if SilentAimPlayersEnabled then
-                            local closest = findClosestPlayer()
-                            if closest and closest.hrp then
-                                targetPos = predictedPosition(closest.hrp)
-                            end
-                        elseif SilentAimNPCsEnabled then
-                            local closestNPC = findClosestNPC()
-                            if closestNPC and closestNPC.hrp then
-                                targetPos = predictedPosition(closestNPC.hrp)
-                            end
-                        end
-                    end
-
-                    if not targetPos and SilentAimPlayersEnabled and SilentAimNPCsEnabled then
-                        local p = findClosestPlayer()
-                        local n = findClosestNPC()
-                        if p and n and p.hrp and n.hrp then
-                            local lpHRP = getHRP(localPlayer.Character)
-                            local pdist = (p.hrp.Position - lpHRP.Position).Magnitude
-                            local ndist = (n.hrp.Position - lpHRP.Position).Magnitude
-                            if pdist <= ndist then
-                                targetPos = predictedPosition(p.hrp)
-                            else
-                                targetPos = predictedPosition(n.hrp)
-                            end
-                        else
-                            if p and p.hrp then targetPos = predictedPosition(p.hrp) end
-                            if not targetPos and n and n.hrp then targetPos = predictedPosition(n.hrp) end
-                        end
-                    end
-
                     if targetPos then
                         args[2] = targetPos
                     end
-
                     return old(self, unpack(args))
                 end
             end
@@ -195,7 +70,7 @@ spawn(function()
 
         return old(self, ...)
     end)
-    setreadonly(meta, true)
+    setreadonly(gg, true)
 end)
 
 return JakeModule
