@@ -8729,7 +8729,7 @@ local DropdownIsland =
     "DropdownIsland",
     {
         Title = "Dropdown",
-        Description = "Dropdown,
+        Description = "Dropdown",
         Values = IslandList,
         Multi = false,
         Default = 1
