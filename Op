@@ -270,27 +270,56 @@ local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
 end
 
-if Mouse then
-    pcall(function()
-        realMouseHit = Mouse.Hit and Mouse.Hit
-        realMouseTarget = Mouse.Target and Mouse.Target
+if MouseModule and typeof(MouseModule) == "Instance" then
+    local ok2, Mouse = pcall(function()
+        return require(MouseModule)
     end)
-end
 
-RunService.Heartbeat:Connect(function()
-    if Mouse then
-        pcall(function()
-            realMouseHit = Mouse.Hit or realMouseHit
-            realMouseTarget = Mouse.Target or realMouseTarget
-        end)
+    if ok2 and Mouse then
+        local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        
+        if Mouse then
+		    pcall(function()
+		        realMouseHit = Mouse.Hit and Mouse.Hit
+		        realMouseTarget = Mouse.Target and Mouse.Target
+		    end)
+		end
 
-        if NPCPosition then
-            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-        elseif PlayersPosition then
-            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+        if RootPart then
+            pcall(function()
+                Mouse.Hit = CFrame.new(RootPart.Position)
+                Mouse.Target = RootPart
+            end)
+        else
+            task.spawn(function()
+                local RootPart = Character:WaitForChild("HumanoidRootPart")
+                pcall(function()
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end)
+            end)
         end
+
+        RunService.Heartbeat:Connect(function()
+            if Mouse then
+	            pcall(function()
+		            realMouseHit = Mouse.Hit or realMouseHit
+		            realMouseTarget = Mouse.Target or realMouseTarget
+		        end)
+		
+                if NPCPosition then
+                    pcall(function()
+                        Mouse.Hit = CFrame.new(NPCPosition)
+                    end)
+                elseif PlayersPosition then
+                    pcall(function()
+                        Mouse.Hit = CFrame.new(PlayersPosition)
+                    end)
+                end
+            end
+        end)
     end
-end)
+end
 
 spawn(function()
     local ok, hookMeta = pcall(getrawmetatable, game)
