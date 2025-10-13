@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
+local Mouse = RS:FindFirstChild("Mouse")
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -36,6 +37,8 @@ local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 local Selectedplayer = nil
+local realMouseHit = nil 
+local realMouseTarget = nil
 
 local characterConnections = {}
 local Skills = {"X"}
@@ -267,6 +270,28 @@ local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
 end
 
+if Mouse then
+    pcall(function()
+        realMouseHit = Mouse.Hit and Mouse.Hit
+        realMouseTarget = Mouse.Target and Mouse.Target
+    end)
+end
+
+RunService.Heartbeat:Connect(function()
+    if Mouse then
+        pcall(function()
+            realMouseHit = Mouse.Hit or realMouseHit
+            realMouseTarget = Mouse.Target or realMouseTarget
+        end)
+
+        if NPCPosition then
+            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+        elseif PlayersPosition then
+            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+        end
+    end
+end)
+
 spawn(function()
     local ok, hookMeta = pcall(getrawmetatable, game)
     if ok and hookMeta then
@@ -285,13 +310,20 @@ spawn(function()
                 end
             elseif Method == "invokeserver" then  
 	            if isValidCondition() then
-	                if type(V1) == "string" and table.find(Skills, V1) then  
+	                if type(V1) == "string" and table.find(Skills, V1) then
 	                    if SilentAimPlayersEnabled and PlayersPosition then  
 	                        return OldHook(self, V1, PlayersPosition, nil, ...)
 	                    elseif SilentAimNPCsEnabled and NPCPosition then
 		                    return OldHook(self, V1, NPCPosition, nil, ...)
 	                    end  
-	                end    
+	                elseif V1 == "TAP" then
+						if SilentAimPlayersEnabled and PlayersPosition then
+							V2 = realMouseHit and realMouseHit.p or V2
+							return OldHook(self, V1, V2, nil, ...)
+						elseif SilentAimNPCsEnabled and NPCPosition then
+							return OldHook(self, V1, V2, nil, ...)
+						end
+					end
 				end
             end
             
