@@ -68,13 +68,7 @@ UserInputService.TouchStarted:Connect(function(touch)
     
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = true
-        
-        if currentTool and currentTool.Name == "Lightning-Lightning" then
-            lightningFActive = true
-            DisableSilentAimbot()
-            return
-        end
-
+    
         if isValidStopCondition() then
             DisableSilentAimbot()
         end
@@ -213,24 +207,18 @@ if not getgenv().VSkillHooked then
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Shark Anchor" then
 	                sharkZActive = true
-					keyHoldingActive = true
-					DisableSilentAimbot()
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "V" then
 	            if lastTool == "Dough-Dough" then
 	                vActive = true
-					keyHoldingActive = true
-					DisableSilentAimbot()
 	            end
 	        end
         
 	        if typeof(a1) == "string" and a1:upper() == "Z" then
 	            if currentTool and currentTool.Name == "Cursed Dual Katana" then
 	                cursedZActive = true
-					keyHoldingActive = true
-					DisableSilentAimbot()
 	            end
 	        end
 	
