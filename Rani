@@ -8628,7 +8628,7 @@ spawn(function()
         end)
     end
 end)
-]]
+
 -----------------------------------------------------------------------------------------------------------------------------------------------
 --Teleport
 local Teleport = Tabs.Teleport:AddSection("Teleport World")
