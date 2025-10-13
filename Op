@@ -10,7 +10,7 @@ local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
-local Mouse = RS:FindFirstChild("Mouse")
+local MouseModule = RS:FindFirstChild("Mouse")
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
