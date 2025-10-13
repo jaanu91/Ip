@@ -1,10 +1,6 @@
-local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/laitung1122/Duong/main/giaodien.lua"))()
-local SaveManager =
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager =
-    loadstring(
-    game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua")
-)()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 ----------------------------------------------------------------------------------------------------------------------------------------------
 local Window =
     Fluent:CreateWindow(
@@ -19,18 +15,18 @@ local Window =
     }
 )
 local Tabs = {
-    Main = Window:AddTab({Title = "Main", Icon = "home"}),
+    Main = Window:AddTab({Title = "Main", Icon = "armchair"}),
     Setting = Window:AddTab({Title = "Setting", Icon = "settings"}),
-    Stats = Window:AddTab({Title = "Stats", Icon = "plus-circle"}),
-    Player = Window:AddTab({Title = "PvP", Icon = "box"}),
-    Race = Window:AddTab({Title = "Race V4", Icon = "chevrons-right"}),
-    Teleport = Window:AddTab({Title = "Teleport", Icon = "palmtree"}),
-    Sea = Window:AddTab({Title = "Sea", Icon = "anchor"}),
-    Fruit = Window:AddTab({Title = "Fruit", Icon = "cherry"}),
-    Raid = Window:AddTab({Title = "Raid", Icon = "swords"}),
-    Shop = Window:AddTab({Title = "Shop", Icon = "shopping-cart"}),
-    Misc = Window:AddTab({Title = "Misc", Icon = "list-plus"}),
-    Hop = Window:AddTab({Title = "Hop", Icon = "wifi"})
+    Stats = Window:AddTab({Title = "Stats", Icon = "clipboard-plus"}),
+    Player = Window:AddTab({Title = "PvP", Icon = "biceps-flexed"}),
+    Race = Window:AddTab({Title = "Race V4", Icon = "turtle"}),
+    Teleport = Window:AddTab({Title = "Teleport", Icon = "book-dashed"}),
+    Sea = Window:AddTab({Title = "Sea", Icon = "waves"}),
+    Fruit = Window:AddTab({Title = "Fruit", Icon = "apple"}),
+    Raid = Window:AddTab({Title = "Raid", Icon = "bell"}),
+    Shop = Window:AddTab({Title = "Shop", Icon = "caravan"}),
+    Misc = Window:AddTab({Title = "Misc", Icon = "clipboard"}),
+    Hop = Window:AddTab({Title = "Hop", Icon = "bird"})
 }
 
 local Options = Fluent.Options
