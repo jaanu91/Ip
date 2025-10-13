@@ -1,7 +1,6 @@
 local SilentAimModule = {}
 
 local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
-local JakeModuleSource = "https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Meet"
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -28,7 +27,6 @@ local UserWantsplayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
 local AutoKen = false
-local JakeHookActive = false
 
 local playersaimbot = nil
 local PlayersPosition = nil
@@ -37,10 +35,6 @@ local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 local Selectedplayer = nil
-getgenv().PlayersPosition = nil
-getgenv().NPCPosition = nil
-getgenv().SilentAimPlayersEnabled = false
-getgenv().SilentAimNPCsEnabled = false
 
 local characterConnections = {}
 
@@ -312,23 +306,6 @@ task.spawn(function()
 	end
 end);
 
-local function ActivateJakeHook()
-	if not JakeHookActive then
-		pcall(function()
-			loadstring(game:HttpGet(JakeModuleSource))()
-			JakeHookActive = true
-			warn("[SilentAimModule] JakeModule hook activated.")
-		end)
-	end
-end
-
-local function DeactivateJakeHook()
-	if JakeHookActive then
-		JakeHookActive = false
-		warn("[SilentAimModule] JakeModule hook deactivated.")
-	end
-end
-
 function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
 end
@@ -336,44 +313,21 @@ end
 function SilentAimModule:SetPlayerSilentAim(state)
 	UserWantsplayerAim = state
 	SilentAimPlayersEnabled = state
-	getgenv().SilentAimPlayersEnabled = state
-
-	if state then
-		ActivateJakeHook()
-	else
-		if not SilentAimNPCsEnabled then
-			DeactivateJakeHook()
-		end
-	end
 end
 
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
-	getgenv().SilentAimNPCsEnabled = state
-
-	if state then
-		ActivateJakeHook()
-	else
-		if not SilentAimPlayersEnabled then
-			DeactivateJakeHook()
-		end
-	end
 end
 
 function SilentAimModule:Pause()
 	SilentAimPlayersEnabled = false
 	SilentAimNPCsEnabled = false
-	DeactivateJakeHook()
 end
 
 function SilentAimModule:Restore()
 	SilentAimPlayersEnabled = UserWantsplayerAim
 	SilentAimNPCsEnabled = UserWantsNPCAim
-
-	if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
-		ActivateJakeHook()
-	end
 end
 
 function SilentAimModule:IsplayerAimEnabled()
