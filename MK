@@ -1,5 +1,4 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/land9678/Sapi-Hub-V1/refs/heads/main/KavoUI.txt"))()
-local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Hot"))()
 local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Jj"))()
 local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Op"))()
 local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Goti"))()
@@ -58,53 +57,6 @@ local Section = Tab:NewSection("◈・Information")
 
 Section:NewLabel("Executor: " .. executor)
 Section:NewLabel("Status: " .. execStatus)
-
-local Tab = Window:NewTab("⛓・ChangesLogs")
-local Section = Tab:NewSection("✏・Updated")
-
-Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbot ✔")
-Section:NewLabel("• Added Fixed Sanguine art Z in silent aimbot ✔")
-Section:NewLabel("• Added Auto Ken ✔")
-Section:NewLabel("• Added Select Target for Silent aim ✔")
-Section:NewLabel("• Added Bring Fruits ✔")
-Section:NewLabel("• Added Spawned Fruits Check ✔")
-Section:NewLabel("• Added Auto V4 ✔")
-
-local Tab = Window:NewTab("❖・Aimbot")
-local Section = Tab:NewSection("☘・Settings")
-
-local AimlockPlayersToggle = Section:NewToggle("・Aimlock Players", "Lock onto nearest player", function(state)
-    AimlockModule:SetPlayerAimlock(state)
-    Settings["AimlockPlayers"] = state
-end)
-
-local AimlockPlayersMiniTogglePlayersToggle = Section:NewToggle("・Aimlock Mini Toggle Players", "Lock onto nearest player", function(state)
-    AimlockModule:SetMiniTogglePlayerAimlock(state)
-    Settings["AimlockPlayersMiniTogglePlayers"] = state
-end)
-
-local AimlockNPCToggle = Section:NewToggle("・Aimlock NPC", "Lock onto nearest NPC/Boss", function(state)
-    AimlockModule:SetNpcAimlock(state)
-    Settings["AimlockNPC"] = state
-end)
-
-local AimlockPlayersMiniToggleNPCToggle = Section:NewToggle("・Aimlock Mini Toggle NPC", "Lock onto nearest NPC/Boss", function(state)
-    AimlockModule:SetMiniToggleNpcAimlock(state)
-    Settings["AimlockPlayersMiniToggleNPC"] = state
-end)
-
-local PredictionToggle = Section:NewToggle("・Prediction", "Predict enemy movement", function(state)
-    AimlockModule:SetPrediction(state)
-    Settings["Prediction"] = state
-end)
-
-Section:NewDropdown("・Prediction Amount | Default 0.1s", "Select max Prediction for Aimlock", {"0.2", "0.3", "0.4"}, function(selected)
-    local num = tonumber(selected)
-    if num then
-        AimlockModule:SetPredictionTime(num)
-        Settings["PredictionAmount"] = num
-    end
-end)
 
 local Tab = Window:NewTab("⛩・Silent Aimbot")
 local Section = Tab:NewSection("⚓・Settings")
@@ -352,16 +304,12 @@ end)
 Settings = OthersStuffsModule.LoadSettings()
 
 OthersStuffsModule:ApplySettings(Settings, {
-    Aimlock = AimlockModule,
     SilentAim = SilentAimModule,
     ESP = ESPModule,
     Stuffs = StuffsModule,
     Ui = UiSettingsModule,
     Zskill= ZSkillModule
 }, {
-    AimlockPlayers = AimlockPlayersToggle,
-    AimlockPlayersMiniTogglePlayers = AimlockPlayersMiniTogglePlayersToggle,
-    AimlockNPC = AimlockNPCToggle,
     SilentAimPlayers = SilentAimPlayersToggle,
     SilentAimNPC = SilentAimNPCToggle,
     ESPPlayers = ESPPlayersToggle,
