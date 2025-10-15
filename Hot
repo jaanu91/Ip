@@ -502,12 +502,6 @@ local function setAimlockTarget(targetModel)
         currentHighlight:Destroy()
         currentHighlight = nil
     end
-    
-	for _, h in pairs(targetModel:GetChildren()) do
-	    if h:IsA("Highlight") then
-	        h:Destroy()
-	    end
-	end
 
     if not targetModel then
         if dmgConn then
@@ -516,6 +510,12 @@ local function setAimlockTarget(targetModel)
         end
         currentTarget = nil
         return
+    end
+
+    for _, h in pairs(targetModel:GetChildren()) do
+        if h:IsA("Highlight") then
+            h:Destroy()
+        end
     end
 
     local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
@@ -530,7 +530,9 @@ local function setAimlockTarget(targetModel)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
         highlight.FillTransparency = 0.5
         highlight.OutlineTransparency = 0
-        highlight.Adornee = targetModel
+
+        local adorn = targetModel:FindFirstChild("HumanoidRootPart") or targetModel.PrimaryPart or targetModel
+        highlight.Adornee = adorn
         highlight.Parent = targetModel
         currentHighlight = highlight
 
