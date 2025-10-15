@@ -530,9 +530,7 @@ local function setAimlockTarget(targetModel)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
         highlight.FillTransparency = 0.5
         highlight.OutlineTransparency = 0
-
-        local adorn = targetModel:FindFirstChild("HumanoidRootPart") or targetModel.PrimaryPart or targetModel
-        highlight.Adornee = adorn
+        highlight.Adornee = targetModel
         highlight.Parent = targetModel
         currentHighlight = highlight
 
