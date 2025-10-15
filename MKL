@@ -1,0 +1,171 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/land9678/Sapi-Hub-V1/refs/heads/main/KavoUI.txt"))()
+local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Hot"))()
+local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Mot"))()
+local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+
+local toggleGui = Instance.new("ScreenGui")
+toggleGui.Name = "ToggleGui"
+toggleGui.Parent = game.CoreGui
+
+local toggleButton = Instance.new("ImageButton")
+toggleButton.Name = "SHV1"
+toggleButton.Size = UDim2.new(0, 40, 0, 40)
+toggleButton.Position = UDim2.new(0, 5, 0, 10)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.BackgroundTransparency = 0.2
+toggleButton.BorderSizePixel = 0
+toggleButton.ZIndex = 9999
+toggleButton.Image = "rbxassetid://76926193047725"
+toggleButton.Parent = toggleGui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
+
+UiSettingsModule:MakeDraggable(toggleButton)
+
+local Settings = OthersStuffsModule.LoadSettings()
+
+local executor = "Unknown"
+if syn then
+    executor = "Synapse X"
+elseif KRNL_LOADED then
+    executor = "KRNL"
+elseif fluxus then
+    executor = "Fluxus"
+elseif getexecutorname then
+    local success, execName = pcall(getexecutorname)
+    if success and type(execName) == "string" then
+        executor = execName
+    end
+end
+
+local execStatus = (executor == "Xeno" or executor:lower():find("solara") or executor:lower():find("krnl")) and "Not Working" or "Working"
+
+local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂  |  " .. executor, UiSettingsModule.currentTheme)
+
+local Tab = Window:NewTab("◇・Executor Status")
+local Section = Tab:NewSection("◈・Information")
+
+Section:NewLabel("Executor: " .. executor)
+Section:NewLabel("Status: " .. execStatus)
+
+local Tab = Window:NewTab("❖・Aimbot")
+local Section = Tab:NewSection("☘・Settings")
+
+local AimlockPlayersToggle = Section:NewToggle("・Aimlock Players", "Lock onto nearest player", function(state)
+    AimlockModule:SetPlayerAimlock(state)
+    Settings["AimlockPlayers"] = state
+end)
+
+local AimlockPlayersMiniTogglePlayersToggle = Section:NewToggle("・Aimlock Mini Toggle Players", "Lock onto nearest player", function(state)
+    AimlockModule:SetMiniTogglePlayerAimlock(state)
+    Settings["AimlockPlayersMiniTogglePlayers"] = state
+end)
+
+local AimlockNPCToggle = Section:NewToggle("・Aimlock NPC", "Lock onto nearest NPC/Boss", function(state)
+    AimlockModule:SetNpcAimlock(state)
+    Settings["AimlockNPC"] = state
+end)
+
+local AimlockPlayersMiniToggleNPCToggle = Section:NewToggle("・Aimlock Mini Toggle NPC", "Lock onto nearest NPC/Boss", function(state)
+    AimlockModule:SetMiniToggleNpcAimlock(state)
+    Settings["AimlockPlayersMiniToggleNPC"] = state
+end)
+
+local PredictionToggle = Section:NewToggle("・Prediction", "Predict enemy movement", function(state)
+    AimlockModule:SetPrediction(state)
+    Settings["Prediction"] = state
+end)
+
+Section:NewDropdown("・Prediction Amount | Default 0.1s", "Select max Prediction for Aimlock", {"0.2", "0.3", "0.4"}, function(selected)
+    local num = tonumber(selected)
+    if num then
+        AimlockModule:SetPredictionTime(num)
+        Settings["PredictionAmount"] = num
+    end
+end)
+
+Section:NewButton("Join Discord", "Get Link Discord server", function()
+	local link = "https://discord.gg/fKwqmB4C"
+    if setclipboard then
+        setclipboard(link)
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Sapi Hub",
+            Text = "Copied Discord Link!",
+            Duration = 5
+        })
+    end
+end)
+
+local Tab = Window:NewTab("⚙・Settings Manager")
+local Section = Tab:NewSection("💾・Settings")
+
+Section:NewButton("Save Current Settings", "Save all current settings", function()
+    OthersStuffsModule.SaveSettings(Settings)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Sapi Hub",
+        Text = "Settings Saved!",
+        Duration = 4
+    })
+end)
+
+Section:NewButton("Reset Settings", "Clear saved settings", function()
+    OthersStuffsModule.ResetSettings()
+    Settings = {} -- also clear local
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Sapi Hub",
+        Text = "Settings Reset!",
+        Duration = 4
+    })
+end)
+
+Section:NewButton("Hop Server", "New server", function()
+    StuffsModule:SetHopServer()
+end)
+
+Section:NewButton("Rejoin Server", "Rejoin your server", function()
+    StuffsModule:SetRejoinServer()
+end)
+
+Section:NewDropdown("Select Theme", "Choose a color theme", UiSettingsModule:getThemeNames(), function(selected)
+    local newColor = UiSettingsModule.themes[selected]
+    if newColor then
+        UiSettingsModule:updateSchemeColor(newColor, Library)
+    end
+end)
+
+Section:NewDropdown("Select Background Theme", "Choose a color background", UiSettingsModule:getBackgroundThemeNames(), function(selected)
+    local newColor = UiSettingsModule.backgroundThemes[selected]
+    if newColor then
+        UiSettingsModule:updateBackgroundColor(newColor, Library)
+    end
+end)
+
+Section:NewDropdown("Select TextColor", "Choose a textcolor", UiSettingsModule:getThemeNames(), function(selected)
+    local newColor = UiSettingsModule.themes[selected]
+    if newColor then
+        UiSettingsModule:updateTextColor(newColor, Library)
+    end
+end)
+
+Settings = OthersStuffsModule.LoadSettings()
+
+OthersStuffsModule:ApplySettings(Settings, {
+    Aimlock = AimlockModule,
+    Ui = UiSettingsModule,
+}, {
+    AimlockPlayers = AimlockPlayersToggle,
+    AimlockPlayersMiniTogglePlayers = AimlockPlayersMiniTogglePlayersToggle,
+    AimlockNPC = AimlockNPCToggle
+})
+
+OthersStuffsModule.StartFruitNotifier()
+
+toggleButton.MouseButton1Click:Connect(function()
+    Library:ToggleUI()
+end)
