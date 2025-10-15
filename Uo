@@ -275,4 +275,12 @@ function VSkillModule:CheckVSkillUsage(SilentAimModule)
     watchDamageCounter()
 end
 
+function VSkillModule:Pause()
+    DisableSilentAimbot()
+end
+
+function VSkillModule:Restore()
+    EnableSilentAimbot()
+end
+
 return VSkillModule
