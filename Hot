@@ -441,8 +441,6 @@ local function watchDamageCounter()
         pcall(function() dmgConn:Disconnect() end)
         dmgConn = nil
     end
-    
-    retryCount = 0
 
     local ok, dmgTextLabel = pcall(function()
         return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
