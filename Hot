@@ -27,12 +27,67 @@ local MiniPlayerCreated = false
 local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
 local characterConnections = {}
+local retryCount = 0
 
 local function clearConnections()
 	for _, conn in ipairs(characterConnections) do
 		pcall(function() conn:Disconnect() end)
 	end
 	characterConnections = {}
+end
+
+-- =========================
+-- Team Check
+-- =========================
+local function isAllyWithMe(targetPlayer)
+	local myGui = player:FindFirstChild("PlayerGui")
+	if not myGui then return false end
+
+	local scrolling = myGui:FindFirstChild("Main")
+		and myGui.Main:FindFirstChild("Allies")
+		and myGui.Main.Allies:FindFirstChild("Container")
+		and myGui.Main.Allies.Container:FindFirstChild("Allies")
+		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+
+	if scrolling then
+		for _, frame in pairs(scrolling:GetDescendants()) do
+			if frame:IsA("ImageButton") and frame.Name == targetPlayer.Name then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isEnemy(targetPlayer)
+	if not targetPlayer or targetPlayer == player then
+		return false
+	end
+
+	local myTeam = player.Team
+	local targetTeam = targetPlayer.Team
+
+	if myTeam and targetTeam then
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+			return true
+		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+			return true
+		end
+
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+			if isAllyWithMe(targetPlayer) then
+				return false -- ally, not enemy
+			end
+			return true
+		end
+
+		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+			return false
+		end
+	end
+
+	return true
 end
 
 -- =========================
@@ -43,7 +98,7 @@ local function getNearestEnemy(maxDistance)
 	local nearest, shortest = nil, maxDistance or 100
 
 	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+		if p ~= player and isEnemy(p) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 			local humanoid = p.Character:FindFirstChildOfClass("Humanoid")
 			if humanoid and humanoid.Health > 0 then
 				local enemyHRP = p.Character.HumanoidRootPart
@@ -158,10 +213,15 @@ end
 -- Mini UI Buttons
 -- =========================
 local function createMiniToggle(name, position, stateVarRef, realVarSetter)
+	local playerGui = player:WaitForChild("PlayerGui")
+    if playerGui:FindFirstChild(name .. "MiniToggleGui") then
+        playerGui[name .. "MiniToggleGui"]:Destroy()
+    end
+    
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = name .. "MiniToggleGui"
     screenGui.ResetOnSpawn = false
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.Parent = playerGui
 
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 70, 0, 40) 
@@ -269,6 +329,10 @@ end
 -- =========================
 -- V Skill Detection
 -- =========================
+if _G.AimlockHooked then
+    return AimlockModule
+end
+_G.AimlockHooked = true
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
@@ -377,6 +441,8 @@ local function watchDamageCounter()
         pcall(function() dmgConn:Disconnect() end)
         dmgConn = nil
     end
+    
+    retryCount = 0
 
     local ok, dmgTextLabel = pcall(function()
         return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
@@ -386,6 +452,12 @@ local function watchDamageCounter()
         task.delay(0.5, function()
             pcall(watchDamageCounter)
         end)
+        return
+    end
+    
+    retryCount += 1
+    if retryCount > 10 then
+        warn("watchDamageCounter() failed too many times, aborting")
         return
     end
 
@@ -432,6 +504,12 @@ local function setAimlockTarget(targetModel)
         currentHighlight:Destroy()
         currentHighlight = nil
     end
+    
+	for _, h in pairs(targetModel:GetChildren()) do
+	    if h:IsA("Highlight") then
+	        h:Destroy()
+	    end
+	end
 
     if not targetModel then
         if dmgConn then
@@ -546,6 +624,16 @@ end)
 -- =========================
 local function onCharacterAdded(newChar)
     clearConnections()
+    
+    if renderConnTilt then
+	    pcall(function() renderConnTilt:Disconnect() end)
+		renderConnTilt = nil
+	end
+
+	if tiltConn then
+	    pcall(function() tiltConn:Disconnect() end)
+	    tiltConn = nil
+	end
 
     char = newChar
 
@@ -559,6 +647,57 @@ local function onCharacterAdded(newChar)
 
     local humanoid = char:WaitForChild("Humanoid")
     local hrp = char:WaitForChild("HumanoidRootPart")
+    
+    local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
+	    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	    if not hrp then return end
+
+	    if AimlockPlayerEnabled then
+	        if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
+	            cachedEnemy = getNearestEnemy(500)
+	        end
+	    else
+	        cachedEnemy = nil
+	    end
+    
+	    if AimlockNpcEnabled then
+	        if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
+	            cachedBoss = getNearestBoss(500)
+	        end
+	    else
+	        cachedBoss = nil
+	    end
+
+	    if not tiltEnabled then
+	        local targetHRP = nil
+	        if AimlockPlayerEnabled then targetHRP = cachedEnemy end
+	        if AimlockNpcEnabled then targetHRP = cachedBoss end
+
+	        if targetHRP then
+	            local camCFrame = camera.CFrame
+	            local camPos = camCFrame.Position
+	            local dist = (targetHRP.Position - camPos).Magnitude
+	            local predictionTime = PredictionAmount
+	            local enemyVelocity = targetHRP.Velocity
+	            local predictedPos = targetHRP.Position
+	            if PredictionEnabled and enemyVelocity.Magnitude > 3 then
+	                predictedPos = predictedPos + enemyVelocity * predictionTime
+	            end
+	            local yOffset = math.clamp(dist / 40, 0, 0.06)
+	            local lookVector = (predictedPos - camPos).Unit
+	            local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
+	            camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
+	        end
+	    end
+
+	    if AimlockPlayerEnabled and cachedEnemy and currentTarget ~= cachedEnemy.Parent then
+	        setAimlockTarget(cachedEnemy.Parent)
+	    elseif AimlockNpcEnabled and cachedBoss and currentTarget ~= cachedBoss.Parent then
+	        setAimlockTarget(cachedBoss.Parent)
+	    elseif not cachedEnemy and not cachedBoss and currentTarget then
+	        setAimlockTarget(nil)
+	    end
+	end)
 
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
         if child:IsA("Tool") then
