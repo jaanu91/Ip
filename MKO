@@ -1,211 +1,345 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/land9678/Sapi-Hub-V1/refs/heads/main/KavoUI.txt"))()
-local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Nin"))()
-local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Kio"))()
-local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Hio"))()
-local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
+local VSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"))()
+
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local PlayerList = {"None"}
+local Character = player.Character or player.CharacterAdded:Wait()
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local RS = game:GetService("ReplicatedStorage")
+local camera = workspace.CurrentCamera
 
-local toggleGui = Instance.new("ScreenGui")
-toggleGui.Name = "ToggleGui"
-toggleGui.Parent = game.CoreGui
+local SilentAimPlayersEnabled = false
 
-local toggleButton = Instance.new("ImageButton")
-toggleButton.Name = "SHV1"
-toggleButton.Size = UDim2.new(0, 40, 0, 40)
-toggleButton.Position = UDim2.new(0, 5, 0, 10)
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-toggleButton.BackgroundTransparency = 0.2
-toggleButton.BorderSizePixel = 0
-toggleButton.ZIndex = 9999
-toggleButton.Image = "rbxassetid://76926193047725"
-toggleButton.Parent = toggleGui
+local currentTool = nil
+local playersaimbot = nil
+local PlayersPosition = nil
+local currentHighlight = nil
+local currentTargetType = nil
 
-local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(0, 8)
-toggleCorner.Parent = toggleButton
+local characterConnections = {}
+local Skills = {"X"}
+local maxRange = 1000
 
-UiSettingsModule:MakeDraggable(toggleButton)
-
-local Settings = OthersStuffsModule.LoadSettings()
-
-local executor = "Unknown"
-if syn then
-    executor = "Synapse X"
-elseif KRNL_LOADED then
-    executor = "KRNL"
-elseif fluxus then
-    executor = "Fluxus"
-elseif getexecutorname then
-    local success, execName = pcall(getexecutorname)
-    if success and type(execName) == "string" then
-        executor = execName
-    end
+local function getHRP(model)
+	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
+	return model.HumanoidRootPart
 end
 
-local execStatus = (executor == "Xeno" or executor:lower():find("solara") or executor:lower():find("krnl")) and "Not Working" or "Working"
-
-local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂  |  " .. executor, UiSettingsModule.currentTheme)
-
-local Tab = Window:NewTab("◇・Executor Status")
-local Section = Tab:NewSection("◈・Information")
-
-Section:NewLabel("Executor: " .. executor)
-Section:NewLabel("Status: " .. execStatus)
-
-local Tab = Window:NewTab("⛩・Silent Aimbot")
-local Section = Tab:NewSection("⚓・Settings")
-
-local SilentAimPlayersToggle = Section:NewToggle("・SilentAim Players", "Lock onto nearest player", function(state)
-    SilentAimModule:SetPlayerSilentAim(state)
-    Settings["SilentAimPlayers"] = state
-end)
-
-local SilentAimNPCToggle = Section:NewToggle("・SilentAim Npcs", "Lock onto nearest npc", function(state)
-    SilentAimModule:SetNPCSilentAim(state)
-    Settings["SilentAimNPC"] = state
-end)
-
-local SilentAimPedictionToggle = Section:NewToggle("・SilentAim Prediction", "Prediction on target", function(state)
-    SilentAimModule:SetPrediction(state)
-    Settings["SilentAimPediction"] = state
-end)
-
-Section:NewDropdown("・Prediction Future | Default 0.1s", "Select max Prediction for Silent Aim", {"0.2", "0.3", "0.4"}, function(selected)
-    local num = tonumber(selected)
-    if num then
-        SilentAimModule:SetPredictionAmount(num)
-        Settings["SilentAimPredictionFuture"] = num
-    end
-end)
-
-Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance for aimbot", {"200", "400", "600"}, function(selected)
-    local num = tonumber(selected)
-    if num then
-        SilentAimModule:SetDistanceLimit(num)
-        Settings["SilentAimDistanceLimit"] = num
-    end
-end)
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= Players.LocalPlayer then
-        table.insert(PlayerList, plr.Name)
-    end
+local function clearConnections()
+	for _, conn in ipairs(characterConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	characterConnections = {}
 end
 
-local PlayerDropdown = Section:NewDropdown("・Select Player Target", "Choose a player to lock onto", PlayerList, function(selected)
-    if selected == "None" then
-        SilentAimModule:SetSelectedPlayer(nil)
-    else
-        SilentAimModule:SetSelectedPlayer(selected)
+local function createMiniToggle(name, position, stateVarRef, realVarSetter)
+	local playerGui = player:WaitForChild("PlayerGui")
+    if playerGui:FindFirstChild(name .. "MiniToggleGui") then
+        playerGui[name .. "MiniToggleGui"]:Destroy()
     end
-end)
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = name .. "MiniToggleGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
 
-local function RefreshPlayerList()
-    local newList = {"None"}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= Players.LocalPlayer then
-            table.insert(newList, plr.Name)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 70, 0, 40) 
+    button.Position = position
+    button.Text = name .. (stateVarRef.value and " ON" or " OFF")
+    button.TextScaled = true
+    button.TextWrapped = true
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    button.BorderSizePixel = 0
+    button.Parent = screenGui
+
+    local uicorner = Instance.new("UICorner")
+    uicorner.CornerRadius = UDim.new(0, 8)
+    uicorner.Parent = button
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 50))
+    }
+    gradient.Rotation = 45
+    gradient.Parent = button
+
+    local function updateUI(state)
+        button.Text = name .. (state and " ON" or " OFF")
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, state and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+            ColorSequenceKeypoint.new(1, state and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+        }
+    end
+
+    button.MouseButton1Click:Connect(function()
+        stateVarRef.value = not stateVarRef.value
+        realVarSetter(stateVarRef.value)
+        updateUI(stateVarRef.value)
+    end)
+
+    -- =========================
+    -- Dragging functionality
+    -- =========================
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    local function onInputBegan(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = button.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end
-    PlayerDropdown:Refresh(newList, true)
+
+    local function onInputChanged(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            local delta = input.Position - dragStart
+            button.Position = UDim2.new(
+                0,
+                math.clamp(startPos.X.Offset + delta.X, 0, camera.ViewportSize.X - button.AbsoluteSize.X),
+                0,
+                math.clamp(startPos.Y.Offset + delta.Y, 0, camera.ViewportSize.Y - button.AbsoluteSize.Y)
+            )
+        end
+    end
+
+    button.InputBegan:Connect(onInputBegan)
+    button.InputChanged:Connect(onInputChanged)
+
+    updateUI(stateVarRef.value)
+    return screenGui
 end
 
-Players.PlayerAdded:Connect(RefreshPlayerList)
-Players.PlayerRemoving:Connect(RefreshPlayerList)
-RefreshPlayerList()
+local SilentPlayersState = { value = SilentAimPlayersEnabled or false }
 
-local ZSkillToggle = Section:NewToggle("・GodhumanZ Aimlock", "I only set Godhuman", function(state)
-    ZSkillModule:SetZSkills(state)
-    Settings["ZSkills"] = state
+local function setSilentPlayers(v)
+    SilentAimPlayersEnabled = v
+
+    if VSkillModule then
+        if v then
+            if VSkillModule.Restore then
+                VSkillModule:Restore()
+            elseif VSkillModule.EnableSilentAimbot then
+                VSkillModule:EnableSilentAimbot()
+            end
+        else
+            if VSkillModule.Pause then
+                VSkillModule:Pause()
+            elseif VSkillModule.DisableSilentAimbot then
+                VSkillModule:DisableSilentAimbot()
+            end
+        end
+    end
+end
+
+-- =========================
+-- Team Check
+-- =========================
+local function isAllyWithMe(targetplayer)
+	local myGui = player:FindFirstChild("PlayerGui")
+	if not myGui then return false end
+
+	local scrolling = myGui:FindFirstChild("Main")
+		and myGui.Main:FindFirstChild("Allies")
+		and myGui.Main.Allies:FindFirstChild("Container")
+		and myGui.Main.Allies.Container:FindFirstChild("Allies")
+		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+
+	if scrolling then
+		for _, frame in pairs(scrolling:GetDescendants()) do
+			if frame:IsA("ImageButton") and frame.Name == targetplayer.Name then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isEnemy(targetplayer)
+	if not targetplayer or targetplayer == player then
+		return false
+	end
+
+	local myTeam = player.Team
+	local targetTeam = targetplayer.Team
+
+	if myTeam and targetTeam then
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+			return true
+		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+			return true
+		end
+
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+			if isAllyWithMe(targetplayer) then
+				return false -- ally, not enemy
+			end
+			return true
+		end
+
+		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+			return false
+		end
+	end
+
+	return true
+end
+
+local function getClosestplayer(lpHRP)
+	if not lpHRP then return nil end
+	
+	local closest = nil
+	local closestDist = math.huge
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
+			local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
+			local hrp = getHRP(pl.Character)
+			if hum and hum.Health > 0 and hrp then
+				local dist = (hrp.Position - lpHRP.Position).Magnitude
+				if dist <= maxRange and dist < closestDist then
+					closestDist = dist
+					closest = pl
+				end
+			end
+		end
+	end
+	return closest
+end
+
+local function applyHighlight(targetModel, targetType)
+    if not targetModel then return end
+    if currentHighlight and currentHighlight.Adornee == targetModel then return end
+
+    if currentHighlight then  
+        currentHighlight:Destroy()  
+        currentHighlight = nil  
+        currentTargetType = nil  
+    end  
+
+    local hl = Instance.new("Highlight")  
+    hl.FillColor = Color3.fromRGB(255, 255, 0)  
+    hl.OutlineColor = Color3.fromRGB(255, 255, 0)  
+    hl.FillTransparency = 0.5  
+    hl.OutlineTransparency = 0  
+    hl.Adornee = targetModel  
+    hl.Parent = targetModel  
+    currentHighlight = hl  
+    currentTargetType = targetType
+
+    VSkillModule:CheckVSkillUsage()
+end
+
+local function clearHighlight()
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+        currentTargetType = nil
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    local lpChar = player.Character
+    if not lpChar then return end
+    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+    if not lpHRP then return end
+
+    local targetModel = nil
+
+    if SilentAimPlayersEnabled then
+		local targetplayer = getClosestplayer(lpHRP)
+		if targetplayer and targetplayer ~= player and targetplayer.Character then
+			playersaimbot = targetplayer.Name
+			local hrp = getHRP(targetplayer.Character)
+			PlayersPosition = hrp.Position
+			targetModel = targetplayer.Character
+			applyHighlight(targetModel, "player")
+		else
+			playersaimbot, PlayersPosition = nil, nil
+		end
+	elseif currentTargetType == "player" then
+		playersaimbot, PlayersPosition = nil, nil
+		clearHighlight()
+	end
 end)
 
-Section:NewButton("Join Discord", "Get Link Discord server", function()
-	local link = "https://discord.gg/fKwqmB4C"
-    if setclipboard then
-        setclipboard(link)
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Sapi Hub",
-            Text = "Copied Discord Link!",
-            Duration = 5
-        })
+local function hookTool(tool)
+    currentTool = tool
+    table.insert(characterConnections, tool.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            currentTool = nil
+        end
+    end))
+end
+
+local function isValidCondition()
+    return (currentTool and currentTool.Name == "Buddy Sword")
+end
+
+spawn(function()
+    local ok, hookMeta = pcall(getrawmetatable, game)
+    if ok and hookMeta then
+        setreadonly(hookMeta, false)
+        if not getgenv()._hookedSilentAim then
+			getgenv()._hookedSilentAim = true
+			local OldHook
+	        OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
+	            local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
+
+	            if tostring(self) == "RemoteEvent" and Method == "fireserver" then
+	                if typeof(V1) == "Vector3" then
+	                    if SilentAimPlayersEnabled and PlayersPosition then
+	                        return OldHook(self, PlayersPosition, V2, ...)
+	                    end
+	                end
+	            elseif Method == "invokeserver" then  
+		            if isValidCondition() then
+		                if type(V1) == "string" and table.find(Skills, V1) then  
+		                    if SilentAimPlayersEnabled and PlayersPosition then  
+		                        return OldHook(self, V1, PlayersPosition, nil, ...)
+		                    end  
+		                end    
+					end
+	            end
+            
+	            return OldHook(self, V1, V2, ...)
+	        end)
+		end        
+        setreadonly(hookMeta, true)
     end
 end)
 
-local Tab = Window:NewTab("⚙・Settings Manager")
-local Section = Tab:NewSection("💾・Settings")
+local function onCharacterAdded(char)
+    clearConnections()
 
-Section:NewTextBox("Paste Job Id Here", "Paste JobId and press Enter", function(jobid)
-    if jobid and jobid ~= "" then
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobid, Players.LocalPlayer)
-    end
+    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then hookTool(child) end
+    end))
+
+    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
+        if child == currentTool then
+            currentTool = nil
+        end
+    end))
+end
+
+player.CharacterAdded:Connect(function(char)
+    clearConnections()
+    onCharacterAdded(char)
 end)
 
-Section:NewButton("Save Current Settings", "Save all current settings", function()
-    OthersStuffsModule.SaveSettings(Settings)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Sapi Hub",
-        Text = "Settings Saved!",
-        Duration = 4
-    })
-end)
+if player.Character then
+    clearConnections()
+    onCharacterAdded(player.Character)
+end
 
-Section:NewButton("Reset Settings", "Clear saved settings", function()
-    OthersStuffsModule.ResetSettings()
-    Settings = {} -- also clear local
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Sapi Hub",
-        Text = "Settings Reset!",
-        Duration = 4
-    })
-end)
-
-Section:NewButton("Hop Server", "New server", function()
-    StuffsModule:SetHopServer()
-end)
-
-Section:NewButton("Rejoin Server", "Rejoin your server", function()
-    StuffsModule:SetRejoinServer()
-end)
-
-Section:NewDropdown("Select Theme", "Choose a color theme", UiSettingsModule:getThemeNames(), function(selected)
-    local newColor = UiSettingsModule.themes[selected]
-    if newColor then
-        UiSettingsModule:updateSchemeColor(newColor, Library)
-    end
-end)
-
-Section:NewDropdown("Select Background Theme", "Choose a color background", UiSettingsModule:getBackgroundThemeNames(), function(selected)
-    local newColor = UiSettingsModule.backgroundThemes[selected]
-    if newColor then
-        UiSettingsModule:updateBackgroundColor(newColor, Library)
-    end
-end)
-
-Section:NewDropdown("Select TextColor", "Choose a textcolor", UiSettingsModule:getThemeNames(), function(selected)
-    local newColor = UiSettingsModule.themes[selected]
-    if newColor then
-        UiSettingsModule:updateTextColor(newColor, Library)
-    end
-end)
-
-Settings = OthersStuffsModule.LoadSettings()
-
-OthersStuffsModule:ApplySettings(Settings, {
-    SilentAim = SilentAimModule,
-    Ui = UiSettingsModule,
-    Zskill= ZSkillModule
-}, {
-    SilentAimPlayers = SilentAimPlayersToggle,
-    SilentAimNPC = SilentAimNPCToggle,
-    ZSkills = ZSkillToggle
-})
-
-OthersStuffsModule.StartFruitNotifier()
-
-toggleButton.MouseButton1Click:Connect(function()
-    Library:ToggleUI()
-end)
+createMiniToggle("SilentPlayers", UDim2.new(0, 10, 0, 80),  SilentPlayersState, setSilentPlayers)
