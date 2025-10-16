@@ -1841,27 +1841,3 @@ task.spawn(function()
         end
     end
 end)
-
---[[// Fast Attack
-local CombatFramework = require(game:GetService('Players').LocalPlayer.PlayerScripts.CombatFramework)
-
-function GetCurrentBlade()
-    local GetFastAttack = debug.getupvalues(CombatFramework)[2]
-    local activeController = GetFastAttack.activeController
-    local blades = activeController.blades[1]
-    if not blades then return end
-    while blades.Parent ~= game.Players.LocalPlayer.Character do blades = blades.Parent end
-    return blades
-end
-
-function AttackNoCD()
-    local plr = game:GetService("Players").LocalPlayer
-    local GetFastAttack = debug.getupvalues(CombatFramework)[2]
-
-    local activeController = GetFastAttack.activeController
-    for i = 1, 1 do
-        local getBladeHits = require(game.ReplicatedStorage.CombatFramework.RigLib).getBladeHits(plr.Character,{plr.Character.HumanoidRootPart},60)
-        local cac = {}
-        local hash = {}
-        for k, v in pairs(getBladeHits) do
-            if v.Parent:FindFirstChild("HumanoidRootPart") and no…"
