@@ -73,6 +73,7 @@ do
             end
         }
     )
+end
     ----------------------------------------------------------------------------------------------------------------------------------------------
 _G.antiscan = true
 getgenv().A = require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).wrapAttackAnimationAsync
