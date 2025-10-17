@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://you.whimper.xyz/sources/btteam/SystemUI.lua"))() -- LIBRARY
+ local Library = loadstring(game:HttpGet("https://you.whimper.xyz/sources/btteam/SystemUI.lua"))() -- LIBRARY
 
 local Window = Library:CreateWindow('BLACKTRAP') -- CREATE WINDOW
 
@@ -1678,7 +1678,7 @@ task.spawn(function()
     end
 end)
 
-local CombatFramework = require(game:GetService('Players').LocalPlayer.PlayerScripts.CombatFramework)
+local CombatFramework = require(game:GetService("Players").LocalPlayer.PlayerScripts.PlayerModule.ControlModule)
 
 function GetCurrentBlade()
     local GetFastAttack = debug.getupvalues(CombatFramework)[2]
