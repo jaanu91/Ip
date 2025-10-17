@@ -283,49 +283,25 @@ local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
 end
 
-spawn(function()
-    local ok, hookMeta = pcall(getrawmetatable, game)
-    if ok and hookMeta then
-        setreadonly(hookMeta, false)
-        if not getgenv()._hookedSilentAim then
-			getgenv()._hookedSilentAim = true
-			local OldHook
-	        OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
-	            local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
-
-	            if tostring(self) == "RemoteEvent" and Method == "fireserver" then
-	                if typeof(V1) == "Vector3" then
-	                    if SilentAimPlayersEnabled and PlayersPosition then
-	                        return OldHook(self, PlayersPosition, V2, ...)
-	                    elseif SilentAimNPCsEnabled and NPCPosition then
-	                        return OldHook(self, NPCPosition, V2, ...)
-	                    end
-	                end
-	            elseif Method == "invokeserver" then  
-		            if isValidCondition() then
-		                if type(V1) == "string" and table.find(Skills, V1) then  
-		                    if SilentAimPlayersEnabled and PlayersPosition then  
-		                        return OldHook(self, V1, PlayersPosition, nil, ...)
-		                    elseif SilentAimNPCsEnabled and NPCPosition then
-			                    return OldHook(self, V1, NPCPosition, nil, ...)
-		                    end  
-		                end    
-					end
-	            elseif tostring(self) == "RE/ShootGunEvent" and Method == "fireserver" then
-	                if typeof(V1) == "Vector3" and typeof(V2) == "table" and #V2 ~= 0 then
-	                    if SilentAimPlayersEnabled and PlayersPosition then
-	                        return OldHook(self, PlayersPosition, V2, ...)
-	                    elseif SilentAimNPCsEnabled and NPCPosition then
-	                        return OldHook(self, NPCPosition, V2, ...)
-	                    end
-	                end
-				end
-            
-	            return OldHook(self, V1, V2, ...)
-	        end)
-		end        
-        setreadonly(hookMeta, true)
-    end
+spawn(function() 
+    local old 
+    old = hookmetamethod(game, "__namecall", function(self, ...)
+        local args = {...}
+        local targetPos = nil
+        if SilentAimPlayersEnabled and PlayersPosition then
+            targetPos = PlayersPosition
+        elseif SilentAimNPCsEnabled and NPCPosition then
+            targetPos = NPCPosition
+        end
+        if targetPos and getnamecallmethod() == "FireServer" and tostring(self) == "RE/ShootGunEvent" then
+            pcall(function() 
+				args[1] = targetPos[1].Position
+				args[2] = targetPos
+				return old(self, unpack(args))
+			end)
+        end
+        return old(self, ...) 
+    end)
 end)
 
 local function onCharacterAdded(char)
