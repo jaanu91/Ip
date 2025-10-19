@@ -338,53 +338,6 @@ spawn(function()
     setreadonly(gg, true)
 end)
 
-setreadonly(gg, false)
-gg.__namecall = newcclosure(function(self, ...)
-    local Method = string.lower(getnamecallmethod())
-
-    if Method ~= "fireserver" then
-        return old(self, ...)
-    end
-
-    local Name = self.Name
-    if Name == "RE/ShootGunEvent" then
-        local Position, Enemies = ...
-
-        if typeof(Position) == "Vector3" and type(Enemies) == "table" then
-            local TargetPosition = nil
-
-            if SilentAimPlayersEnabled and PlayersPosition then
-                TargetPosition = PlayersPosition
-            elseif SilentAimNPCsEnabled and NPCPosition then
-                TargetPosition = NPCPosition
-            end
-
-            if TargetPosition then
-                return old(self, TargetPosition, {TargetPosition})
-            end
-        end
-
-    elseif Name == "RemoteEvent" then
-        local v1, v2 = ...
-
-        local TargetPosition = nil
-        if SilentAimPlayersEnabled and PlayersPosition then
-            TargetPosition = PlayersPosition
-        elseif SilentAimNPCsEnabled and NPCPosition then
-            TargetPosition = NPCPosition
-        end
-
-        if typeof(v1) == "Vector3" and not v2 and TargetPosition then
-            return old(self, TargetPosition)
-        elseif v1 == "TAP" and typeof(v2) == "Vector3" and TargetPosition then
-            return old(self, "TAP", TargetPosition)
-        end
-    end
-
-    return old(self, ...)
-end)
-setreadonly(gg, true)
-
 local function onCharacterAdded(char)
     clearConnections()
 
