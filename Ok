@@ -40,8 +40,8 @@ local Window =
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 120,
-        Size = UDim2.fromOffset(320, 220),
+        TabWidth = 80,
+        Size = UDim2.fromOffset(360, 260),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
