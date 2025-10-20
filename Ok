@@ -32,8 +32,6 @@ local World2 = (PlaceId == World2ID)
 local World3 = (PlaceId == World3ID)
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 repeat
     wait()
 until game:IsLoaded()
@@ -43,8 +41,8 @@ local Window =
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 100,
-        Size = UDim2.fromOffset(400, 200),
+        TabWidth = 120,
+        Size = UDim2.fromOffset(320, 220),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -55,8 +53,6 @@ local Tabs = {
     Main0 = Window:AddTab({Title = "Discord Link"}),
     Main1 = Window:AddTab({Title = "Menu Raids"})
 }
-
-local Options = Fluent.Options
 
 Tabs.Main0:AddButton(
     {
@@ -159,23 +155,34 @@ v139:OnChanged(
 
 v139:SetValue(false)
 
-spawn(
-    function()
-        while wait() do
-            pcall(
-                function()
-                    if _G.Auto_StartRaid then
-                        if World2 then
-                            fireclickdetector(game:GetService("Workspace").Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
-                        elseif World3 then
-	                        fireclickdetector(game:GetService("Workspace").Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
+spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            if _G.Auto_StartRaid then
+                local raidMap = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("RaidMap")
+                if raidMap then
+                    local hasIslands = false
+                    for _, island in ipairs(raidMap:GetChildren()) do
+                        if island.Name:match("RaidIsland") then
+                            hasIslands = true
+                            break
                         end
                     end
+
+                    if not hasIslands then
+                        if World2 then
+                            fireclickdetector(workspace.Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
+                        elseif World3 then
+                            fireclickdetector(workspace.Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
+                        end
+
+                        task.wait(20)
+                    end
                 end
-            )
-        end
+            end
+        end)
     end
-)
+end)
 
 local v140 =
     Tabs.Main1:AddToggle(
