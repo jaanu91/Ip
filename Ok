@@ -23,6 +23,8 @@ ImageButton.MouseButton1Down:Connect(
 )
 
 local workspace = game:GetService("Workspace")
+local partline = workspace.Map["Boat Castle"].RaidSummon2.MainRaid:GetChildren()[11]
+
 local PlaceId = game.PlaceId
 
 local World2ID = 4442272183
@@ -45,7 +47,7 @@ local Window =
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
         TabWidth = 100,
-        Size = UDim2.fromOffset(360, 240),
+        Size = UDim2.fromOffset(380, 260),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -480,7 +482,7 @@ elseif World3 then
             Title = "Teleport To Lab",
             Description = "",
             Callback = function()
-                Tween2(CFrame.new(-5038.623, 322.358, -2873.446))
+                topos(partline.CFrame * CFrame.new(PosX,PosY,PosZ))
             end
         }
     )
