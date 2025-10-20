@@ -7,7 +7,6 @@ local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubuserconten
 local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
 local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer 
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local PlayerList = {"None"}
@@ -59,17 +58,6 @@ local Section = Tab:NewSection("◈・Information")
 Section:NewLabel("Executor: " .. executor)
 Section:NewLabel("Status: " .. execStatus)
 
-local Tab = Window:NewTab("⛓・ChangesLogs")
-local Section = Tab:NewSection("✏・Updated")
-
-Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbot ✔")
-Section:NewLabel("• Added Fixed Sanguine art Z in silent aimbot ✔")
-Section:NewLabel("• Added Auto Ken ✔")
-Section:NewLabel("• Added Select Target for Silent aim ✔")
-Section:NewLabel("• Added Bring Fruits ✔")
-Section:NewLabel("• Added Spawned Fruits Check ✔")
-Section:NewLabel("• Added Auto V4 ✔")
-
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
 
@@ -114,9 +102,19 @@ local SilentAimPlayersToggle = Section:NewToggle("・SilentAim Players", "Lock o
     Settings["SilentAimPlayers"] = state
 end)
 
+local SilentMiniTogglePlayersToggle = Section:NewToggle("・SilentAim Mini Toggle Players", "Lock onto nearest player", function(state)
+    SilentAimModule:SetMiniTogglePlayerSilentAim(state)
+    Settings["SilentMiniTogglePlayers"] = state
+end)
+
 local SilentAimNPCToggle = Section:NewToggle("・SilentAim Npcs", "Lock onto nearest npc", function(state)
     SilentAimModule:SetNPCSilentAim(state)
     Settings["SilentAimNPC"] = state
+end)
+
+local SilentMiniToggleNPCToggle = Section:NewToggle("・SilentAim Mini Toggle NPC", "Lock onto nearest NPC/Boss", function(state)
+    SilentAimModule:SetMiniToggleNpcSilentAim(state)
+    Settings["SilentMiniToggleNPC"] = state
 end)
 
 local SilentAimPedictionToggle = Section:NewToggle("・SilentAim Prediction", "Prediction on target", function(state)
@@ -173,11 +171,16 @@ local ZSkillToggle = Section:NewToggle("・GodhumanZ Aimlock", "I only set Godhu
     Settings["ZSkills"] = state
 end)
 
+local HighlightToggle = Section:NewToggle("・Main Highlight", "Current Target Highlighted", function(state)
+    SilentAimModule:SetHighlight(state)
+    Settings["Highlight"] = state
+end)
+
 local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
 Section:NewButton("Join Discord", "Get Link Discord server", function()
-	local link = "https://discord.gg/6Fm6yAYc"
+	local link = "https://discord.gg/fKwqmB4C"
     if setclipboard then
         setclipboard(link)
         game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -213,30 +216,11 @@ local FpsOrPingsToggle = Section:NewToggle("・Fps Or Pings", "Display Ping or F
     Settings["FpsOrPings"] = state
 end)
 
-player.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    task.wait(1)
-    if Settings["WalkSpeedValue"] then
-        char.Humanoid.WalkSpeed = Settings["WalkSpeedValue"]
-    end
-end)
-
-if player.Character and player.Character:FindFirstChild("Humanoid") and Settings["WalkSpeedValue"] then
-    player.Character.Humanoid.WalkSpeed = Settings["WalkSpeedValue"]
-end
-
 Section:NewTextBox("Speed Hack", "WalkSpeedValue", function(speedfunc)
     local num = tonumber(speedfunc)
     if num then
         getgenv().WalkSpeedValue = num
         UiSettingsModule:SetWalkSpeed(num)
-        Settings["WalkSpeedValue"] = num
-        OthersStuffsModule.SaveSettings(Settings)
-
-        local char = Players.LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.WalkSpeed = num
-        end
     end
 end)
 
@@ -378,7 +362,10 @@ OthersStuffsModule:ApplySettings(Settings, {
     ZSkills = ZSkillToggle,
     BunnyHop = BunnyHopToggle,
     AuraSkill = AuraSkillToggle,
-    V3Skill = V3SkillToggle
+    V3Skill = V3SkillToggle,
+    Highlight = HighlightToggle,
+    SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
+    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
