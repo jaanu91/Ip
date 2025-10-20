@@ -90,7 +90,7 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     end
     
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = name .. "MiniToggleGui"
+    screenGui.Name = name .. "MiniToggleGuiS"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
