@@ -32,6 +32,9 @@ local World2 = (PlaceId == World2ID)
 local World3 = (PlaceId == World3ID)
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
 repeat
     wait()
 until game:IsLoaded()
@@ -41,8 +44,8 @@ local Window =
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 120,
-        Size = UDim2.fromOffset(320, 220),
+        TabWidth = 100,
+        Size = UDim2.fromOffset(400, 200),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -50,9 +53,11 @@ local Window =
 )
 
 local Tabs = {
-    Main0 = Window:AddTab({Title = "Discord Link"}),
-    Main1 = Window:AddTab({Title = "Menu Raids"})
+    Main0 = Window:AddTab({Title = "Discord Link", Icon = "clipboard" }),
+    Main1 = Window:AddTab({Title = "Menu Raids", Icon = "bow-arrow" })
 }
+
+local Options = Fluent.Options
 
 Tabs.Main0:AddButton(
     {
