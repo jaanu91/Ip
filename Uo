@@ -27,15 +27,20 @@ end
 local function DisableSilentAimbot()
     if SilentAimModuleRef then
         SilentAimModuleRef:Pause()
+        if SilentAimModuleRef.SyncMiniUI then
+            SilentAimModuleRef:SyncMiniUI()
+        end
     end
 end
 
 local function EnableSilentAimbot()
     if SilentAimModuleRef then
         SilentAimModuleRef:Restore()
+        if SilentAimModuleRef.SyncMiniUI then
+            SilentAimModuleRef:SyncMiniUI()
+        end
     end
 end
-
 -- =========================
 -- Tool Watcher
 -- =========================
