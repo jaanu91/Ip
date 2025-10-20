@@ -22,9 +22,10 @@ ImageButton.MouseButton1Down:Connect(
     end
 )
 
-_G.FastAttack = true
+local FastAttackEnabled = false
+local bringmob = false
 
-if _G.FastAttack then
+do
     local _ENV = (getgenv or getrenv or getfenv)()
 
     local function SafeWaitForChild(parent, childName)
@@ -55,7 +56,7 @@ if _G.FastAttack then
     local Player = Players.LocalPlayer
 
     if not Player then
-        warn("Player not found.")
+        warn("Không tìm thấy người chơi cục bộ.")
         return
     end
 
@@ -101,7 +102,7 @@ if _G.FastAttack then
         local FastAttack = {
             Distance = 100,
             attackMobs = true,
-            attackPlayers = false,
+            attackPlayers = true,
             Equipped = nil
         }
 
@@ -154,7 +155,7 @@ if _G.FastAttack then
 
         task.spawn(function()
             while task.wait(Settings.ClickDelay) do
-                if Settings.AutoClick then
+                if Settings.AutoClick and FastAttackEnabled then
                     FastAttack:BladeHits()
                 end
             end
@@ -165,11 +166,9 @@ if _G.FastAttack then
     end)()
 end
 
-_G.BringMob = true
-
 task.spawn(function()
 	while task.wait() do
-		if _G.BringMob then
+		if bringmob then
 			pcall(function()
 				for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
 					if v.Name == MonFarm and (v.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 350 then
@@ -223,7 +222,7 @@ local Window =
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
         TabWidth = 100,
-        Size = UDim2.fromOffset(380, 260),
+        Size = UDim2.fromOffset(390, 280),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -514,8 +513,6 @@ local v141 =
 v141:OnChanged(
     function(v357)
         AutoKill = v357
-        _G.BringMob = v357
-        _G.FastAttack = v357
     end
 )
 
@@ -523,14 +520,11 @@ v141:SetValue(false)
 
 task.spawn(function()
     while task.wait(0.5) do
-        if AutoKill and not AutoNextIsland then
+        if AutoKill then
 	        EquipTool(SelectWeapon)
 			AutoHaki()
-            _G.BringMob = true
-            _G.FastAttack = true
-        else
-            _G.BringMob = false
-            _G.FastAttack = false
+            bringmob = true
+            FastAttackEnabled = true
         end
     end
 end)
