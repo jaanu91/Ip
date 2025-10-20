@@ -32,25 +32,32 @@ local World2 = (PlaceId == World2ID)
 local World3 = (PlaceId == World3ID)
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 repeat
     wait()
 until game:IsLoaded()
+
 local Window =
     Fluent:CreateWindow(
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 120,
-        Size = UDim2.fromOffset(320, 220),
+        TabWidth = 100,
+        Size = UDim2.fromOffset(400, 200),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
     }
 )
+
 local Tabs = {
     Main0 = Window:AddTab({Title = "Discord Link"}),
     Main1 = Window:AddTab({Title = "Menu Raids"})
 }
+
+local Options = Fluent.Options
+
 Tabs.Main0:AddButton(
     {
         Title = "SapiHub",
@@ -60,6 +67,7 @@ Tabs.Main0:AddButton(
         end
     }
 )
+
 local v136 = {
     "Flame",
     "Ice",
@@ -421,13 +429,26 @@ spawn(
     end
 )
 
+function Tween2(targetCFrame)
+	local player = game.Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = tweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+
+	tween:Play()
+	tween.Completed:Wait()
+end
+
 if World2 then
     Tabs.Main1:AddButton(
         {
             Title = "Teleport To Lab",
             Description = "",
             Callback = function()
-                Tween2(CFrame.new(-6438.73535, 250.645355, -4501.50684))
+                Tween2(CFrame.new(-6505.351, 255.138, -4506.073))
             end
         }
     )
@@ -437,27 +458,7 @@ elseif World3 then
             Title = "Teleport To Lab",
             Description = "",
             Callback = function()
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(-5075.50927734375, 314.5155029296875, -3150.0224609375)
-                )
-
-                Tween2(
-                    CFrame.new(
-                        -5017.40869,
-                        314.844055,
-                        -2823.0127,
-                        -0.925743818,
-                        4.482175e-8,
-                        -0.378151238,
-                        4.5550315e-9,
-                        1,
-                        1.0737756e-7,
-                        0.378151238,
-                        9.768162e-8,
-                        -0.925743818
-                    )
-                )
+                Tween2(CFrame.new(-5038.623, 322.358, -2873.446))
             end
         }
     )
