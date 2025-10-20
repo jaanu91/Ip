@@ -11,7 +11,7 @@ ImageButton.BorderSizePixel = 0
 ImageButton.Position = UDim2.new(0.10615778, 0, 0.16217947, 0)
 ImageButton.Size = UDim2.new(0, 40, 0, 40)
 ImageButton.Draggable = true
-ImageButton.Image = "http://www.roblox.com/asset/?id=5009915795"
+ImageButton.Image = "rbxassetid://76926193047725"
 
 UICorner.CornerRadius = UDim.new(1, 10)
 UICorner.Parent = ImageButton
@@ -22,6 +22,7 @@ ImageButton.MouseButton1Down:Connect(
     end
 )
 
+local workspace = game:GetService("Workspace")
 local PlaceId = game.PlaceId
 
 local World2ID = 4442272183
@@ -190,13 +191,13 @@ v140:OnChanged(
 
 v140:SetValue(false)
 
-local islandNames = {"Island 5", "Island 4", "Island 3", "Island 2", "Island 1"}
+local islandNames = {"RaidIsland5", "RaidIsland4", "RaidIsland3", "RaidIsland2", "RaidIsland1"}
 spawn(function()
     while wait() do
         if AutoNextIsland then
 			if not game.Players.LocalPlayer.PlayerGui.Main.Timer.Visible == false then
                 for _, islandName in ipairs(islandNames) do
-                    local island = game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild(islandName)
+                    local island = workspace.Map.RaidMap:FindFirstChild(islandName)
                     if island then
                         topos(island.CFrame * CFrame.new(0, 70, 100))
                         break
