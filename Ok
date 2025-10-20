@@ -40,16 +40,16 @@ local Window =
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 80,
-        Size = UDim2.fromOffset(420, 320),
+        TabWidth = 60,
+        Size = UDim2.fromOffset(400, 300),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
     }
 )
 local Tabs = {
-    Main0 = Window:AddTab({Title = "Tab Info"}),
-    Main1 = Window:AddTab({Title = "Tab Menu Raids"})
+    Main0 = Window:AddTab({Title = "Discord Link"}),
+    Main1 = Window:AddTab({Title = "OoO Raids"})
 }
 Tabs.Main0:AddButton(
     {
