@@ -45,7 +45,7 @@ local Window =
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
         TabWidth = 100,
-        Size = UDim2.fromOffset(400, 200),
+        Size = UDim2.fromOffset(360, 240),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -447,9 +447,19 @@ function Tween2(targetCFrame)
 	local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 	local tweenService = game:GetService("TweenService")
-	local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = tweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
 
+	local distance = (humanoidRootPart.Position - targetCFrame.Position).Magnitude
+
+	local speed = 0.05
+	local tweenTime = math.clamp(distance * speed, 2, 15)
+	
+	local tweenInfo = TweenInfo.new(
+		tweenTime,
+		Enum.EasingStyle.Linear,
+		Enum.EasingDirection.Out
+	)
+
+	local tween = tweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
 	tween:Play()
 	tween.Completed:Wait()
 end
