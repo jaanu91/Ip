@@ -11,16 +11,9 @@ ImageButton.BorderSizePixel = 0
 ImageButton.Position = UDim2.new(0.10615778, 0, 0.16217947, 0)
 ImageButton.Size = UDim2.new(0, 40, 0, 40)
 ImageButton.Draggable = true
-ImageButton.Image = "http://www.roblox.com/asset/?id=5009915795"
+ImageButton.Image = "rbxassetid://76926193047725"
 
-UICorner.CornerRadius = UDim.new(1, 10)
-UICorner.Parent = ImageButton
-
-ImageButton.MouseButton1Down:Connect(
-    function()
-        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
-    end
-)
+local uiVisible = true
 
 local workspace = game:GetService("Workspace")
 local PlaceId = game.PlaceId
@@ -47,10 +40,21 @@ local Window =
         MinimizeKey = Enum.KeyCode.End
     }
 )
+
+local function toggleFluentUI()
+    uiVisible = not uiVisible
+    for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if v.Name == "Fluent" then
+            v.Enabled = uiVisible
+        end
+    end
+end
+
 local Tabs = {
     Main0 = Window:AddTab({Title = "Tab Info"}),
     Main1 = Window:AddTab({Title = "Tab Menu Raids"})
 }
+
 Tabs.Main0:AddButton(
     {
         Title = "Discord",
@@ -60,6 +64,7 @@ Tabs.Main0:AddButton(
         end
     }
 )
+
 local v136 = {
     "Flame",
     "Ice",
@@ -462,3 +467,7 @@ elseif World3 then
         }
     )
 end
+
+ImageButton.MouseButton1Click:Connect(function()
+    toggleFluentUI()
+end)
