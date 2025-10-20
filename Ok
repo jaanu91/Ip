@@ -23,8 +23,6 @@ ImageButton.MouseButton1Down:Connect(
 )
 
 local workspace = game:GetService("Workspace")
-local partline = workspace.Map["Boat Castle"].RaidSummon2.MainRaid:GetChildren()[11]
-
 local PlaceId = game.PlaceId
 
 local World2ID = 4442272183
@@ -443,27 +441,65 @@ spawn(
     end
 )
 
-function Tween2(targetCFrame)
-	local player = game.Players.LocalPlayer
-	local character = player.Character or player.CharacterAdded:Wait()
-	local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+function TP2(P1)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    local hrp = character.HumanoidRootPart
+    local tweenService = game:GetService("TweenService")
 
-	local tweenService = game:GetService("TweenService")
+    local distance = (P1.Position - hrp.Position).Magnitude
+    local speed = 350
 
-	local distance = (humanoidRootPart.Position - targetCFrame.Position).Magnitude
+    if distance >= 1 then
+        local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+        local tween = tweenService:Create(hrp, tweenInfo, { CFrame = P1 })
 
-	local speed = 0.05
-	local tweenTime = math.clamp(distance * speed, 2, 15)
-	
-	local tweenInfo = TweenInfo.new(
-		tweenTime,
-		Enum.EasingStyle.Linear,
-		Enum.EasingDirection.Out
-	)
+        if _G.CancelTween2 then
+            tween:Cancel()
+            return
+        end
 
-	local tween = tweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-	tween:Play()
-	tween.Completed:Wait()
+        _G.Clip2 = true
+        tween:Play()
+
+        task.wait(distance / speed)
+        _G.Clip2 = false
+    end
+end
+
+function Tween(Pos)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local tweenService = game:GetService("TweenService")
+
+    local distance = (Pos.Position - hrp.Position).Magnitude
+    local speed = 350
+
+    if humanoid.Sit then
+        humanoid.Sit = false
+    end
+
+    local tween
+    pcall(function()
+        local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+        tween = tweenService:Create(hrp, tweenInfo, { CFrame = Pos })
+    end)
+
+    if not tween then return end
+
+    tween:Play()
+
+    if distance <= speed then
+        tween:Cancel()
+        hrp.CFrame = Pos
+    end
+
+    if _G.StopTween then
+        tween:Cancel()
+        _G.Clip = false
+    end
 end
 
 if World2 then
@@ -472,7 +508,7 @@ if World2 then
             Title = "Teleport To Lab",
             Description = "",
             Callback = function()
-                Tween2(CFrame.new(-6505.351, 255.138, -4506.073))
+                Tween(CFrame.new(-6505.351, 255.138, -4506.073))
             end
         }
     )
@@ -482,7 +518,7 @@ elseif World3 then
             Title = "Teleport To Lab",
             Description = "",
             Callback = function()
-                topos(partline.CFrame * CFrame.new(PosX,PosY,PosZ))
+                Tween(CFrame.new(-5038.623, 322.358, -2873.446))
             end
         }
     )
