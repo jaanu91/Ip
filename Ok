@@ -13,7 +13,14 @@ ImageButton.Size = UDim2.new(0, 40, 0, 40)
 ImageButton.Draggable = true
 ImageButton.Image = "rbxassetid://76926193047725"
 
-local uiVisible = true
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = ImageButton
+
+ImageButton.MouseButton1Down:Connect(
+    function()
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
+    end
+)
 
 local workspace = game:GetService("Workspace")
 local PlaceId = game.PlaceId
@@ -33,38 +40,26 @@ local Window =
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 157,
-        Size = UDim2.fromOffset(555, 320),
-        Acrylic = true,
+        TabWidth = 120,
+        Size = UDim2.fromOffset(320, 220),
+        Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
     }
 )
-
-local function toggleFluentUI()
-    uiVisible = not uiVisible
-    for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
-        if v.Name == "Fluent" then
-            v.Enabled = uiVisible
-        end
-    end
-end
-
 local Tabs = {
     Main0 = Window:AddTab({Title = "Tab Info"}),
     Main1 = Window:AddTab({Title = "Tab Menu Raids"})
 }
-
 Tabs.Main0:AddButton(
     {
-        Title = "Discord",
-        Description = "SapiHub",
+        Title = "SapiHub",
+        Description = "Discord Link",
         Callback = function()
             setclipboard("https://discord.gg/6Fm6yAYc")
         end
     }
 )
-
 local v136 = {
     "Flame",
     "Ice",
@@ -467,7 +462,3 @@ elseif World3 then
         }
     )
 end
-
-ImageButton.MouseButton1Click:Connect(function()
-    toggleFluentUI()
-end)
