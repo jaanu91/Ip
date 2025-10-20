@@ -509,26 +509,13 @@ local v141 =
 
 v141:OnChanged(
     function(v357)
-        AutoKill = v357   
+        AutoKill = v357
+        _G.BringMob = v357
+        _G.FastAttack = v357
     end
 )
 
 v141:SetValue(false)
-
-spawn(function()
-    pcall(function()
-        while wait() do
-            if AutoKill then
-                if game:GetService("Workspace").Enemies then
-                    for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        _G.BringMob = true
-                        _G.FastAttack = true
-                    end
-                end
-            end
-        end
-    end)
-end)
 
 local v142 =
     Tabs.Main1:AddToggle(
