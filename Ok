@@ -22,8 +22,6 @@ ImageButton.MouseButton1Down:Connect(
     end
 )
 
-_G.FastAttack = true
-
 if _G.FastAttack then
     local _ENV = (getgenv or getrenv or getfenv)()
 
@@ -164,6 +162,39 @@ if _G.FastAttack then
         return FastAttack
     end)()
 end
+
+task.spawn(function()
+	while task.wait() do
+		if _G.BringMob then
+			pcall(function()
+				for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+					if v.Name == MonFarm and (v.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 350 then
+						if InMyNetWork(v.HumanoidRootPart) then
+							FarmPos = v.HumanoidRootPart.CFrame
+							v.Humanoid.JumpPower = 0
+							v.Humanoid.WalkSpeed = 0
+							v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+							v.HumanoidRootPart.CanCollide = false
+							v.Head.CanCollide = false
+
+							local animator = v.Humanoid:FindFirstChild("Animator")
+							if animator then
+								animator:Destroy()
+							end
+						end
+					end
+				end
+				
+				local player = game.Players.LocalPlayer
+				if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+					local hrp = player.Character.HumanoidRootPart
+					local mobY = FarmPos.Y
+					hrp.CFrame = CFrame.new(FarmPos.X, mobY + 35, FarmPos.Z)
+				end
+			end)
+		end
+	end
+end)
 
 local workspace = game:GetService("Workspace")
 local PlaceId = game.PlaceId
@@ -466,72 +497,6 @@ function EquipTool(ToolSe)
     end
 end
 
-function AttackNoCoolDown()
-    local character = player.Character
-    if not character then return end
-    local equippedWeapon = nil
-    for _, item in ipairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            equippedWeapon = item
-            break
-        end
-    end
-    if not equippedWeapon then return end
-    local function IsEntityAlive(entity)
-        return entity and entity:FindFirstChild("Humanoid") and entity.Humanoid.Health > 0
-    end
-    local function GetEnemiesInRange(range)
-        local enemies = game:GetService("Workspace").Enemies:GetChildren()
-        local targets = {}
-        local playerPos = character:GetPivot().Position
-        for _, enemy in ipairs(enemies) do
-            local primaryPart = enemy:FindFirstChild("HumanoidRootPart")
-            if primaryPart and IsEntityAlive(enemy) and (primaryPart.Position - playerPos).Magnitude <= range then
-                table.insert(targets, enemy)
-            end
-        end
-        return targets
-    end
-    if equippedWeapon:FindFirstChild("LeftClickRemote") then
-        local attackCount = 1  
-        local enemiesInRange = GetEnemiesInRange(60)
-        for _, enemy in ipairs(enemiesInRange) do
-            local direction = (enemy.HumanoidRootPart.Position - character:GetPivot().Position).Unit
-            pcall(function()
-                equippedWeapon.LeftClickRemote:FireServer(direction, attackCount)
-            end)
-            attackCount = attackCount + 1
-            if attackCount > 10000000000000 then attackCount = 1 end
-        end
-    else
-        local targets = {}
-        local enemies = game:GetService("Workspace").Enemies:GetChildren()
-        local playerPos = character:GetPivot().Position
-        local mainTarget = nil
-        for _, enemy in ipairs(enemies) do
-            if not enemy:GetAttribute("IsBoat") and IsEntityAlive(enemy) then
-                local head = enemy:FindFirstChild("Head")
-                if head and (playerPos - head.Position).Magnitude <= 60 then
-                    table.insert(targets, { enemy, head })
-                    mainTarget = head
-                end
-            end
-        end
-        if not mainTarget then return end
-        pcall(function()
-            local storage = game:GetService("ReplicatedStorage")
-            local attackEvent = storage:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterAttack")
-            local hitEvent = storage:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit")
-            if #targets > 0 then
-                attackEvent:FireServer(0.0000000000001)
-                hitEvent:FireServer(mainTarget, targets)
-            else
-                task.wait(0.0000000000001)
-            end
-        end)
-    end
-end
-
 local v141 =
     Tabs.Main1:AddToggle(
     "ToggleAutoRaid",
@@ -556,12 +521,8 @@ spawn(function()
             if AutoKill then
                 if game:GetService("Workspace").Enemies then
                     for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        AttackNoCoolDown()
-                        AutoHaki()
-                        EquipTool(SelectWeapon)
-                        Tween(v.HumanoidRootPart.CFrame * Pos)
-                        v.HumanoidRootPart.CanCollide = false
-                        v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                        _G.BringMob = true
+                        _G.FastAttack = true
                     end
                 end
             end
