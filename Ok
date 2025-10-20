@@ -1,0 +1,637 @@
+local ScreenGui = Instance.new("ScreenGui")
+local ImageButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+ImageButton.Parent = ScreenGui
+ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ImageButton.BorderSizePixel = 0
+ImageButton.Position = UDim2.new(0.10615778, 0, 0.16217947, 0)
+ImageButton.Size = UDim2.new(0, 40, 0, 40)
+ImageButton.Draggable = true
+ImageButton.Image = "http://www.roblox.com/asset/?id=5009915795"
+
+UICorner.CornerRadius = UDim.new(1, 10)
+UICorner.Parent = ImageButton
+
+ImageButton.MouseButton1Down:Connect(
+    function()
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.End, false, game)
+    end
+)
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+repeat
+    wait()
+until game:IsLoaded()
+local Window =
+    Fluent:CreateWindow(
+    {
+        Title = "Banana Hub Raids",
+        SubTitle = "by macuongdz",
+        TabWidth = 157,
+        Size = UDim2.fromOffset(555, 320),
+        Acrylic = true,
+        Theme = "Dark",
+        MinimizeKey = Enum.KeyCode.End
+    }
+)
+local Tabs = {
+    Main0 = Window:AddTab({Title = "Tab Info"}),
+    Main1 = Window:AddTab({Title = "Tab Menu Raids"})
+}
+Tabs.Main0:AddButton(
+    {
+        Title = "Discord",
+        Description = "macuong01234",
+        Callback = function()
+            setclipboard("https://discord.gg/RGZbjt8P")
+        end
+    }
+)
+local v136 = {
+    "Flame",
+    "Ice",
+    "Quake",
+    "Light",
+    "Dark",
+    "Spider",
+    "Rumble",
+    "Magma",
+    "Buddha",
+    "Sand",
+    "Phoenix",
+    "Dough"
+}
+
+local v137 =
+    Tabs.Main1:AddDropdown(
+    "DropdownRaid",
+    {
+        Title = "Select Chip",
+        Description = "",
+        Values = v136,
+        Multi = false,
+        Default = 1
+    }
+)
+
+v137:SetValue(SelectChip)
+
+v137:OnChanged(
+    function(v353)
+        SelectChip = v353
+    end
+)
+
+local v138 =
+    Tabs.Main1:AddToggle(
+    "ToggleBuy",
+    {
+        Title = "Buy Chip",
+        Description = "",
+        Default = false
+    }
+)
+
+v138:OnChanged(
+    function(v354)
+        _G.Auto_Buy_Chips_Dungeon = v354
+    end
+)
+
+v17.ToggleBuy:SetValue(false)
+
+spawn(
+    function()
+        while wait() do
+            if _G.Auto_Buy_Chips_Dungeon then
+                pcall(
+                    function()
+                        local v805 = {
+                            [1] = "RaidsNpc",
+                            [2] = "Select",
+                            [3] = SelectChip
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v805))
+                    end
+                )
+            end
+        end
+    end
+)
+
+local v139 =
+    Tabs.Main1:AddToggle(
+    "ToggleStart",
+    {
+        Title = "Start Raids",
+        Description = "",
+        Default = false
+    }
+)
+
+v139:OnChanged(
+    function(v355)
+        _G.Auto_StartRaid = v355
+    end
+)
+
+v17.ToggleStart:SetValue(false)
+
+spawn(
+    function()
+        while wait() do
+            pcall(
+                function()
+                    if _G.Auto_StartRaid then
+                        if (game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Timer.Visible == false) then
+                            if
+                                (not game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 1") and
+                                    (game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Special Microchip") or
+                                        game:GetService("Players").LocalPlayer.Character:FindFirstChild(
+                                            "Special Microchip"
+                                        )))
+                             then
+                                if Sea2 then
+                                    Tween2(CFrame.new(-6438.73535, 250.645355, -4501.50684))
+
+                                    local v1547 = {
+                                        [1] = "SetSpawnPoint"
+                                    }
+
+                                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v1547))
+
+                                    fireclickdetector(
+                                        game:GetService("Workspace").Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector
+                                    )
+                                elseif Sea3 then
+                                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
+                                        "requestEntrance",
+                                        Vector3.new(-5075.50927734375, 314.5155029296875, -3150.0224609375)
+                                    )
+
+                                    Tween2(
+                                        CFrame.new(
+                                            -5017.40869,
+                                            314.844055,
+                                            -2823.0127,
+                                            -0.925743818,
+                                            4.482175e-8,
+                                            -0.378151238,
+                                            4.5550315e-9,
+                                            1,
+                                            1.0737756e-7,
+                                            0.378151238,
+                                            9.768162e-8,
+                                            -0.925743818
+                                        )
+                                    )
+
+                                    local Tabs56 = {
+                                        [1] = "SetSpawnPoint"
+                                    }
+
+                                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(Tabs56))
+
+                                    fireclickdetector(
+                                        game:GetService("Workspace").Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector
+                                    )
+                                end
+                            end
+                        end
+                    end
+                end
+            )
+        end
+    end
+)
+
+local v140 =
+    Tabs.Main1:AddToggle(
+    "ToggleNextIsland",
+    {
+        Title = "Auto Fram Raid+Next Island",
+        Description = "",
+        Default = false
+    }
+)
+
+v140:OnChanged(
+    function(v356)
+        AutoNextIsland = v356
+
+        if not v356 then
+            _G.AutoNear = false
+        end
+    end
+)
+
+v17.ToggleNextIsland:SetValue(false)
+
+spawn(
+    function()
+        local v357 = {}
+
+        while task.wait() do
+            if AutoNextIsland then
+                pcall(
+                    function()
+                        local v806 = game.Players.LocalPlayer.Character
+
+                        if (v806 and v806:FindFirstChild("HumanoidRootPart")) then
+                            local v900 = game:GetService("Workspace")["_WorldOrigin"].Locations
+
+                            local v901 = v806.HumanoidRootPart.Position
+
+                            if
+                                (((v901 - Vector3.new(-6438.73535, 250.645355, -4501.50684)).Magnitude < 1) or
+                                    ((v901 - Vector3.new(-5017.40869, 314.844055, -2823.0127)).Magnitude < 1))
+                             then
+                                v357 = {}
+                            end
+
+                            if v900:FindFirstChild("Island 1") then
+                                _G.AutoNear = true
+                            end
+
+                            if (v900:FindFirstChild("Island 2") and not v357["Island 2"]) then
+                                Tween(v900:FindFirstChild("Island 2").CFrame)
+
+                                v357["Island 2"] = true
+
+                                AutoNextIsland = false
+
+                                wait()
+
+                                AutoNextIsland = true
+                            elseif (v900:FindFirstChild("Island 3") and not v357["Island 3"]) then
+                                Tween(v900:FindFirstChild("Island 3").CFrame)
+
+                                v357["Island 3"] = true
+
+                                AutoNextIsland = false
+
+                                wait()
+
+                                AutoNextIsland = true
+                            elseif (v900:FindFirstChild("Island 4") and not v357["Island 4"]) then
+                                Tween(v900:FindFirstChild("Island 4").CFrame)
+
+                                v357["Island 4"] = true
+
+                                AutoNextIsland = false
+
+                                wait()
+
+                                AutoNextIsland = true
+                            elseif (v900:FindFirstChild("Island 5") and not v357["Island 5"]) then
+                                Tween(v900:FindFirstChild("Island 5").CFrame)
+
+                                v357["Island 5"] = true
+
+                                AutoNextIsland = false
+
+                                wait()
+
+                                AutoNextIsland = true
+                            end
+                        end
+                    end
+                )
+            end
+        end
+    end
+)
+
+local v141 =
+    Tabs.Main1:AddToggle(
+    "ToggleAwake",
+    {
+        Title = "Auto Awkening",
+        Description = "",
+        Default = false
+    }
+)
+
+v141:OnChanged(
+    function(v358)
+        AutoAwakenAbilities = v358
+    end
+)
+
+v17.ToggleAwake:SetValue(false)
+
+spawn(
+    function()
+        while task.wait() do
+            if AutoAwakenAbilities then
+                pcall(
+                    function()
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Awakener", "Awaken")
+                    end
+                )
+            end
+        end
+    end
+)
+
+local v142 =
+    Tabs.Main1:AddToggle(
+    "ToggleGetFruit",
+    {
+        Title = "Get Fruit In Inventory Low Beli",
+        Description = "",
+        Default = false
+    }
+)
+
+v142:OnChanged(
+    function(v359)
+        _G.Autofruit = v359
+    end
+)
+
+spawn(
+    function()
+        while wait() do
+            pcall(
+                function()
+                    if _G.Autofruit then
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Rocket-Rocket"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Spin-Spin"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Chop-Chop"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Spring-Spring"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Bomb-Bomb"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Smoke-Smoke"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Spike-Spike"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Flame-Flame"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Falcon-Falcon"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Ice-Ice"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Sand-Sand"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Dark-Dark"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Ghost-Ghost"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Diamond-Diamond"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Light-Light"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Rubber-Rubber"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+
+                        local v807 = {
+                            [1] = "LoadFruit",
+                            [2] = "Barrier-Barrier"
+                        }
+
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(v807))
+                    end
+                end
+            )
+        end
+    end
+)
+
+if Sea2 then
+    Tabs.Main1:AddButton(
+        {
+            Title = "Teleport To Lab",
+            Description = "",
+            Callback = function()
+                Tween2(CFrame.new(-6438.73535, 250.645355, -4501.50684))
+            end
+        }
+    )
+elseif Sea3 then
+    Tabs.Main1:AddButton(
+        {
+            Title = "Teleport To Lab",
+            Description = "",
+            Callback = function()
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
+                    "requestEntrance",
+                    Vector3.new(-5075.50927734375, 314.5155029296875, -3150.0224609375)
+                )
+
+                Tween2(
+                    CFrame.new(
+                        -5017.40869,
+                        314.844055,
+                        -2823.0127,
+                        -0.925743818,
+                        4.482175e-8,
+                        -0.378151238,
+                        4.5550315e-9,
+                        1,
+                        1.0737756e-7,
+                        0.378151238,
+                        9.768162e-8,
+                        -0.925743818
+                    )
+                )
+            end
+        }
+    )
+end
+
+local v56 = Tabs.Main1:AddSection("Tập Kích Law")
+
+local v143 =
+    Tabs.Main1:AddToggle(
+    "ToggleLaw",
+    {
+        Title = "Buy Chip + Raid Law",
+        Description = "",
+        Default = false
+    }
+)
+
+v143:OnChanged(
+    function(v360)
+        Auto_Law = v360
+    end
+)
+
+v17.ToggleLaw:SetValue(false)
+
+spawn(
+    function()
+        pcall(
+            function()
+                while wait() do
+                    if Auto_Law then
+                        if
+                            (not game:GetService("Players").LocalPlayer.Character:FindFirstChild("Microchip") and
+                                not game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Microchip") and
+                                not game:GetService("Workspace").Enemies:FindFirstChild("Order") and
+                                not game:GetService("ReplicatedStorage"):FindFirstChild("Order"))
+                         then
+                            wait()
+
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
+                                "BlackbeardReward",
+                                "Microchip",
+                                "1"
+                            )
+
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
+                                "BlackbeardReward",
+                                "Microchip",
+                                "2"
+                            )
+                        end
+                    end
+                end
+            end
+        )
+    end
+)
+
+spawn(
+    function()
+        pcall(
+            function()
+                while wait() do
+                    if Auto_Law then
+                        if
+                            (not game:GetService("Workspace").Enemies:FindFirstChild("Order") and
+                                not game:GetService("ReplicatedStorage"):FindFirstChild("Order"))
+                         then
+                            if
+                                (game:GetService("Players").LocalPlayer.Character:FindFirstChild("Microchip") or
+                                    game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Microchip"))
+                             then
+                                fireclickdetector(
+                                    game:GetService("Workspace").Map.CircleIsland.RaidSummon.Button.Main.ClickDetector
+                                )
+                            end
+                        end
+
+                        if
+                            (game:GetService("ReplicatedStorage"):FindFirstChild("Order") or
+                                game:GetService("Workspace").Enemies:FindFirstChild("Order"))
+                         then
+                            if game:GetService("Workspace").Enemies:FindFirstChild("Order") then
+                                for v1468, v1469 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                    if (v1469.Name == "Order") then
+                                        repeat
+                                            wait(_G.Fast_Delay)
+
+                                            AttackNoCoolDown()
+
+                                            AutoHaki()
+
+                                            EquipTool(SelectWeapon)
+
+                                            Tween(v1469.HumanoidRootPart.CFrame * Pos)
+
+                                            v1469.HumanoidRootPart.CanCollide = false
+
+                                            v1469.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                                        until not v1469.Parent or (v1469.Humanoid.Health <= 0) or (Auto_Law == false)
+                                    end
+                                end
+                            elseif game:GetService("ReplicatedStorage"):FindFirstChild("Order") then
+                                Tween(CFrame.new(-6217.2021484375, 28.047645568848, -5053.1357421875))
+                            end
+                        end
+                    end
+                end
+            end
+        )
+    end
+)
