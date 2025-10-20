@@ -85,8 +85,8 @@ end
 
 local function createMiniToggle(name, position, stateVarRef, realVarSetter)
 	local playerGui = player:WaitForChild("PlayerGui")
-    if playerGui:FindFirstChild(name .. "MiniToggleGui") then
-        playerGui[name .. "MiniToggleGui"]:Destroy()
+    if playerGui:FindFirstChild(name .. "MiniToggleGuiS") then
+        playerGui[name .. "MiniToggleGuiS"]:Destroy()
     end
     
     local screenGui = Instance.new("ScreenGui")
