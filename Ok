@@ -40,8 +40,8 @@ local Window =
     {
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
-        TabWidth = 60,
-        Size = UDim2.fromOffset(400, 300),
+        TabWidth = 120,
+        Size = UDim2.fromOffset(320, 220),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -49,7 +49,7 @@ local Window =
 )
 local Tabs = {
     Main0 = Window:AddTab({Title = "Discord Link"}),
-    Main1 = Window:AddTab({Title = "OoO Raids"})
+    Main1 = Window:AddTab({Title = "Menu Raids"})
 }
 Tabs.Main0:AddButton(
     {
@@ -278,7 +278,7 @@ local v143 =
     Tabs.Main1:AddToggle(
     "ToggleGetFruit",
     {
-        Title = "Buy Chip By CUR(CommonUncommonRare) FruitsTvT",
+        Title = "Buy Chip By Lowest Beli FruitsTvT",
         Description = "",
         Default = false
     }
