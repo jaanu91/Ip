@@ -149,6 +149,21 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Toggles.AutoKen:UpdateToggle(nil, Settings["AutoKen"])
     end
     
+    if Settings["Highlight"] ~= nil then
+        Modules.SilentAim:SetHighlight(Settings["Highlight"])
+        Toggles.Highlight:UpdateToggle(nil, Settings["Highlight"])
+    end
+    
+    if Settings["SilentMiniToggleNPC"] ~= nil then
+        Modules.SilentAim:SetMiniToggleNpcSilentAim(Settings["SilentMiniToggleNPC"])
+        Toggles.SilentMiniToggleNPC:UpdateToggle(nil, Settings["SilentMiniToggleNPC"])
+    end
+    
+    if Settings["SilentMiniTogglePlayers"] ~= nil then
+        Modules.SilentAim:SetMiniTogglePlayerSilentAim(Settings["SilentMiniTogglePlayers"])
+        Toggles.SilentMiniTogglePlayers:UpdateToggle(nil, Settings["SilentMiniTogglePlayers"])
+    end
+    
     if Settings["ZSkills"] ~= nil then
         Modules.Zskill:SetZSkills(Settings["ZSkills"])
         Toggles.ZSkills:UpdateToggle(nil, Settings["ZSkills"])
