@@ -22,6 +22,8 @@ ImageButton.MouseButton1Down:Connect(
     end
 )
 
+_G.FastAttack = true
+
 if _G.FastAttack then
     local _ENV = (getgenv or getrenv or getfenv)()
 
@@ -162,6 +164,8 @@ if _G.FastAttack then
         return FastAttack
     end)()
 end
+
+_G.BringMob = true
 
 task.spawn(function()
 	while task.wait() do
