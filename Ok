@@ -102,7 +102,7 @@ v138:OnChanged(
     end
 )
 
-v17.ToggleBuy:SetValue(false)
+v138:SetValue(false)
 
 spawn(
     function()
@@ -140,7 +140,7 @@ v139:OnChanged(
     end
 )
 
-v17.ToggleStart:SetValue(false)
+v139:SetValue(false)
 
 spawn(
     function()
@@ -230,7 +230,7 @@ v140:OnChanged(
     end
 )
 
-v17.ToggleNextIsland:SetValue(false)
+v140:SetValue(false)
 
 spawn(
     function()
@@ -323,7 +323,7 @@ v141:OnChanged(
     end
 )
 
-v17.ToggleAwake:SetValue(false)
+v141:SetValue(false)
 
 spawn(
     function()
@@ -546,7 +546,7 @@ v143:OnChanged(
     end
 )
 
-v17.ToggleLaw:SetValue(false)
+v143:SetValue(false)
 
 spawn(
     function()
