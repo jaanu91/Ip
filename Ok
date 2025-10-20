@@ -517,6 +517,20 @@ v141:OnChanged(
 
 v141:SetValue(false)
 
+task.spawn(function()
+    while task.wait(0.5) do
+        if AutoKill and not AutoNextIsland then
+	        EquipTool(SelectWeapon)
+			AutoHaki()
+            _G.BringMob = true
+            _G.FastAttack = true
+        else
+            _G.BringMob = false
+            _G.FastAttack = false
+        end
+    end
+end)
+
 local v142 =
     Tabs.Main1:AddToggle(
     "ToggleAwake",
