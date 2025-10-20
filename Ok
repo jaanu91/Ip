@@ -11,7 +11,7 @@ ImageButton.BorderSizePixel = 0
 ImageButton.Position = UDim2.new(0.10615778, 0, 0.16217947, 0)
 ImageButton.Size = UDim2.new(0, 40, 0, 40)
 ImageButton.Draggable = true
-ImageButton.Image = "rbxassetid://76926193047725"
+ImageButton.Image = "http://www.roblox.com/asset/?id=5009915795"
 
 UICorner.CornerRadius = UDim.new(1, 10)
 UICorner.Parent = ImageButton
@@ -38,8 +38,8 @@ until game:IsLoaded()
 local Window =
     Fluent:CreateWindow(
     {
-        Title = "Banana Hub Raids",
-        SubTitle = "by macuongdz",
+        Title = "Sapi Hub RaidsTvT",
+        SubTitle = "Enjoy",
         TabWidth = 157,
         Size = UDim2.fromOffset(555, 320),
         Acrylic = true,
@@ -54,9 +54,9 @@ local Tabs = {
 Tabs.Main0:AddButton(
     {
         Title = "Discord",
-        Description = "macuong01234",
+        Description = "SapiHub",
         Callback = function()
-            setclipboard("https://discord.gg/RGZbjt8P")
+            setclipboard("https://discord.gg/6Fm6yAYc")
         end
     }
 )
@@ -137,7 +137,7 @@ local v139 =
     Tabs.Main1:AddToggle(
     "ToggleStart",
     {
-        Title = "Start Raids",
+        Title = "Start Selected Raids",
         Description = "",
         Default = false
     }
@@ -212,7 +212,7 @@ local v141 =
     Tabs.Main1:AddToggle(
     "ToggleAutoRaid",
     {
-        Title = "Auto Raid",
+        Title = "Auto Raid(Bye Bye Npcs)",
         Description = "",
         Default = false
     }
@@ -246,7 +246,7 @@ local v142 =
     Tabs.Main1:AddToggle(
     "ToggleAwake",
     {
-        Title = "Auto Awkening",
+        Title = "Auto Currently Awkening",
         Description = "",
         Default = false
     }
@@ -278,7 +278,7 @@ local v143 =
     Tabs.Main1:AddToggle(
     "ToggleGetFruit",
     {
-        Title = "Get Fruit In Inventory Low Beli",
+        Title = "Buy Chip By CUR(CommonUncommonRare) FruitsTvT",
         Description = "",
         Default = false
     }
@@ -421,7 +421,7 @@ spawn(
     end
 )
 
-if Sea2 then
+if World2 then
     Tabs.Main1:AddButton(
         {
             Title = "Teleport To Lab",
@@ -431,7 +431,7 @@ if Sea2 then
             end
         }
     )
-elseif Sea3 then
+elseif World3 then
     Tabs.Main1:AddButton(
         {
             Title = "Teleport To Lab",
@@ -462,111 +462,3 @@ elseif Sea3 then
         }
     )
 end
-
-local v56 = Tabs.Main1:AddSection("Tập Kích Law")
-
-local v144 =
-    Tabs.Main1:AddToggle(
-    "ToggleLaw",
-    {
-        Title = "Buy Chip + Raid Law",
-        Description = "",
-        Default = false
-    }
-)
-
-v144:OnChanged(
-    function(v360)
-        Auto_Law = v360
-    end
-)
-
-v144:SetValue(false)
-
-spawn(
-    function()
-        pcall(
-            function()
-                while wait() do
-                    if Auto_Law then
-                        if
-                            (not game:GetService("Players").LocalPlayer.Character:FindFirstChild("Microchip") and
-                                not game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Microchip") and
-                                not game:GetService("Workspace").Enemies:FindFirstChild("Order") and
-                                not game:GetService("ReplicatedStorage"):FindFirstChild("Order"))
-                         then
-                            wait()
-
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
-                                "BlackbeardReward",
-                                "Microchip",
-                                "1"
-                            )
-
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(
-                                "BlackbeardReward",
-                                "Microchip",
-                                "2"
-                            )
-                        end
-                    end
-                end
-            end
-        )
-    end
-)
-
-spawn(
-    function()
-        pcall(
-            function()
-                while wait() do
-                    if Auto_Law then
-                        if
-                            (not game:GetService("Workspace").Enemies:FindFirstChild("Order") and
-                                not game:GetService("ReplicatedStorage"):FindFirstChild("Order"))
-                         then
-                            if
-                                (game:GetService("Players").LocalPlayer.Character:FindFirstChild("Microchip") or
-                                    game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Microchip"))
-                             then
-                                fireclickdetector(
-                                    game:GetService("Workspace").Map.CircleIsland.RaidSummon.Button.Main.ClickDetector
-                                )
-                            end
-                        end
-
-                        if
-                            (game:GetService("ReplicatedStorage"):FindFirstChild("Order") or
-                                game:GetService("Workspace").Enemies:FindFirstChild("Order"))
-                         then
-                            if game:GetService("Workspace").Enemies:FindFirstChild("Order") then
-                                for v1468, v1469 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                    if (v1469.Name == "Order") then
-                                        repeat
-                                            wait(_G.Fast_Delay)
-
-                                            AttackNoCoolDown()
-
-                                            AutoHaki()
-
-                                            EquipTool(SelectWeapon)
-
-                                            Tween(v1469.HumanoidRootPart.CFrame * Pos)
-
-                                            v1469.HumanoidRootPart.CanCollide = false
-
-                                            v1469.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                                        until not v1469.Parent or (v1469.Humanoid.Health <= 0) or (Auto_Law == false)
-                                    end
-                                end
-                            elseif game:GetService("ReplicatedStorage"):FindFirstChild("Order") then
-                                Tween(CFrame.new(-6217.2021484375, 28.047645568848, -5053.1357421875))
-                            end
-                        end
-                    end
-                end
-            end
-        )
-    end
-)
