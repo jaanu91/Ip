@@ -75,10 +75,6 @@ Section:NewToggle("・Buy Chip", "Buy Chip From Selected Chip", function(state)
     RaidsModule:SetBuyChip(state)
 end)
 
-Section:NewToggle("・Equip Special Chip", "Required For Start Raid", function(state)
-    RaidsModule:SetGetChips(state)
-end)
-
 Section:NewToggle("・Start Raid", "Start Raid From Selected Chip", function(state)
     RaidsModule:SetStartRaid(state)
 end)
