@@ -248,14 +248,24 @@ task.spawn(function()
 				end
 
 				if nearestEnemy and nearestHumanoid and nearestHumanoid.Health > 0 then
-					local aboveCFrame = nearestEnemy.CFrame * CFrame.new(0, 25, 0)
-					Tween2(aboveCFrame)
+				    local orbitHeight = 25
+				    local orbitRadius = 8
+				    local orbitSpeed = 2
+    
+				    Tween2(nearestEnemy.CFrame * CFrame.new(0, orbitHeight, 0))
+				    task.wait(0.5)
 
-					repeat
-						task.wait(0.3)
-					until nearestHumanoid.Health <= 0 or not bringmob
+				    local angle = 0
+				    while bringmob and nearestHumanoid.Health > 0 do
+				        angle += orbitSpeed * task.wait()
+				        local orbitX = math.cos(angle) * orbitRadius
+				        local orbitZ = math.sin(angle) * orbitRadius
+				        local orbitPosition = nearestEnemy.Position + Vector3.new(orbitX, orbitHeight, orbitZ)
+				        local orbitCFrame = CFrame.new(orbitPosition, nearestEnemy.Position)
+				        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = orbitCFrame
+				    end
 
-					task.wait(0.2)
+				    task.wait(0.2)
 				end
 			end)
 		end
