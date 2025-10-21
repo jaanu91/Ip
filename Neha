@@ -14,7 +14,7 @@ local FastAttackEnabled = false
 local bringmob = false
 local AutoAwakenAbilities = false
 local Autofruit = false
-local BringFruit = false
+local TeleportToFruits = false
 
 local SelectChip = nil
 local weaponsToCheck = {"Godhuman", "Sanguine Art", "Dragon Talon"}
@@ -265,10 +265,13 @@ RunService.Heartbeat:Connect(function()
 		end)
 	end
 	
-	if BringFruit then
+	if TeleportToFruits then
 		for _, v in pairs(workspace:GetChildren()) do
-			if v:IsA("Tool") and v:FindFirstChild("Handle") then
-				Tween(v.Handle)
+			if v:IsA("Tool") then
+				local handle = v:FindFirstChild("Handle")
+                if handle and handle:IsA("BasePart") then
+					Tween(handle)
+				end
 			end
 		end
 	end
@@ -426,8 +429,8 @@ function RaidsModule:SetAutoAwaken(state: boolean)
     AutoAwakenAbilities = state
 end
 
-function RaidsModule:SetBringFruits(state: boolean)
-    BringFruit = state
+function RaidsModule:SetTeleportFruits(state: boolean)
+    TeleportToFruits = state
 end
 
 function RaidsModule:SetGetFruits(state: boolean)
