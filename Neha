@@ -239,7 +239,7 @@ RunService.Heartbeat:Connect(function()
 
 			local nearestEnemy = nil
 			local nearestDistance = math.huge
-			local MAX_RANGE = 150
+			local MAX_RANGE = 250
 
 			for _, enemy in pairs(enemies:GetChildren()) do
 				local hrpEnemy = enemy:FindFirstChild("HumanoidRootPart")
