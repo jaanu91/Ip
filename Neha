@@ -4,6 +4,7 @@ local player = game.Players.LocalPlayer
 local backpack = player:WaitForChild("Backpack")
 local character = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
+local workspace = game:GetService("Workspace")
 
 local Auto_Buy_Chips_Raid = false
 local Auto_StartRaid = false
@@ -263,9 +264,15 @@ RunService.Heartbeat:Connect(function()
 			end
 		end)
 	end
+	
+	if BringFruit then
+		for _, v in pairs(workspace:GetChildren()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				Tween(v.Handle)
+			end
+		end
+	end
 end)
-
-local workspace = game:GetService("Workspace")
 
 task.spawn(function()
     while task.wait(2) do
@@ -399,22 +406,6 @@ spawn(function()
             end
         end)
     end
-end)
-
-RunService.Heartbeat:Connect(function()
-	if BringFruit then
-		local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-		if not hrp then continue end
-
-		for _, v in pairs(workspace:GetChildren()) do
-			if v:IsA("Tool") and v:FindFirstChild("Handle") then
-				local handle = v.Handle
-				local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
-				local tween = game:GetService("TweenService"):Create(handle, tweenInfo, { CFrame = hrp.CFrame })
-				tween:Play()
-			end
-		end
-	end
 end)
 
 function RaidsModule:SetBuyChip(state: boolean)
