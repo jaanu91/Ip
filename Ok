@@ -96,7 +96,7 @@ Section:NewToggle("・Get Lowest Beli Fruits TvT", "Make Sure You Have Fruits in
 end)
 
 Section:NewToggle("・Teleport on Fruits", "Teleport Spawned Or Dropped Fruits ", function(state)
-    RaidsModule:SetBringFruits(state)
+    RaidsModule:SetTeleportFruits(state)
 end)
 
 if World2 then
