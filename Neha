@@ -13,6 +13,7 @@ local FastAttackEnabled = false
 local bringmob = false
 local AutoAwakenAbilities = false
 local Autofruit = false
+local BringFruit = false
 
 local SelectChip = nil
 local weaponsToCheck = {"Godhuman", "Sanguine Art", "Dragon Talon"}
@@ -239,7 +240,7 @@ RunService.Heartbeat:Connect(function()
 
 			local nearestEnemy = nil
 			local nearestDistance = math.huge
-			local MAX_RANGE = 300
+			local MAX_RANGE = 250
 
 			for _, enemy in pairs(enemies:GetChildren()) do
 				local hrpEnemy = enemy:FindFirstChild("HumanoidRootPart")
@@ -407,6 +408,22 @@ spawn(function()
     end
 end)
 
+RunService.Heartbeat:Connect(function()
+	if BringFruit then
+		local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if not hrp then continue end
+
+		for _, v in pairs(workspace:GetChildren()) do
+			if v:IsA("Tool") and v:FindFirstChild("Handle") then
+				local handle = v.Handle
+				local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+				local tween = game:GetService("TweenService"):Create(handle, tweenInfo, { CFrame = hrp.CFrame })
+				tween:Play()
+			end
+		end
+	end
+end)
+
 function RaidsModule:SetBuyChip(state: boolean)
     Auto_Buy_Chips_Raid = state
 end
@@ -423,6 +440,10 @@ end
 
 function RaidsModule:SetAutoAwaken(state: boolean)
     AutoAwakenAbilities = state
+end
+
+function RaidsModule:SetBringFruits(state: boolean)
+    BringFruit = state
 end
 
 function RaidsModule:SetGetFruits(state: boolean)
