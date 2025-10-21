@@ -95,6 +95,10 @@ Section:NewToggle("・Get Lowest Beli Fruits TvT", "Make Sure You Have Fruits in
     RaidsModule:SetGetFruits(state)
 end)
 
+Section:NewToggle("・Bring Fruits", "Bringing Spawned Or Dropped Fruits ", function(state)
+    RaidsModule:SetBringFruits(state)
+end)
+
 if World2 then
     Section:NewButton("Teleport Lab", "Teleport Lab Of Sea Two", function()
 		Tween2(CFrame.new(-6505.351, 255.138, -4506.073))
