@@ -104,3 +104,7 @@ elseif World3 then
 		Tween2(CFrame.new(-5038.623, 322.358, -2873.446))
 	end)
 end
+
+toggleButton.MouseButton1Click:Connect(function()
+    Library:ToggleUI()
+end)
