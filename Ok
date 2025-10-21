@@ -102,7 +102,7 @@ do
         local FastAttack = {
             Distance = 100,
             attackMobs = true,
-            attackPlayers = true,
+            attackPlayers = false,
             Equipped = nil
         }
 
@@ -200,44 +200,50 @@ function Tween(KG)
     end
 end
 
-local players = game:GetService("Players")
-local player = players.LocalPlayer
-
 task.spawn(function()
 	while task.wait(0.3) do
-		if bringmob and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		if bringmob and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
 			pcall(function()
+				local player = game.Players.LocalPlayer
+				local char = player.Character
+				local hrp = char.HumanoidRootPart
 				local enemies = workspace:FindFirstChild("Enemies")
+
 				if not enemies then return end
 
-				local nearestEnemy, nearestDistance
+				local nearestEnemy = nil
+				local nearestHumanoid = nil
+				local nearestDistance = math.huge
+
 				for _, enemy in pairs(enemies:GetChildren()) do
 					local hrpEnemy = enemy:FindFirstChild("HumanoidRootPart")
 					local hum = enemy:FindFirstChild("Humanoid")
 					if hrpEnemy and hum and hum.Health > 0 then
 						local dist = (hrpEnemy.Position - hrp.Position).Magnitude
-						if not nearestDistance or dist < nearestDistance then
+						if dist < nearestDistance then
 							nearestEnemy = hrpEnemy
+							nearestHumanoid = hum
 							nearestDistance = dist
 						end
 					end
 				end
 
-				if nearestEnemy then
+				if nearestEnemy and nearestHumanoid then
 					local abovePos = nearestEnemy.CFrame * CFrame.new(0, 25, 0)
 					Tween2(abovePos)
 
-					for _, otherEnemy in pairs(enemies:GetChildren()) do
-						local otherHRP = otherEnemy:FindFirstChild("HumanoidRootPart")
-						local hum = otherEnemy:FindFirstChild("Humanoid")
-						if otherHRP and hum and hum.Health > 0 then
-							local dist = (otherHRP.Position - hrp.Position).Magnitude
-							if dist <= 200 then
-								otherHRP.CFrame = CFrame.new(
-									hrp.Position.X,
-									hrp.Position.Y - 10,
-									hrp.Position.Z
-								)
+					while bringmob and nearestHumanoid.Health > 0 do
+						task.wait(0.2)
+						for _, otherEnemy in pairs(enemies:GetChildren()) do
+							local otherHRP = otherEnemy:FindFirstChild("HumanoidRootPart")
+							local hum = otherEnemy:FindFirstChild("Humanoid")
+							if otherHRP and hum and hum.Health > 0 then
+								local dist = (otherHRP.Position - hrp.Position).Magnitude
+								if dist <= 200 then
+									if otherHRP ~= nearestEnemy then
+										otherHRP.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 10, hrp.Position.Z)
+									end
+								end
 							end
 						end
 					end
