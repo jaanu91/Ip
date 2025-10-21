@@ -228,9 +228,7 @@ task.spawn(function()
 
 				if not enemies then return end
 
-				local nearestEnemy = nil
-				local nearestHumanoid = nil
-				local nearestDistance = math.huge
+				local nearestEnemy, nearestHumanoid, nearestDistance = nil, nil, math.huge
 
 				for _, enemy in pairs(enemies:GetChildren()) do
 					local hrpEnemy = enemy:FindFirstChild("HumanoidRootPart")
@@ -238,32 +236,36 @@ task.spawn(function()
 					if hrpEnemy and hum and hum.Health > 0 then
 						local dist = (hrpEnemy.Position - hrp.Position).Magnitude
 						if dist < nearestDistance then
-							nearestEnemy = hrpEnemy
-							nearestHumanoid = hum
-							nearestDistance = dist
+							nearestEnemy, nearestHumanoid, nearestDistance = hrpEnemy, hum, dist
 						end
 					end
 				end
 
 				if nearestEnemy and nearestHumanoid then
 					local abovePos = nearestEnemy.CFrame * CFrame.new(0, 25, 0)
+					char.HumanoidRootPart.Anchored = true
 					Tween2(abovePos)
-
+					
 					while bringmob and nearestHumanoid.Health > 0 do
-						task.wait(0.2)
+						task.wait(0.1)
+						local targetAbove = nearestEnemy.CFrame * CFrame.new(0, 25, 0)
+						char.HumanoidRootPart.CFrame = targetAbove
+						
 						for _, otherEnemy in pairs(enemies:GetChildren()) do
 							local otherHRP = otherEnemy:FindFirstChild("HumanoidRootPart")
 							local hum = otherEnemy:FindFirstChild("Humanoid")
-							if otherHRP and hum and hum.Health > 0 then
+							if otherHRP and hum and hum.Health > 0 and otherHRP ~= nearestEnemy then
 								local dist = (otherHRP.Position - hrp.Position).Magnitude
 								if dist <= 200 then
-									if otherHRP ~= nearestEnemy then
-										otherHRP.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 10, hrp.Position.Z)
-									end
+									local targetCFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 10, hrp.Position.Z)
+									local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Linear)
+									game:GetService("TweenService"):Create(otherHRP, tweenInfo, {CFrame = targetCFrame}):Play()
 								end
 							end
 						end
 					end
+					
+					char.HumanoidRootPart.Anchored = false
 				end
 			end)
 		end
