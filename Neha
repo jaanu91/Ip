@@ -13,6 +13,7 @@ local FastAttackEnabled = false
 local bringmob = false
 local AutoAwakenAbilities = false
 local Autofruit = false
+local AutoGetChip = false
 
 local SelectChip = nil
 local weaponsToCheck = {"Godhuman", "Sanguine Art", "Dragon Talon"}
@@ -34,6 +35,7 @@ local World2 = (PlaceId == World2ID)
 local World3 = (PlaceId == World3ID)
 
 local SelectWeapon = checkForWeapons()
+local SpecialChip = {"Special Microchip"}
 
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
@@ -345,6 +347,14 @@ task.spawn(function()
     end
 end)
 
+task.spawn(function()
+    while task.wait(0.5) do
+        if AutoGetChip then
+	        EquipTool(SpecialChip)
+        end
+    end
+end)
+
 spawn(
     function()
         while task.wait() do
@@ -435,6 +445,10 @@ end
 
 function RaidsModule:SetGetFruits(state: boolean)
     Autofruit = state
+end
+
+function RaidsModule:SetGetChips(state: boolean)
+    AutoGetChip = state
 end
 
 function RaidsModule:SetNextIsland(state: boolean)
