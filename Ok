@@ -168,7 +168,7 @@ end
 
 function Tween2(KG)
     local Distance = (KG.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-    local Speed = 350
+    local Speed = 200
     local tweenInfo = TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear)
     local tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, tweenInfo, {
         CFrame = KG
@@ -202,24 +202,18 @@ end
 
 task.spawn(function()
 	while task.wait(0.3) do
-		if bringmob and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		if bringmob and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			pcall(function()
-				local player = game.Players.LocalPlayer
-				local char = player.Character
-				local hrp = char.HumanoidRootPart
 				local enemies = workspace:FindFirstChild("Enemies")
-
 				if not enemies then return end
 
-				local nearestEnemy = nil
-				local nearestDistance = math.huge
-
+				local nearestEnemy, nearestDistance
 				for _, enemy in pairs(enemies:GetChildren()) do
 					local hrpEnemy = enemy:FindFirstChild("HumanoidRootPart")
 					local hum = enemy:FindFirstChild("Humanoid")
 					if hrpEnemy and hum and hum.Health > 0 then
 						local dist = (hrpEnemy.Position - hrp.Position).Magnitude
-						if dist < nearestDistance then
+						if not nearestDistance or dist < nearestDistance then
 							nearestEnemy = hrpEnemy
 							nearestDistance = dist
 						end
@@ -228,7 +222,7 @@ task.spawn(function()
 
 				if nearestEnemy then
 					local abovePos = nearestEnemy.CFrame * CFrame.new(0, 25, 0)
-					Tween(abovePos)
+					Tween2(abovePos)
 
 					for _, otherEnemy in pairs(enemies:GetChildren()) do
 						local otherHRP = otherEnemy:FindFirstChild("HumanoidRootPart")
@@ -236,7 +230,11 @@ task.spawn(function()
 						if otherHRP and hum and hum.Health > 0 then
 							local dist = (otherHRP.Position - hrp.Position).Magnitude
 							if dist <= 200 then
-								otherHRP.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 10, hrp.Position.Z)
+								otherHRP.CFrame = CFrame.new(
+									hrp.Position.X,
+									hrp.Position.Y - 10,
+									hrp.Position.Z
+								)
 							end
 						end
 					end
