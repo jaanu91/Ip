@@ -166,33 +166,80 @@ do
     end)()
 end
 
-task.spawn(function()
-	while task.wait() do
-		if bringmob then
-			pcall(function()
-				for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-					if v.Name == MonFarm and (v.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 350 then
-						if InMyNetWork(v.HumanoidRootPart) then
-							FarmPos = v.HumanoidRootPart.CFrame
-							v.Humanoid.JumpPower = 0
-							v.Humanoid.WalkSpeed = 0
-							v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-							v.HumanoidRootPart.CanCollide = false
-							v.Head.CanCollide = false
+function Tween2(KG)
+    local Distance = (KG.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local Speed = 350
+    local tweenInfo = TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear)
+    local tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, tweenInfo, {
+        CFrame = KG
+    })
+    tween:Play()
+    if _G.StopTween2 then
+        tween:Cancel()
+    end
+    _G.Clip2 = true
+    wait(Distance / Speed)
+    _G.Clip2 = false
+end
+function BKP(Point)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = Point
+    task.wait()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = Point
+end
+TweenSpeed = 350
+function Tween(KG)
+    local Distance = (KG.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local Speed = TweenSpeed  
+    local tweenInfo = TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear)
+    local tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, tweenInfo, {
+        CFrame = KG
+    })
+    tween:Play()
+    if _G.StopTween then
+        tween:Cancel()
+    end
+end
 
-							local animator = v.Humanoid:FindFirstChild("Animator")
-							if animator then
-								animator:Destroy()
-							end
+task.spawn(function()
+	while task.wait(0.3) do
+		if bringmob and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			pcall(function()
+				local player = game.Players.LocalPlayer
+				local char = player.Character
+				local hrp = char.HumanoidRootPart
+				local enemies = workspace:FindFirstChild("Enemies")
+
+				if not enemies then return end
+
+				local nearestEnemy = nil
+				local nearestDistance = math.huge
+
+				for _, enemy in pairs(enemies:GetChildren()) do
+					local hrpEnemy = enemy:FindFirstChild("HumanoidRootPart")
+					local hum = enemy:FindFirstChild("Humanoid")
+					if hrpEnemy and hum and hum.Health > 0 then
+						local dist = (hrpEnemy.Position - hrp.Position).Magnitude
+						if dist < nearestDistance then
+							nearestEnemy = hrpEnemy
+							nearestDistance = dist
 						end
 					end
 				end
-				
-				local player = game.Players.LocalPlayer
-				if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-					local hrp = player.Character.HumanoidRootPart
-					local mobY = FarmPos.Y
-					hrp.CFrame = CFrame.new(FarmPos.X, mobY + 35, FarmPos.Z)
+
+				if nearestEnemy then
+					local abovePos = nearestEnemy.CFrame * CFrame.new(0, 25, 0)
+					Tween(abovePos)
+
+					for _, otherEnemy in pairs(enemies:GetChildren()) do
+						local otherHRP = otherEnemy:FindFirstChild("HumanoidRootPart")
+						local hum = otherEnemy:FindFirstChild("Humanoid")
+						if otherHRP and hum and hum.Health > 0 then
+							local dist = (otherHRP.Position - hrp.Position).Magnitude
+							if dist <= 200 then
+								otherHRP.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 10, hrp.Position.Z)
+							end
+						end
+					end
 				end
 			end)
 		end
@@ -365,40 +412,6 @@ spawn(function()
         end)
     end
 end)
-
-function Tween2(KG)
-    local Distance = (KG.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-    local Speed = 350
-    local tweenInfo = TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear)
-    local tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, tweenInfo, {
-        CFrame = KG
-    })
-    tween:Play()
-    if _G.StopTween2 then
-        tween:Cancel()
-    end
-    _G.Clip2 = true
-    wait(Distance / Speed)
-    _G.Clip2 = false
-end
-function BKP(Point)
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = Point
-    task.wait()
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = Point
-end
-TweenSpeed = 350
-function Tween(KG)
-    local Distance = (KG.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-    local Speed = TweenSpeed  
-    local tweenInfo = TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear)
-    local tween = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, tweenInfo, {
-        CFrame = KG
-    })
-    tween:Play()
-    if _G.StopTween then
-        tween:Cancel()
-    end
-end
 
 local v140 =
     Tabs.Main1:AddToggle(
