@@ -26,6 +26,13 @@ local function checkForWeapons()
 	return nil
 end
 
+local PlaceId = game.PlaceId
+local World2ID = 4442272183
+local World3ID = 7449423635
+
+local World2 = (PlaceId == World2ID)
+local World3 = (PlaceId == World3ID)
+
 local SelectWeapon = checkForWeapons()
 
 function AutoHaki()
@@ -277,90 +284,61 @@ task.spawn(function()
 end)
 
 spawn(function()
-    local lastClickTime = 0
-    local cooldown = 20 
-
-    RunService.Heartbeat:Connect(function()
-        if not Auto_StartRaid then
-            return
-        end
-
-        if tick() - lastClickTime < cooldown then
-            return
-        end
-
+    while wait(.1) do
         pcall(function()
-            local raidMap = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("RaidMap")
-            if not raidMap then return end
-
-            local hasIslands = false
-            for _, island in ipairs(raidMap:GetChildren()) do
-                if island.Name:match("RaidIsland") then
-                    hasIslands = true
-                    break
-                end
-            end
-
-            if not hasIslands then
-                if World2 and workspace.Map:FindFirstChild("CircleIsland") then
-                    fireclickdetector(workspace.Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
-                    lastClickTime = tick()
-                elseif World3 and workspace.Map:FindFirstChild("Boat Castle") then
-                    fireclickdetector(workspace.Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
-                    lastClickTime = tick()
+            if _G.Auto_StartRaid then
+                if game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Timer.Visible == false then
+                    if not game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 1") and game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Special Microchip") or game:GetService("Players").LocalPlayer.Character:FindFirstChild("Special Microchip") then
+                        if World2 then
+                            fireclickdetector(game:GetService("Workspace").Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
+                        elseif World3 then
+                            fireclickdetector(game:GetService("Workspace").Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
+                        end
+                    end
                 end
             end
         end)
-    end)
+    end
 end)
 
 spawn(function()
-    local visitedIslands = {}
-    while task.wait(0.5) do
+    local MAX_RANGE = 200
+    while task.wait(1) do
         if AutoNextIsland then
             pcall(function()
-                local character = game.Players.LocalPlayer.Character
-                if not (character and character:FindFirstChild("HumanoidRootPart")) then return end
-                local hrp = character.HumanoidRootPart
-                local locationsFolder = workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations")
-                if not locationsFolder then return end
+                local player = game.Players.LocalPlayer
+                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
 
-                local pos = hrp.Position
+                local locations = workspace:WaitForChild("_WorldOrigin"):WaitForChild("Locations")
+                if not locations then return end
 
-                if (pos - Vector3.new(-6438.73535, 250.645355, -4501.50684)).Magnitude < 1
-                or (pos - Vector3.new(-5017.40869, 314.844055, -2823.0127)).Magnitude < 1 then
-                    visitedIslands = {}
-                end
+                if player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main.Timer.Visible then
+                    
+                    local closestIsland = nil
+                    local closestDist = math.huge
 
-                for _, island in ipairs(locationsFolder:GetChildren()) do
-                    if island.Name:match("^Island %d+") and not visitedIslands[island.Name] then
-                        local islandPos
-                        if island:IsA("BasePart") then
-                            islandPos = island.Position
-                        elseif island:FindFirstChildWhichIsA("BasePart") then
-                            islandPos = island:FindFirstChildWhichIsA("BasePart").Position
-                        elseif island.CFrame then
-                            islandPos = island.CFrame.Position
-                        end
-
-                        if islandPos then
-                            local dist = (islandPos - pos).Magnitude
-                            if dist <= 500 then
-                                Tween(island.CFrame or CFrame.new(islandPos))
-                                visitedIslands[island.Name] = true
-
-                                AutoNextIsland = false
-                                wait()
-                                AutoNextIsland = true
-                                break
+                    for i = 1, 5 do
+                        local island = locations:FindFirstChild("Island " .. i)
+                        if island then
+                            local dist = (island.Position - hrp.Position).Magnitude
+                            if dist < closestDist then
+                                closestDist = dist
+                                closestIsland = island
                             end
                         end
+                    end
+
+                    if closestIsland and closestDist <= MAX_RANGE then
+                        local targetCFrame = closestIsland.CFrame * CFrame.new(0, 70, 100)
+                        Tween(targetCFrame)
                     end
                 end
             end)
         end
     end
 end)
+
 
 task.spawn(function()
     while task.wait(0.5) do
