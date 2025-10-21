@@ -224,7 +224,7 @@ function Tween(KG)
     end
 end
 
-task.spawn(function()
+RunService.Heartbeat:Connect(function()
 	if bringmob 
 		and game.Players.LocalPlayer.Character 
 		and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") 
@@ -307,43 +307,26 @@ spawn(function()
 end)
 
 spawn(function()
-    local MAX_RANGE = 200
-    while task.wait(1) do
+    while task.wait() do
         if AutoNextIsland then
             pcall(function()
-                local player = game.Players.LocalPlayer
-                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
-
-                local locations = workspace:WaitForChild("_WorldOrigin"):WaitForChild("Locations")
-                if not locations then return end
-
-                if player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main.Timer.Visible then
-                    
-                    local closestIsland = nil
-                    local closestDist = math.huge
-
-                    for i = 1, 5 do
-                        local island = locations:FindFirstChild("Island " .. i)
-                        if island then
-                            local dist = (island.Position - hrp.Position).Magnitude
-                            if dist < closestDist then
-                                closestDist = dist
-                                closestIsland = island
-                            end
-                        end
-                    end
-
-                    if closestIsland and closestDist <= MAX_RANGE then
-                        local targetCFrame = closestIsland.CFrame * CFrame.new(0, 70, 100)
-                        Tween(targetCFrame)
+                if game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Timer.Visible == true then
+                    if game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 5") then
+                        Tween(game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 5").CFrame * CFrame.new(0,70,100))
+                    elseif game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 4") then
+                        Tween(game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 4").CFrame * CFrame.new(0,70,100))
+                    elseif game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 3") then
+                        Tween(game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 3").CFrame * CFrame.new(0,70,100))
+                    elseif game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 2") then
+                        Tween(game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 2").CFrame * CFrame.new(0,70,100))
+                    elseif game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 1") then
+                        Tween(game:GetService("Workspace")["_WorldOrigin"].Locations:FindFirstChild("Island 1").CFrame * CFrame.new(0,70,100))
                     end
                 end
             end)
         end
     end
 end)
-
 
 task.spawn(function()
     while task.wait(0.5) do
