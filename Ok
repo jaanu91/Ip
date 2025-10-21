@@ -222,7 +222,7 @@ local Window =
         Title = "Sapi Hub RaidsTvT",
         SubTitle = "Enjoy",
         TabWidth = 100,
-        Size = UDim2.fromOffset(390, 280),
+        Size = UDim2.fromOffset(380, 260),
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.End
@@ -513,6 +513,8 @@ local v141 =
 v141:OnChanged(
     function(v357)
         AutoKill = v357
+        bringmob = v357
+        FastAttackEnabled = v357
     end
 )
 
@@ -523,8 +525,6 @@ task.spawn(function()
         if AutoKill then
 	        EquipTool(SelectWeapon)
 			AutoHaki()
-            bringmob = true
-            FastAttackEnabled = true
         end
     end
 end)
