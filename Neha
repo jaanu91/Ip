@@ -267,13 +267,6 @@ end)
 
 local workspace = game:GetService("Workspace")
 
-local function removeLava()
-    local interiorLavaModel = game.Workspace.Map.PrehistoricIsland.Core:FindFirstChild("InteriorLava")
-    if interiorLavaModel and interiorLavaModel:IsA("Model") then
-        interiorLavaModel:Destroy()
-    end
-end
-
 task.spawn(function()
     while task.wait(2) do
         if Auto_Buy_Chips_Raid and SelectChip then
