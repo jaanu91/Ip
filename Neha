@@ -15,7 +15,7 @@ local FastAttackEnabled = false
 local bringmob = false
 local AutoAwakenAbilities = false
 local Autofruit = false
-local TeleportToFruits = false
+local BringFruits = false
 local WalkWaterEnabled = false
 local NoClip = false
 
@@ -464,7 +464,7 @@ end)
 
 local TweenService = game:GetService("TweenService")
 
-local function Tween3(targetCFrame)
+local function Tweens(targetCFrame)
 	if not targetCFrame then return end
 	local info = TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 	local goal = {CFrame = hrp.CFrame + Vector3.new(0, 1, 0)}
@@ -473,11 +473,11 @@ local function Tween3(targetCFrame)
 end
 
 spawn(function()
-	while task.wait() do
-		if TeleportToFruits then
+	while task.wait(0.1) do
+		if BringFruits then
 			for _, v in pairs(workspace:GetChildren()) do
 				if v:IsA("Tool") and v:FindFirstChild("Handle") then
-					Tween3(v.Handle)
+					Tweens(v.Handle)
 				end
 			end
 		end
@@ -530,7 +530,7 @@ function RaidsModule:SetAutoAwaken(state: boolean)
 end
 
 function RaidsModule:SetBringFruits(state: boolean)
-    TeleportToFruits = state
+    BringFruits = state
 end
 
 function RaidsModule:SetGetFruits(state: boolean)
