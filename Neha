@@ -393,34 +393,33 @@ spawn(
 )
 
 spawn(function()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local CommF = ReplicatedStorage.Remotes.CommF_
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local CommF = ReplicatedStorage.Remotes.CommF_
 
-    local fruits = {
-        "Rocket-Rocket",
-        "Spin-Spin",
-        "Chop-Chop",
-        "Spring-Spring",
-        "Bomb-Bomb",
-        "Smoke-Smoke",
-        "Spike-Spike",
-        "Flame-Flame",
-        "Falcon-Falcon",
-        "Ice-Ice",
-        "Sand-Sand",
-        "Dark-Dark",
-        "Ghost-Ghost",
-        "Diamond-Diamond",
-        "Light-Light",
-        "Rubber-Rubber",
-        "Barrier-Barrier"
-    }
+	local fruits = {
+		"Rocket-Rocket",
+		"Spin-Spin",
+		"Chop-Chop",
+		"Spring-Spring",
+		"Bomb-Bomb",
+		"Smoke-Smoke",
+		"Spike-Spike",
+		"Flame-Flame",
+		"Falcon-Falcon",
+		"Ice-Ice",
+		"Sand-Sand",
+		"Dark-Dark",
+		"Ghost-Ghost",
+		"Diamond-Diamond",
+		"Light-Light",
+		"Rubber-Rubber",
+		"Barrier-Barrier"
+	}
 
-    local loadedFruit = nil
-
-    local function playerHasAnyFruit()
-        local backpack = game.Players.LocalPlayer:FindFirstChild("Backpack")
-        local character = game.Players.LocalPlayer.Character
+	local loadedFruit = nil
+	
+	local function playerHasAnyFruit()
+	    local backpack = game.Players.LocalPlayer:FindFirstChild("Backpack")
         if backpack then
             for _, item in pairs(backpack:GetChildren()) do
                 for _, fruitName in ipairs(fruits) do
@@ -430,52 +429,38 @@ spawn(function()
                 end
             end
         end
-        if character then
-            for _, item in pairs(character:GetChildren()) do
-                for _, fruitName in ipairs(fruits) do
-                    if item.Name == fruitName then
-                        return true
-                    end
-                end
-            end
-        end
-        return false
     end
 
-    while task.wait(1) do
-        pcall(function()
-            if not Autofruit then
-                task.wait(2)
-                return
-            end
+	while task.wait(1) do
+		pcall(function()
+			if Autofruit then
+				if not playerHasAnyFruit() then
+					local fruitFound = false
 
-            if playerHasAnyFruit() then
-                loadedFruit = nil
-                task.wait(2)
-                return
-            end
+					for _, fruitName in ipairs(fruits) do
+						if loadedFruit ~= fruitName then
+							local success = CommF:InvokeServer("LoadFruit", fruitName)
+							if success then
+								loadedFruit = fruitName
+								fruitFound = true
+								break
+							end
+						else
+							fruitFound = true
+							break
+						end
+					end
 
-            local fruitFound = false
-            for _, fruitName in ipairs(fruits) do
-                if loadedFruit ~= fruitName then
-                    local success = CommF:InvokeServer("LoadFruit", fruitName)
-                    if success then
-                        loadedFruit = fruitName
-                        fruitFound = true
-                        break
-                    end
-                else
-                    fruitFound = true
-                    break
-                end
-            end
-
-            if not fruitFound then
-                loadedFruit = nil
-                task.wait(10)
-            end
-        end)
-    end
+					if not fruitFound then
+						loadedFruit = nil
+						task.wait(10)
+					end
+				else
+					task.wait(2)
+				end
+			end
+		end)
+	end
 end)
 
 local TweenService = game:GetService("TweenService")
