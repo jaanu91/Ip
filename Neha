@@ -417,46 +417,45 @@ spawn(function()
 	}
 
 	local loadedFruit = nil
-	
-	local function playerHasAnyFruit()
-	    local backpack = game.Players.LocalPlayer:FindFirstChild("Backpack")
-        if backpack then
-            for _, item in pairs(backpack:GetChildren()) do
-                for _, fruitName in ipairs(fruits) do
-                    if item.Name == fruitName then
-                        return true
-                    end
-                end
-            end
-        end
-    end
+
+	local function hasFruitInList()
+		local backpack = game.Players.LocalPlayer:FindFirstChild("Backpack")
+		if backpack then
+			for _, item in pairs(backpack:GetChildren()) do
+				for _, fruitName in ipairs(fruits) do
+					if item.Name == fruitName then
+						return true, item.Name
+					end
+				end
+			end
+		end
+		return false, nil
+	end
 
 	while task.wait(1) do
 		pcall(function()
 			if Autofruit then
-				if not playerHasAnyFruit() then
-					local fruitFound = false
+				local hasFruit, ownedFruit = hasFruitInList()
 
-					for _, fruitName in ipairs(fruits) do
-						if loadedFruit ~= fruitName then
-							local success = CommF:InvokeServer("LoadFruit", fruitName)
-							if success then
-								loadedFruit = fruitName
-								fruitFound = true
-								break
-							end
-						else
-							fruitFound = true
+				if hasFruit then
+					task.wait(3)
+					return
+				end
+
+				local fruitLoaded = false
+				for _, fruitName in ipairs(fruits) do
+					if not hasFruit then
+						local success = CommF:InvokeServer("LoadFruit", fruitName)
+						if success then
+							loadedFruit = fruitName
+							fruitLoaded = true
 							break
 						end
 					end
+				end
 
-					if not fruitFound then
-						loadedFruit = nil
-						task.wait(10)
-					end
-				else
-					task.wait(2)
+				if not fruitLoaded then
+					task.wait(10)
 				end
 			end
 		end)
