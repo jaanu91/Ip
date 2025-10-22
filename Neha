@@ -282,16 +282,43 @@ task.spawn(function()
 end)
 
 spawn(function()
-    while wait(.1) do
+    while task.wait(0.1) do
         pcall(function()
-            if Auto_StartRaid then
-                if game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Timer.Visible == false then
-                    if game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Special Microchip") then
+            if not Auto_StartRaid then return end
+
+            local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+            local mainGui = playerGui and playerGui:FindFirstChild("Main")
+            local timerVisible = mainGui and mainGui:FindFirstChild("Timer") and mainGui.Timer.Visible
+
+            if timerVisible == false then
+                local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+                local hasChip = backpack and backpack:FindFirstChild("Special Microchip")
+
+                if hasChip then
+                    while Auto_StartRaid and timerVisible == false and backpack:FindFirstChild("Special Microchip") do
                         if World2 then
-                            fireclickdetector(game:GetService("Workspace").Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
+                            local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("CircleIsland")
+                            cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
+                            cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
+                            if cd then
+                                fireclickdetector(cd)
+                            end
                         elseif World3 then
-                            fireclickdetector(game:GetService("Workspace").Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
+                            local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Boat Castle")
+                            cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
+                            cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
+                            if cd then
+                                fireclickdetector(cd)
+                            end
                         end
+
+                        task.wait(0.6)
+
+                        playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+                        mainGui = playerGui and playerGui:FindFirstChild("Main")
+                        timerVisible = mainGui and mainGui:FindFirstChild("Timer") and mainGui.Timer.Visible
+                        backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+                        if not backpack then break end
                     end
                 end
             end
