@@ -391,6 +391,37 @@ spawn(
     end
 )
 
+local lowBeliFruits = {
+    "Rocket-Rocket",
+    "Spin-Spin",
+    "Chop-Chop",
+    "Spring-Spring",
+    "Bomb-Bomb",
+    "Smoke-Smoke",
+    "Spike-Spike",
+    "Flame-Flame",
+    "Falcon-Falcon",
+    "Ice-Ice",
+    "Sand-Sand",
+    "Dark-Dark",
+    "Ghost-Ghost",
+    "Diamond-Diamond",
+    "Light-Light",
+    "Rubber-Rubber",
+    "Barrier-Barrier"
+}
+
+local function hasAnyFruitInList(list)
+    local bp = player and player:FindFirstChild("Backpack")
+    local char = player and player.Character
+    for _, fname in ipairs(list) do
+        if (bp and bp:FindFirstChild(fname)) or (char and char:FindFirstChild(fname)) then
+            return true
+        end
+    end
+    return false
+end
+
 spawn(function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local CommF = ReplicatedStorage.Remotes.CommF_
@@ -419,10 +450,22 @@ spawn(function()
 
     while task.wait(1) do
         pcall(function()
-            if Autofruit then
-                local fruitFound = false
+            if not Autofruit then
+                task.wait(2)
+                return
+            end
 
-                for _, fruitName in ipairs(fruits) do
+
+            local bp = player and player:FindFirstChild("Backpack")
+            local char = player and player.Character
+
+            local fruitFound = false
+
+            local haveLowBeli = hasAnyFruitInList(lowBeliFruits)
+
+            for _, fruitName in ipairs(fruits) do
+                if table.find(lowBeliFruits, fruitName) and haveLowBeli then
+                else
                     if loadedFruit ~= fruitName then
                         local success = CommF:InvokeServer("LoadFruit", fruitName)
                         if success then
@@ -435,13 +478,11 @@ spawn(function()
                         break
                     end
                 end
+            end
 
-                if not fruitFound then
-                    loadedFruit = nil
-                    task.wait(10) 
-                end
-            else
-                task.wait(2) 
+            if not fruitFound then
+                loadedFruit = nil
+                task.wait(10)
             end
         end)
     end
