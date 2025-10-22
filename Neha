@@ -512,7 +512,7 @@ function RaidsModule:SetAutoAwaken(state: boolean)
     AutoAwakenAbilities = state
 end
 
-function RaidsModule:SetTeleportFruits(state: boolean)
+function RaidsModule:SetBringFruits(state: boolean)
     TeleportToFruits = state
 end
 
