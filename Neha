@@ -15,6 +15,8 @@ local bringmob = false
 local AutoAwakenAbilities = false
 local Autofruit = false
 local TeleportToFruits = false
+local WalkWaterEnabled = false
+local NoClip = false
 
 local SelectChip = nil
 local weaponsToCheck = {"Godhuman", "Sanguine Art", "Dragon Talon"}
@@ -445,20 +447,55 @@ spawn(function()
     end
 end)
 
+local function Tween3(targetCFrame)
+	if not targetCFrame then return end
+	local info = TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+	local goal = {CFrame = hrp.CFrame + Vector3.new(0, 1, 0)}
+	local tween = TweenService:Create(targetCFrame, info, goal)
+	tween:Play()
+end
+
 spawn(function()
-    while wait(.1) do
-        if TeleportToFruits then
-            for i,v in pairs(game.Workspace:GetChildren()) do
-                if string.find(v.Name, "Fruit") then
-                    Tween(v.Handle.CFrame)
-                end
-            end 
-        end
+	while task.wait() do
+		if TeleportToFruits then
+			for _, v in pairs(workspace:GetChildren()) do
+				if v:IsA("Tool") and v:FindFirstChild("Handle") then
+					Tween3(v.Handle)
+				end
+			end
+		end
 	end
 end)
 
+spawn(function()
+    pcall(function()
+        game:GetService("RunService").Stepped:Connect(function()
+            if NoClip then
+                for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false    
+                    end
+                end
+            end
+        end)
+    end)
+end)
+
+function RaidsModule:SetWalkWater(state: boolean)
+    WalkWaterEnabled = state
+    if WalkWaterEnabled then
+        waterPart.Size = Vector3.new(1000,110,1000)
+    else
+        waterPart.Size = Vector3.new(1000,80,1000)
+    end
+end
+
 function RaidsModule:SetBuyChip(state: boolean)
     Auto_Buy_Chips_Raid = state
+end
+
+function RaidsModule:SetNoClip(state: boolean)
+    NoClip = state
 end
 
 function RaidsModule:SetStartRaid(state: boolean)
