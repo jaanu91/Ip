@@ -95,8 +95,16 @@ Section:NewToggle("・Get Lowest Beli Fruits TvT", "Make Sure You Have Fruits in
     RaidsModule:SetGetFruits(state)
 end)
 
-Section:NewToggle("・Teleport on Fruits", "Teleport Spawned Or Dropped Fruits ", function(state)
-    RaidsModule:SetTeleportFruits(state)
+Section:NewToggle("・Bring Fruits", "Bringing Spawned Or Dropped Fruits ", function(state)
+    RaidsModule:SetBringFruits(state)
+end)
+
+Section:NewToggle("・Walk On Water", "Use in Auto Raid ", function(state)
+    RaidsModule:SetWalkWater(state)
+end)
+
+Section:NewToggle("・No Clip", "Use For Tween", function(state)
+    RaidsModule:SetNoClip(state)
 end)
 
 if World2 then
