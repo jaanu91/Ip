@@ -290,7 +290,9 @@ end
 function ESPModule:SetBuso(state)
     BusoEnabled = state
     if state then
-        pcall(function() CommF:InvokeServer("Buso") end)
+	    if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
+	        pcall(function() CommF:InvokeServer("Buso") end)
+		end
     end
 end
 
@@ -312,7 +314,9 @@ local function onCharacterAdded(newChar)
         startV3Loop()
     end
     if BusoEnabled then
-        pcall(function() CommF:InvokeServer("Buso") end)
+        if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
+	        pcall(function() CommF:InvokeServer("Buso") end)
+		end
     end
 end
 
