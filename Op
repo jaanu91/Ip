@@ -452,6 +452,12 @@ task.spawn(function()
 					observationManager.radius = 0
 		            observationManager:setActive(true);
 		            commE:FireServer("Ken", true);
+					local dodgesLeft = player:GetAttribute("KenDodgesLeft")
+					if dodgesLeft == 0 then
+						commE:FireServer("Ken", false);
+					elseif dodgesLeft and dodgesLeft > 0 then
+						commE:FireServer("Ken", true);
+					end
 		        end
 		    end
 		    wait();
