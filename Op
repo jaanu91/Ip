@@ -454,8 +454,9 @@ task.spawn(function()
 		            commE:FireServer("Ken", true);
 					local dodgesLeft = player:GetAttribute("KenDodgesLeft")
 					if dodgesLeft == 0 then
-						commE:FireServer("Ken", false);
+						AutoKen = false
 					elseif dodgesLeft and dodgesLeft > 0 then
+						AutoKen = true
 						commE:FireServer("Ken", true);
 					end
 		        end
