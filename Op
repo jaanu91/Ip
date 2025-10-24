@@ -430,41 +430,46 @@ end
 
 task.spawn(function()
 	while true do
-		local char = player.Character or player.CharacterAdded:Wait();
-		char:WaitForChild("Humanoid");
-		char:WaitForChild("HumanoidRootPart");
-		wait(.1);
-		if AutoKen then
-		    if HasTag("Ken") then
-				local playerGui = player:FindFirstChild("PlayerGui")
-		        if playerGui then
-		            local kenButton = playerGui:FindFirstChild("MobileContextButtons")
-	                and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-	                and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+		local char = player.Character or player.CharacterAdded:Wait()
+		char:WaitForChild("Humanoid")
+		char:WaitForChild("HumanoidRootPart")
+		task.wait(0.1)
 
-		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
-		                kenButton:SetAttribute("Selected", true)
-		            end
-		        end
-		
-		        local observationManager = getrenv()._G.OM;
-		        if (observationManager and not observationManager.active) then
-					observationManager.radius = 0
-		            observationManager:setActive(true);
-		            commE:FireServer("Ken", true);
-					local dodgesLeft = player:GetAttribute("KenDodgesLeft")
-					if dodgesLeft == 0 then
-						AutoKen = false
-					elseif dodgesLeft and dodgesLeft > 0 then
-						AutoKen = true
-						commE:FireServer("Ken", true);
+		if AutoKen then
+			local dodgesLeft = player:GetAttribute("KenDodgesLeft")
+
+			if HasTag("Ken") then
+				local playerGui = player:FindFirstChild("PlayerGui")
+				if playerGui then
+					local kenButton = playerGui:FindFirstChild("MobileContextButtons")
+						and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+						and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+
+					if kenButton and kenButton:GetAttribute("Selected") ~= true then
+						kenButton:SetAttribute("Selected", true)
 					end
-		        end
-		    end
-		    wait();
+				end
+
+				local observationManager = getrenv()._G.OM
+				if observationManager then
+					if dodgesLeft == 0 then
+						if observationManager.active then
+							observationManager:setActive(false)
+							commE:FireServer("Ken", false)
+						end
+
+					elseif dodgesLeft > 0 then
+						if not observationManager.active then
+							observationManager.radius = 0
+							observationManager:setActive(true)
+							commE:FireServer("Ken", true)
+						end
+					end
+				end
+			end
 		end
 	end
-end);
+end)
 
 local function onCharacterAdded(char)
     clearConnections()
