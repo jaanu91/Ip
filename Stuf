@@ -621,7 +621,7 @@ function StuffsModule:SetRejoinServer(state)
 end
 
 function StuffsModule:SetFastAttack(state)
-    FastAttackEnabled = state
+    ToggleFastAttack = state
 end
 
 function StuffsModule:SetWalkWater(state)
