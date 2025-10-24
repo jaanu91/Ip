@@ -77,13 +77,6 @@ local function getPredictedPosition(hrp)
 	return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
 
-local function clearConnections()
-	for _, conn in ipairs(characterConnections) do
-		pcall(function() conn:Disconnect() end)
-	end
-	characterConnections = {}
-end
-
 local function createMiniToggle(name, position, stateVarRef, realVarSetter)
 	local playerGui = player:WaitForChild("PlayerGui")
     if playerGui:FindFirstChild(name .. "MiniToggleGuiS") then
@@ -419,8 +412,8 @@ if MouseModule and typeof(MouseModule) == "Instance" then
 
             RunService.Heartbeat:Connect(function()
                 if Mouse then
-                    if playersPosition then
-                        pcall(function() Mouse.Hit = CFrame.new(playersPosition) end)
+                    if PlayersPosition then
+                        pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
                     elseif NPCPosition then
                         pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
                     end
