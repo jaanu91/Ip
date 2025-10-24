@@ -390,36 +390,35 @@ spawn(function()
 end)
 
 if MouseModule and typeof(MouseModule) == "Instance" then
-        local ok2, Mouse = pcall(function() return require(MouseModule) end)
-        if ok2 and Mouse then
-            local Character = player.Character or player.CharacterAdded:Wait()
-            local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-            if RootPart then
+    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+    if ok2 and Mouse then
+        local Character = player.Character or player.CharacterAdded:Wait()
+        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+        if RootPart then
+            pcall(function()
+                Mouse.Hit = CFrame.new(RootPart.Position)
+                Mouse.Target = RootPart
+            end)
+        else
+            task.spawn(function()
+                local Character = player.Character or player.CharacterAdded:Wait()
+                local RootPart = Character:WaitForChild("HumanoidRootPart")
                 pcall(function()
                     Mouse.Hit = CFrame.new(RootPart.Position)
                     Mouse.Target = RootPart
                 end)
-            else
-                task.spawn(function()
-                    local Character = player.Character or player.CharacterAdded:Wait()
-                    local RootPart = Character:WaitForChild("HumanoidRootPart")
-                    pcall(function()
-                        Mouse.Hit = CFrame.new(RootPart.Position)
-                        Mouse.Target = RootPart
-                    end)
-                end)
-            end
-
-            RunService.Heartbeat:Connect(function()
-                if Mouse then
-                    if PlayersPosition then
-                        pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
-                    elseif NPCPosition then
-                        pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-                    end
-                end
             end)
         end
+
+        RunService.Heartbeat:Connect(function()
+            if Mouse then
+                if PlayersPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+                elseif NPCPosition then
+                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+                end
+            end
+        end)
     end
 end
 
