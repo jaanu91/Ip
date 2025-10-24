@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
+local MouseModule = WaitChilds(ReplicatedStorage, "Mouse")
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -23,7 +24,6 @@ local Services = setmetatable({}, {
 
 local SilentAimPlayersEnabled = false
 local SilentAimNPCsEnabled = false
-local Gusilent = false
 local UserWantsplayerAim = false
 local UserWantsNPCAim = false
 local PredictionEnabled = false
@@ -396,6 +396,40 @@ spawn(function()
     end
 end)
 
+if MouseModule and typeof(MouseModule) == "Instance" then
+        local ok2, Mouse = pcall(function() return require(MouseModule) end)
+        if ok2 and Mouse then
+            local Character = player.Character or player.CharacterAdded:Wait()
+            local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+            if RootPart then
+                pcall(function()
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end)
+            else
+                task.spawn(function()
+                    local Character = player.Character or player.CharacterAdded:Wait()
+                    local RootPart = Character:WaitForChild("HumanoidRootPart")
+                    pcall(function()
+                        Mouse.Hit = CFrame.new(RootPart.Position)
+                        Mouse.Target = RootPart
+                    end)
+                end)
+            end
+
+            RunService.Heartbeat:Connect(function()
+                if Mouse then
+                    if playersPosition then
+                        pcall(function() Mouse.Hit = CFrame.new(playersPosition) end)
+                    elseif NPCPosition then
+                        pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+                    end
+                end
+            end)
+        end
+    end
+end
+
 local HasTag = function(tagName)
   local char = player.Character
   if (not char) then return false; end
@@ -433,75 +467,6 @@ task.spawn(function()
 	end
 end);
 
-spawn(function()
-    while wait() do
-        for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-            if v:IsA("Tool") then
-                if v:FindFirstChild("RemoteFunctionShoot") then
-                    SelectToolWeaponGun = v.Name
-                end
-            end
-        end
-        for i, v in pairs(game.Players.LocalPlayer.Character:GetChildren()) do
-            if v:IsA("Tool") then
-                if v:FindFirstChild("RemoteFunctionShoot") then
-                    SelectToolWeaponGun = v.Name
-                end
-            end
-        end
-    end
-end)
-
-local function performGunSilentFire()
-    if not Gusilent then return end
-    if not SelectToolWeaponGun then return end
-    if not playersaimbot then return end
-    if not PlayersPosition then return end -- PlayersPosition should be a Vector3 (predicted pos)
-
-    local targetPlayerObj = Players:FindFirstChild(playersaimbot)
-    if not targetPlayerObj or not targetPlayerObj.Character then return end
-
-    local localChar = player.Character
-    if not localChar then return end
-    local tool = localChar:FindFirstChild(SelectToolWeaponGun)
-    if not tool or not tool:FindFirstChild("Handle") then return end
-
-    local origin = tool.Handle.Position
-    local direction = (PlayersPosition - origin).unit * 100
-    local ok, hitPart = pcall(function()
-        return workspace:FindPartOnRayWithIgnoreList(Ray.new(origin, direction), { localChar, workspace._WorldOrigin })
-    end)
-
-    local hrpFromPartArg = nil
-    pcall(function()
-        local util = require(game.ReplicatedStorage.Util)
-        if util and util.Other and util.Other.hrpFromPart then
-            hrpFromPartArg = util.Other.hrpFromPart(hitPart)
-        end
-    end)
-
-    pcall(function()
-        if tool.RemoteFunctionShoot then
-            tool.RemoteFunctionShoot:InvokeServer(PlayersPosition, hrpFromPartArg)
-        end
-    end)
-end
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    local t = input.UserInputType
-    if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
-        performGunSilentFire()
-    end
-end)
-
-if UserInputService.TouchStarted then
-    UserInputService.TouchStarted:Connect(function(touch, gameProcessed)
-        if gameProcessed then return end
-        performGunSilentFire()
-    end)
-end
-
 local function onCharacterAdded(char)
     clearConnections()
 
@@ -531,10 +496,6 @@ end
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
-end
-
-function SilentAimModule:SetGunSilent(state)
-	Gusilent = state
 end
 
 function SilentAimModule:Pause()
