@@ -360,7 +360,7 @@ local ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
 local GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
 
 local Config = {
-    AttackDistance = 65,
+    AttackDistance = 155,
     AttackMobs = true,
     AttackPlayers = true,
     AttackCooldown = 0.2,
@@ -484,9 +484,6 @@ function FastAttack:ShootInTarget(TargetPosition)
         end
         self.ShootDebounce = tick()
     else
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-        task.wait(0.05)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
         self.ShootDebounce = tick()
     end
 end
