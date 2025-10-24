@@ -311,7 +311,7 @@ local ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
 local GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
 
 local Config = {
-    AttackDistance = 155,
+    AttackDistance = 255,
     AttackMobs = true,
     AttackPlayers = true,
     AttackCooldown = 0.2,
@@ -484,6 +484,15 @@ function FastAttack:UseFruitM1(Character, Equipped, Combo)
     local Targets = self:GetBladeHits(Character)
     if not Targets[1] then return end
     
+    local Direction = (Targets[1][2].Position - Character:GetPivot().Position).Unit
+    Equipped.LeftClickRemote:FireServer(Direction, Combo)
+end
+
+function FastAttack:UseFruitM1(Character, Equipped, Combo)
+    local range = Config.AttackDistance
+    local Targets = self:GetBladeHits(Character, range)
+    if not Targets[1] then return end
+
     local Direction = (Targets[1][2].Position - Character:GetPivot().Position).Unit
     Equipped.LeftClickRemote:FireServer(Direction, Combo)
 end
