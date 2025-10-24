@@ -58,6 +58,17 @@ local Section = Tab:NewSection("◈・Information")
 Section:NewLabel("Executor: " .. executor)
 Section:NewLabel("Status: " .. execStatus)
 
+local Tab = Window:NewTab("⛓・ChangesLogs")
+local Section = Tab:NewSection("✏・Updated")
+
+Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbot ✔")
+Section:NewLabel("• Added Fixed Sanguine art Z in silent aimbot ✔")
+Section:NewLabel("• Added Auto Ken ✔")
+Section:NewLabel("• Added Select Target for Silent aim ✔")
+Section:NewLabel("• Added Bring Fruits ✔")
+Section:NewLabel("• Added Spawned Fruits Check ✔")
+Section:NewLabel("• Added Auto V4 ✔")
+
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
 
@@ -276,6 +287,11 @@ local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(stat
     Settings["AutoKen"] = state
 end)
 
+local FastShootToggle = Section:NewToggle("・Fast Shoot", "Fast Shoot", function(state)
+    StuffsModule:SetFastShoot(state)
+    Settings["FastShoot"] = state
+end)
+
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -365,7 +381,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     V3Skill = V3SkillToggle,
     Highlight = HighlightToggle,
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
-    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle
+    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
+    FastShoot = FastShootToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
