@@ -12,7 +12,6 @@ local FpsBoostEnabled = false
 local InfiniteEnergy = false
 local FastAttackEnabled = false
 local WalkWaterEnabled = false
-local fastAttackConnection
 
 local savedSettings = {}
 local connections = {}
@@ -570,6 +569,11 @@ function FastAttack:Attack()
 end
 
 local AttackInstance = FastAttack.new()
+table.insert(AttackInstance.Connections, RunService.Stepped:Connect(function()
+    if FastAttackEnabled then
+        AttackInstance:Attack()
+    end
+end))
 
 for _, v in pairs(getgc(true)) do
     if typeof(v) == "function" and iscclosure(v) then
@@ -579,22 +583,6 @@ for _, v in pairs(getgc(true)) do
                 AttackInstance:Attack()
                 return v(...)
             end)
-        end
-    end
-end
-
-function ToggleFastAttack(state)
-    FastAttackEnabled = state
-    if state then
-        if not fastAttackConnection then
-            fastAttackConnection = RunService.Stepped:Connect(function()
-                AttackInstance:Attack()
-            end)
-        end
-    else
-        if fastAttackConnection then
-            fastAttackConnection:Disconnect()
-            fastAttackConnection = nil
         end
     end
 end
@@ -621,7 +609,7 @@ function StuffsModule:SetRejoinServer(state)
 end
 
 function StuffsModule:SetFastAttack(state)
-    ToggleFastAttack = state
+    FastAttackEnabled = state
 end
 
 function StuffsModule:SetWalkWater(state)
