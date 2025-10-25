@@ -287,11 +287,6 @@ local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(stat
     Settings["AutoKen"] = state
 end)
 
-local FastShootToggle = Section:NewToggle("・Fast Shoot", "Fast Shoot", function(state)
-    StuffsModule:SetFastShoot(state)
-    Settings["FastShoot"] = state
-end)
-
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -381,8 +376,7 @@ OthersStuffsModule:ApplySettings(Settings, {
     V3Skill = V3SkillToggle,
     Highlight = HighlightToggle,
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
-    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
-    FastShoot = FastShootToggle
+    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
