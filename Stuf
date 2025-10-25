@@ -11,7 +11,6 @@ local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
 local FastAttackEnabled = false
-local FastShootEnabled = false
 local WalkWaterEnabled = false
 
 local savedSettings = {}
@@ -541,43 +540,6 @@ for _, v in pairs(getgc(true)) do
                 end
                 return v(...)
             end)
-        end
-    end
-end
-
-function FastShooted()
-    local plr = game:GetService("Players").LocalPlayer
-    local ShootGunEvent = game:GetService("ReplicatedStorage").Modules.Net["RE/ShootGunEvent"]
-    for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-        if v:FindFirstChild("Humanoid") and v:FindFirstChild("Humanoid").Health > 0 then
-            local toolEquiped = plr.Character:FindFirstChildOfClass("Tool")
-            if (v.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude < 200 then
-                local toolEquiped = plr.Character:FindFirstChildOfClass("Tool")
-                if toolEquiped.ToolTip == "Gun" then
-                    ShootGunEvent:FireServer(v.HumanoidRootPart.Position, {[1] = v.HumanoidRootPart})
-                end
-            end
-        end
-    end
-end
-
-function StuffsModule:SetFastShoot(state)
-    FastShootEnabled = state
-
-    if FastShootEnabled then
-        if not connections.FastShoot then
-            connections.FastShoot = RunService.Heartbeat:Connect(function()
-                pcall(function()
-                    if FastShootEnabled then
-                        FastShooted()
-                    end
-                end)
-            end)
-        end
-    else
-        if connections.FastShoot then
-            connections.FastShoot:Disconnect()
-            connections.FastShoot = nil
         end
     end
 end
