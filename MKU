@@ -61,7 +61,6 @@ Section:NewLabel("Status: " .. execStatus)
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Added Gun Fast Shoot ✔")
 Section:NewLabel("• Added Fruit M1 Closet Attack ✔")
 Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbo ✔")
 Section:NewLabel("• Added Select Target for Silent aim ✔")
