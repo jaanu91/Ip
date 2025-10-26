@@ -173,6 +173,11 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.Zskill:SetZSkills(Settings["ZSkills"])
         Toggles.ZSkills:UpdateToggle(nil, Settings["ZSkills"])
     end
+    
+    if Settings["Zskillmone"] ~= nil then
+        Modules.SilentAim:SetZSkillorM1(Settings["Zskillmone"])
+        Toggles.Zskillmone:UpdateToggle(nil, Settings["Zskillmone"])
+    end
 end
 
 local FruitsToCheck = {
