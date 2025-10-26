@@ -10,7 +10,7 @@ local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
-local MouseModule = RS:FindFirstChild("Mouse")
+local Mouse = RS:FindFirstChild("Mouse")
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -355,72 +355,75 @@ local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
 end
 
-spawn(function()
-    local ok, hookMeta = pcall(getrawmetatable, game)
-    if ok and hookMeta then
-        setreadonly(hookMeta, false)
-        local OldHook
-        OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
-            local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
+-- near top, add storage for the real mouse CFrame
+local realMouseHit = nil
+local realMouseTarget = nil
 
-            if tostring(self) == "RemoteEvent" and Method == "fireserver" then
-                if typeof(V1) == "Vector3" then
-                    if SilentAimPlayersEnabled and PlayersPosition then
-                        return OldHook(self, PlayersPosition, V2, ...)
-                    elseif SilentAimNPCsEnabled and NPCPosition then
-                        return OldHook(self, NPCPosition, V2, ...)
-                    end
-                end
-            elseif Method == "invokeserver" then  
-	            if isValidCondition() then
-	                if type(V1) == "string" and table.find(Skills, V1) then  
-	                    if SilentAimPlayersEnabled and PlayersPosition then  
-	                        return OldHook(self, V1, PlayersPosition, nil, ...)
-	                    elseif SilentAimNPCsEnabled and NPCPosition then
-		                    return OldHook(self, V1, NPCPosition, nil, ...)
-	                    end  
-	                end    
-				end
-            end
-            
-            return OldHook(self, V1, V2, ...)
+-- when you first get the Mouse from MouseModule, capture the original
+if Mouse then
+    pcall(function()
+        realMouseHit = Mouse.Hit and Mouse.Hit
+        realMouseTarget = Mouse.Target and Mouse.Target
+    end)
+end
+
+-- when you overwrite Mouse.Hit in your heartbeat, store the real values first
+RunService.Heartbeat:Connect(function()
+    if Mouse then
+        -- store the real values (do this before you overwrite)
+        pcall(function()
+            realMouseHit = Mouse.Hit or realMouseHit
+            realMouseTarget = Mouse.Target or realMouseTarget
         end)
-        setreadonly(hookMeta, true)
+
+        if NPCPosition then
+            pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+        elseif PlayersPosition then
+            pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+        end
     end
 end)
 
-if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
-    if ok2 and Mouse then
-        local Character = player.Character or player.CharacterAdded:Wait()
-        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-        if RootPart then
-            pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
-            end)
-        else
-            task.spawn(function()
-                local Character = player.Character or player.CharacterAdded:Wait()
-                local RootPart = Character:WaitForChild("HumanoidRootPart")
-                pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
-                end)
-            end)
-        end
+-- update namecall hook: also handle InvokeServer so TAP can use the real mouse
+local old = gg.__namecall
+gg.__namecall = newcclosure(function(...)
+    local method = getnamecallmethod()
+    local args = {...}
 
-        RunService.Heartbeat:Connect(function()
-            if Mouse then
-                if PlayersPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
-                elseif NPCPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
-                end
-            end
-        end)
+    -- keep existing FireServer replacement logic (unchanged)
+    local targetPos = nil
+    if SilentAimPlayersEnabled and PlayersPosition then
+        targetPos = PlayersPosition
+    elseif SilentAimNPCsEnabled and NPCPosition then
+        targetPos = NPCPosition
     end
-end
+
+    if targetPos and tostring(method) == "FireServer" then
+        if tostring(args[1]) == "RemoteEvent" then
+            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+                args[2] = targetPos
+                return old(unpack(args))
+            end
+        end
+    end
+
+    -- NEW: if a RemoteFunction InvokeServer is used for TAP, restore the real mouse args
+    if tostring(method) == "InvokeServer" then
+        -- many RemoteFunction invocations use a string like "TAP" as first arg
+        if typeof(args[1]) == "string" and args[1] == "TAP" then
+            -- decompiled shows InvokeServer("TAP", tbl[1], tbl[2])
+            -- restore tbl[1] from realMouseHit if available
+            if realMouseHit then
+                args[2] = realMouseHit.p
+            end
+            -- args[3] could be HRP or position; restore if needed similarly using realMouseTarget
+            -- then call original
+            return old(unpack(args))
+        end
+    end
+
+    return old(...)
+end)
 
 local HasTag = function(tagName)
   local char = player.Character
@@ -430,46 +433,34 @@ end
 
 task.spawn(function()
 	while true do
-		local char = player.Character or player.CharacterAdded:Wait()
-		char:WaitForChild("Humanoid")
-		char:WaitForChild("HumanoidRootPart")
-		task.wait(0.1)
-
+		local char = player.Character or player.CharacterAdded:Wait();
+		char:WaitForChild("Humanoid");
+		char:WaitForChild("HumanoidRootPart");
+		wait(.1);
 		if AutoKen then
-			local dodgesLeft = player:GetAttribute("KenDodgesLeft")
-
-			if HasTag("Ken") then
+		    if HasTag("Ken") then
 				local playerGui = player:FindFirstChild("PlayerGui")
-				if playerGui then
-					local kenButton = playerGui:FindFirstChild("MobileContextButtons")
-						and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-						and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+		        if playerGui then
+		            local kenButton = playerGui:FindFirstChild("MobileContextButtons")
+	                and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
+	                and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
 
-					if kenButton and kenButton:GetAttribute("Selected") ~= true then
-						kenButton:SetAttribute("Selected", true)
-					end
-				end
-
-				local observationManager = getrenv()._G.OM
-				if observationManager then
-					if dodgesLeft == 0 then
-						if observationManager.active then
-							observationManager:setActive(false)
-							commE:FireServer("Ken", false)
-						end
-
-					elseif dodgesLeft > 0 then
-						if not observationManager.active then
-							observationManager.radius = 0
-							observationManager:setActive(true)
-							commE:FireServer("Ken", true)
-						end
-					end
-				end
-			end
+		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
+		                kenButton:SetAttribute("Selected", true)
+		            end
+		        end
+		
+		        local observationManager = getrenv()._G.OM;
+		        if (observationManager and not observationManager.active) then
+					observationManager.radius = 0
+		            observationManager:setActive(true);
+		            commE:FireServer("Ken", true);
+		        end
+		    end
+		    wait();
 		end
 	end
-end)
+end);
 
 local function onCharacterAdded(char)
     clearConnections()
