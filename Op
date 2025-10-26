@@ -296,6 +296,29 @@ local function clearHighlight()
     end
 end
 
+if MouseModule and typeof(MouseModule) == "Instance" then
+    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+    if ok2 and Mouse then
+        local Character = player.Character or player.CharacterAdded:Wait()
+        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+        if RootPart then
+            pcall(function()
+                Mouse.Hit = CFrame.new(RootPart.Position)
+                Mouse.Target = RootPart
+            end)
+        else
+            task.spawn(function()
+                local Character = player.Character or player.CharacterAdded:Wait()
+                local RootPart = Character:WaitForChild("HumanoidRootPart")
+                pcall(function()
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end)
+            end)
+        end
+    end
+end
+
 RunService.Heartbeat:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -342,56 +365,34 @@ RunService.Heartbeat:Connect(function()
 	    clearHighlight()
 	end
 	
-	if MouseModule and typeof(MouseModule) == "Instance" then
-	    local ok2, Mouse = pcall(function() return require(MouseModule) end)
-	    if ok2 and Mouse then
-	        local Character = player.Character or player.CharacterAdded:Wait()
-	        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-	        if RootPart then
-	            pcall(function()
-	                Mouse.Hit = CFrame.new(RootPart.Position)
-	                Mouse.Target = RootPart
-	            end)
-	        else
-	            task.spawn(function()
-	                local Character = player.Character or player.CharacterAdded:Wait()
-	                local RootPart = Character:WaitForChild("HumanoidRootPart")
-	                pcall(function()
-	                    Mouse.Hit = CFrame.new(RootPart.Position)
-	                    Mouse.Target = RootPart
-	                end)
-	            end)
+    if Mouse then
+        if ZSkillorM1 then		            
+            local targetCFrame
+
+	        if PlayersPosition then
+	            targetCFrame = CFrame.new(PlayersPosition)
+	        elseif NPCPosition then
+	            targetCFrame = CFrame.new(NPCPosition)
 	        end
-	        if Mouse then
-		        if ZSkillorM1 then		            
-		            local targetCFrame
 
-			        if PlayersPosition then
-			            targetCFrame = CFrame.new(PlayersPosition)
-			        elseif NPCPosition then
-			            targetCFrame = CFrame.new(NPCPosition)
-			        end
+	        if targetCFrame then
+	            pcall(function()
+	                Mouse.Hit = targetCFrame
+	                Mouse.Target = nil
+	            end)
 
-			        if targetCFrame then
-			            pcall(function()
-			                Mouse.Hit = targetCFrame
-			                Mouse.Target = nil
-			            end)
+	            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	            local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
 
-			            local ReplicatedStorage = game:GetService("ReplicatedStorage")
-			            local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
-
-			            if MouseModule then
-			                local success, MouseData = pcall(require, MouseModule)
-			                if success and type(MouseData) == "table" then
-			                    MouseData.Hit = targetCFrame
-			                    MouseData.Target = nil
-			                end
-			            end
-			        end
-		        end
-		    end
-	    end
+	            if MouseModule then
+	                local success, MouseData = pcall(require, MouseModule)
+	                if success and type(MouseData) == "table" then
+	                    MouseData.Hit = targetCFrame
+	                    MouseData.Target = nil
+	                end
+	            end
+	        end
+        end
 	end
 end)
 
