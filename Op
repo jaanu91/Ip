@@ -29,6 +29,7 @@ local UserWantsNPCAim = false
 local PredictionEnabled = false
 local HighlightEnabled = false 
 local AutoKen = false
+local ZSkillorM1= false
 
 local currentTool = nil
 local playersaimbot = nil
@@ -295,6 +296,29 @@ local function clearHighlight()
     end
 end
 
+if MouseModule and typeof(MouseModule) == "Instance" then
+    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+    if ok2 and Mouse then
+        local Character = player.Character or player.CharacterAdded:Wait()
+        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+        if RootPart then
+            pcall(function()
+                Mouse.Hit = CFrame.new(RootPart.Position)
+                Mouse.Target = RootPart
+            end)
+        else
+            task.spawn(function()
+                local Character = player.Character or player.CharacterAdded:Wait()
+                local RootPart = Character:WaitForChild("HumanoidRootPart")
+                pcall(function()
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end)
+            end)
+        end
+    end
+end
+
 RunService.Heartbeat:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -340,6 +364,42 @@ RunService.Heartbeat:Connect(function()
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
 	end
+
+    if Mouse then
+        if ZSkillorM1 then
+            if currentTargetType == "player" and PlayersPosition then
+                pcall(function()
+                    Mouse.Hit = CFrame.new(PlayersPosition)
+                    Mouse.Target = PlayersPosition
+                end)
+            elseif currentTargetType == "NPC" and NPCPosition then
+                pcall(function()
+                    Mouse.Hit = CFrame.new(NPCPosition)
+                    Mouse.Target = NPCPosition
+                end)
+            else
+                local root = lpHRP
+                if root then
+                    pcall(function()
+                        Mouse.Hit = CFrame.new(root.Position)
+                        Mouse.Target = root
+                    end)
+                end
+            end
+        else
+            if PlayersPosition then
+                pcall(function()
+                    Mouse.Hit = CFrame.new(PlayersPosition)
+                    Mouse.Target = PlayersPosition
+                end)
+            elseif NPCPosition then
+                pcall(function()
+                    Mouse.Hit = CFrame.new(NPCPosition)
+                    Mouse.Target = NPCPosition
+                end)
+            end
+        end
+    end
 end)
 
 local function hookTool(tool)
@@ -388,29 +448,6 @@ spawn(function()
         setreadonly(hookMeta, true)
     end
 end)
-
-if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
-    if ok2 and Mouse then
-        local Character = player.Character or player.CharacterAdded:Wait()
-        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-        if RootPart then
-            pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
-            end)
-        else
-            task.spawn(function()
-                local Character = player.Character or player.CharacterAdded:Wait()
-                local RootPart = Character:WaitForChild("HumanoidRootPart")
-                pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
-                end)
-            end)
-        end
-    end
-end
 
 local HasTag = function(tagName)
   local char = player.Character
@@ -478,6 +515,10 @@ end
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
+end
+
+function SilentAimModule:SetZSkillorM1(state)
+    ZSkillorM1 = (state == true)
 end
 
 function SilentAimModule:Pause()
