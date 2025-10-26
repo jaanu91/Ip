@@ -259,6 +259,11 @@ local AntiAFKToggle = Section:NewToggle("・AntiAfk", "AntiAfk only on before yo
     Settings["AntiAFK"] = state
 end)
 
+local FastShootToggle = Section:NewToggle("・Fast Shoot |warn dragonstorm", "Fast Shoot", function(state)
+    StuffsModule:SetFastShoot(state)
+    Settings["FastShoot"] = state
+end)
+
 Section:NewTextBox("Jump Power", "JumpValue", function(jumpfunc)
   getgenv().JumpValue = jumpfunc
     if getgenv().JumpValue then
@@ -375,7 +380,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     V3Skill = V3SkillToggle,
     Highlight = HighlightToggle,
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
-    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle
+    SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
+    FastShoot = FastShootToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
