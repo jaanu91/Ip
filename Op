@@ -390,14 +390,10 @@ spawn(function()
 end)
 
 if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function()
-        return require(MouseModule)
-    end)
-
+    local ok2, Mouse = pcall(function() return require(MouseModule) end)
     if ok2 and Mouse then
         local Character = player.Character or player.CharacterAdded:Wait()
         local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-
         if RootPart then
             pcall(function()
                 Mouse.Hit = CFrame.new(RootPart.Position)
@@ -407,32 +403,12 @@ if MouseModule and typeof(MouseModule) == "Instance" then
             task.spawn(function()
                 local Character = player.Character or player.CharacterAdded:Wait()
                 local RootPart = Character:WaitForChild("HumanoidRootPart")
-
                 pcall(function()
                     Mouse.Hit = CFrame.new(RootPart.Position)
                     Mouse.Target = RootPart
                 end)
             end)
         end
-
-        RunService.Heartbeat:Connect(function()
-            if Mouse then
-                local targetCFrame
-
-                if PlayersPosition then
-                    targetCFrame = CFrame.new(PlayersPosition)
-                elseif NPCPosition then
-                    targetCFrame = CFrame.new(NPCPosition)
-                end
-
-                if targetCFrame then
-                    pcall(function()
-                        Mouse.Hit = targetCFrame
-                        Mouse.Target = nil
-                    end)
-                end
-            end
-        end)
     end
 end
 
