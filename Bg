@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
+local MouseModule = RS:FindFirstChild("Mouse")
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -28,6 +29,7 @@ local UserWantsNPCAim = false
 local PredictionEnabled = false
 local HighlightEnabled = false 
 local AutoKen = false
+local ZSkillorM1= false
 
 local currentTool = nil
 local playersaimbot = nil
@@ -42,6 +44,7 @@ local MiniNpcState = nil
 local MiniPlayerCreated = false
 local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
+local Mouse = nil
 
 local characterConnections = {}
 local Skills = {"X"}
@@ -74,13 +77,6 @@ local function getPredictedPosition(hrp)
 	end
 
 	return hrp.Position + (hrp.Velocity * PredictionAmount)
-end
-
-local function clearConnections()
-	for _, conn in ipairs(characterConnections) do
-		pcall(function() conn:Disconnect() end)
-	end
-	characterConnections = {}
 end
 
 local function createMiniToggle(name, position, stateVarRef, realVarSetter)
@@ -395,6 +391,77 @@ spawn(function()
     end
 end)
 
+if MouseModule and typeof(MouseModule) == "Instance" then
+    local ok2, okResult = pcall(function()
+        return require(MouseModule)
+    end)
+
+    if ok2 and okResult then
+        if type(okResult) == "table" then
+            Mouse = okResult
+        else
+            Mouse = nil
+        end
+    else
+        Mouse = nil
+    end
+
+    if Mouse then
+        local Character = player.Character or player.CharacterAdded:Wait()
+        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+        if RootPart then
+            pcall(function()
+                if type(Mouse) == "table" then
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end
+            end)
+        else
+            task.spawn(function()
+                local Character = player.Character or player.CharacterAdded:Wait()
+                local RootPart = Character:WaitForChild("HumanoidRootPart")
+                pcall(function()
+                    if type(Mouse) == "table" then
+                        Mouse.Hit = CFrame.new(RootPart.Position)
+                        Mouse.Target = RootPart
+                    end
+                end)
+            end)
+        end
+    end
+
+    RunService.Heartbeat:Connect(function()
+        if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
+            local targetCFrame = nil
+
+            if PlayersPosition then
+                targetCFrame = CFrame.new(PlayersPosition)
+            elseif NPCPosition then
+                targetCFrame = CFrame.new(NPCPosition)
+            end
+
+            if targetCFrame then
+                pcall(function()
+                    if type(Mouse) == "table" then
+                        Mouse.Hit = targetCFrame
+                        Mouse.Target = nil
+                    end
+                end)
+
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")
+                if MouseModuleCheck then
+                    local ok, MouseData = pcall(require, MouseModuleCheck)
+                    if ok and type(MouseData) == "table" then
+                        MouseData.Hit = targetCFrame
+                        MouseData.Target = nil
+                    end
+                end
+            end
+        end
+    end)
+end
+
 local HasTag = function(tagName)
   local char = player.Character
   if (not char) then return false; end
@@ -461,6 +528,10 @@ end
 function SilentAimModule:SetNPCSilentAim(state)
 	UserWantsNPCAim = state
 	SilentAimNPCsEnabled = state
+end
+
+function SilentAimModule:SetZSkillorM1(state)
+    ZSkillorM1 = state
 end
 
 function SilentAimModule:Pause()
