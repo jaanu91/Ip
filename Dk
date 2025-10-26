@@ -579,7 +579,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
             if PredictionEnabled and enemyVelocity.Magnitude > 3 then
                 predictedPos = predictedPos + enemyVelocity * predictionTime
             end
-            local yOffset = math.clamp(dist / 40, 0, 0.06)
+            local yOffset = math.clamp(dist / 40, 0, 0.09)
             local lookVector = (predictedPos - camPos).Unit
             local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
             camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
