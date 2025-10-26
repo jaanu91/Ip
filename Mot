@@ -123,6 +123,11 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.Stuffs:SetFastAttack(Settings["FastAttack"])
         Toggles.FastAttack:UpdateToggle(nil, Settings["FastAttack"])
     end
+    
+    if Settings["FastShoot"] ~= nil then
+        Modules.Stuffs:SetFastShoot(Settings["FastShoot"])
+        Toggles.FastShoot:UpdateToggle(nil, Settings["FastShoot"])
+    end
 
     if Settings["WalkonWater"] ~= nil then
         Modules.Stuffs:SetWalkWater(Settings["WalkonWater"])
