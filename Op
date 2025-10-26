@@ -389,17 +389,6 @@ spawn(function()
     end
 end)
 
-local old_GetRay = getupvalue(MouseModule.GetRayFromMousePoint, 1)
-setreadonly(MouseModule, false)
-MouseModule.GetRayFromMousePoint = function(distance)
-    if getgenv().PlayersPosition then
-        local cam = workspace.CurrentCamera
-        return Ray.new(cam.CFrame.Position, (getgenv().PlayersPosition - cam.CFrame.Position).Unit * distance)
-    end
-    return old_GetRay(distance)
-end
-setreadonly(MouseModule, true)
-
 if MouseModule and typeof(MouseModule) == "Instance" then
     local ok2, Mouse = pcall(function()
         return require(MouseModule)
