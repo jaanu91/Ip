@@ -389,11 +389,26 @@ spawn(function()
     end
 end)
 
+local old_GetRay = getupvalue(MouseModule.GetRayFromMousePoint, 1)
+setreadonly(MouseModule, false)
+MouseModule.GetRayFromMousePoint = function(distance)
+    if getgenv().PlayersPosition then
+        local cam = workspace.CurrentCamera
+        return Ray.new(cam.CFrame.Position, (getgenv().PlayersPosition - cam.CFrame.Position).Unit * distance)
+    end
+    return old_GetRay(distance)
+end
+setreadonly(MouseModule, true)
+
 if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function() return require(MouseModule) end)
+    local ok2, Mouse = pcall(function()
+        return require(MouseModule)
+    end)
+
     if ok2 and Mouse then
         local Character = player.Character or player.CharacterAdded:Wait()
         local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+
         if RootPart then
             pcall(function()
                 Mouse.Hit = CFrame.new(RootPart.Position)
@@ -403,6 +418,7 @@ if MouseModule and typeof(MouseModule) == "Instance" then
             task.spawn(function()
                 local Character = player.Character or player.CharacterAdded:Wait()
                 local RootPart = Character:WaitForChild("HumanoidRootPart")
+
                 pcall(function()
                     Mouse.Hit = CFrame.new(RootPart.Position)
                     Mouse.Target = RootPart
@@ -412,10 +428,30 @@ if MouseModule and typeof(MouseModule) == "Instance" then
 
         RunService.Heartbeat:Connect(function()
             if Mouse then
+                local targetCFrame
+
                 if PlayersPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(PlayersPosition) end)
+                    targetCFrame = CFrame.new(PlayersPosition)
                 elseif NPCPosition then
-                    pcall(function() Mouse.Hit = CFrame.new(NPCPosition) end)
+                    targetCFrame = CFrame.new(NPCPosition)
+                end
+
+                if targetCFrame then
+                    pcall(function()
+                        Mouse.Hit = targetCFrame
+                        Mouse.Target = nil
+                    end)
+
+                    local RS = game:GetService("ReplicatedStorage")
+                    local MouseModule = RS:FindFirstChild("Mouse")
+
+                    if MouseModule then
+                        local success, MouseData = pcall(require, MouseModule)
+                        if success and type(MouseData) == "table" then
+                            MouseData.Hit = targetCFrame
+                            MouseData.Target = nil
+                        end
+                    end
                 end
             end
         end)
