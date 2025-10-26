@@ -363,38 +363,32 @@ RunService.Heartbeat:Connect(function()
 	            end)
 	        end
 	        if Mouse then
-		        if ZSkillorM1 then
-		            if currentTargetType == "player" and PlayersPosition then
-		                pcall(function()
-		                    Mouse.Hit = CFrame.new(PlayersPosition)
-		                    Mouse.Target = PlayersPosition
-		                end)
-		            elseif currentTargetType == "NPC" and NPCPosition then
-		                pcall(function()
-		                    Mouse.Hit = CFrame.new(NPCPosition)
-		                    Mouse.Target = NPCPosition
-		                end)
-		            else
-		                local root = lpHRP
-		                if root then
-		                    pcall(function()
-		                        Mouse.Hit = CFrame.new(root.Position)
-		                        Mouse.Target = root
-		                    end)
-		                end
-		            end
-		        else
-		            if PlayersPosition then
-		                pcall(function()
-		                    Mouse.Hit = CFrame.new(PlayersPosition)
-		                    Mouse.Target = PlayersPosition
-		                end)
-		            elseif NPCPosition then
-		                pcall(function()
-		                    Mouse.Hit = CFrame.new(NPCPosition)
-		                    Mouse.Target = NPCPosition
-		                end)
-		            end
+		        if ZSkillorM1 then		            
+		            local targetCFrame
+
+			        if PlayersPosition then
+			            targetCFrame = CFrame.new(PlayersPosition)
+			        elseif NPCPosition then
+			            targetCFrame = CFrame.new(NPCPosition)
+			        end
+
+			        if targetCFrame then
+			            pcall(function()
+			                Mouse.Hit = targetCFrame
+			                Mouse.Target = nil
+			            end)
+
+			            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+			            local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
+
+			            if MouseModule then
+			                local success, MouseData = pcall(require, MouseModule)
+			                if success and type(MouseData) == "table" then
+			                    MouseData.Hit = targetCFrame
+			                    MouseData.Target = nil
+			                end
+			            end
+			        end
 		        end
 		    end
 	    end
@@ -517,7 +511,7 @@ function SilentAimModule:SetNPCSilentAim(state)
 end
 
 function SilentAimModule:SetZSkillorM1(state)
-    ZSkillorM1 = (state == true)
+    ZSkillorM1 = state
 end
 
 function SilentAimModule:Pause()
