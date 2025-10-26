@@ -390,62 +390,77 @@ spawn(function()
     end
 end)
 
+local Mouse = nil
+
 if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function()
+    local ok2, okResult = pcall(function()
         return require(MouseModule)
     end)
 
-    if ok2 and Mouse then
+    if ok2 and okResult then
+        if type(okResult) == "table" then
+            Mouse = okResult
+        else
+            Mouse = nil
+        end
+    else
+        Mouse = nil
+    end
+
+    if Mouse then
         local Character = player.Character or player.CharacterAdded:Wait()
         local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-
         if RootPart then
             pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
+                if type(Mouse) == "table" then
+                    Mouse.Hit = CFrame.new(RootPart.Position)
+                    Mouse.Target = RootPart
+                end
             end)
         else
             task.spawn(function()
                 local Character = player.Character or player.CharacterAdded:Wait()
                 local RootPart = Character:WaitForChild("HumanoidRootPart")
-
                 pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
+                    if type(Mouse) == "table" then
+                        Mouse.Hit = CFrame.new(RootPart.Position)
+                        Mouse.Target = RootPart
+                    end
                 end)
             end)
         end
+    end
 
-        RunService.Heartbeat:Connect(function()
-            if Mouse and ZSkillorM1 and SilentAimPlayersEnabled = true and SilentAimNPCsEnabled = true then
-                local targetCFrame
+    RunService.Heartbeat:Connect(function()
+        if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
+            local targetCFrame = nil
 
-                if PlayersPosition then
-                    targetCFrame = CFrame.new(PlayersPosition)
-                elseif NPCPosition then
-                    targetCFrame = CFrame.new(NPCPosition)
-                end
+            if PlayersPosition then
+                targetCFrame = CFrame.new(PlayersPosition)
+            elseif NPCPosition then
+                targetCFrame = CFrame.new(NPCPosition)
+            end
 
-                if targetCFrame then
-                    pcall(function()
+            if targetCFrame then
+                pcall(function()
+                    if type(Mouse) == "table" then
                         Mouse.Hit = targetCFrame
                         Mouse.Target = nil
-                    end)
+                    end
+                end)
 
-                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                    local MouseModule = ReplicatedStorage:FindFirstChild("Mouse")
-
-                    if MouseModule then
-                        local success, MouseData = pcall(require, MouseModule)
-                        if success and type(MouseData) == "table" then
-                            MouseData.Hit = targetCFrame
-                            MouseData.Target = nil
-                        end
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")
+                if MouseModuleCheck then
+                    local ok, MouseData = pcall(require, MouseModuleCheck)
+                    if ok and type(MouseData) == "table" then
+                        MouseData.Hit = targetCFrame
+                        MouseData.Target = nil
                     end
                 end
             end
-        end)
-    end
+        end
+    end)
 end
 
 local HasTag = function(tagName)
