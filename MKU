@@ -61,6 +61,8 @@ Section:NewLabel("Status: " .. execStatus)
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Fixed Z Skills Work(Except Godhuman Z) ✔")
+Section:NewLabel("• Added Gun Fast Shoot ✔")
 Section:NewLabel("• Added Fruit M1 Closet Attack ✔")
 Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbo ✔")
 Section:NewLabel("• Added Select Target for Silent aim ✔")
@@ -186,6 +188,11 @@ local HighlightToggle = Section:NewToggle("・Main Highlight", "Current Target H
     Settings["Highlight"] = state
 end)
 
+local ZskillMOneToggle = Section:NewToggle("・Z Skills(except Godhuman Z) Or M1(Portal)", "Silent Aim That Work Some Skills", function(state)
+    SilentAimModule:SetZSkillorM1(state)
+    Settings["Zskillmone"] = state
+end)
+
 local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
@@ -259,11 +266,6 @@ local AntiAFKToggle = Section:NewToggle("・AntiAfk", "AntiAfk only on before yo
     Settings["AntiAFK"] = state
 end)
 
-local FastShootToggle = Section:NewToggle("・Fast Shoot |warn dragonstorm", "Fast Shoot", function(state)
-    StuffsModule:SetFastShoot(state)
-    Settings["FastShoot"] = state
-end)
-
 Section:NewTextBox("Jump Power", "JumpValue", function(jumpfunc)
   getgenv().JumpValue = jumpfunc
     if getgenv().JumpValue then
@@ -289,6 +291,11 @@ end)
 local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(state)
     SilentAimModule:SetAutoKen(state)
     Settings["AutoKen"] = state
+end)
+
+local FastShootToggle = Section:NewToggle("・Fast Shoot", "Fast Shoot", function(state)
+    StuffsModule:SetFastShoot(state)
+    Settings["FastShoot"] = state
 end)
 
 local Tab = Window:NewTab("⚙・Settings Manager")
@@ -381,7 +388,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     Highlight = HighlightToggle,
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
     SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
-    FastShoot = FastShootToggle
+    FastShoot = FastShootToggle,
+    Zskillmone =ZskillMOneToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
