@@ -384,45 +384,44 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- update namecall hook: also handle InvokeServer so TAP can use the real mouse
-local old = gg.__namecall
-gg.__namecall = newcclosure(function(...)
-    local method = getnamecallmethod()
-    local args = {...}
+spawn(function()
+    local success, gg = pcall(function() return getrawmetatable(game) end)
+    if not success or not gg then return end
+    local old = gg.__namecall
+    if not old then return end
 
-    -- keep existing FireServer replacement logic (unchanged)
-    local targetPos = nil
-    if SilentAimPlayersEnabled and PlayersPosition then
-        targetPos = PlayersPosition
-    elseif SilentAimNPCsEnabled and NPCPosition then
-        targetPos = NPCPosition
-    end
+    setreadonly(gg, false)
+    gg.__namecall = newcclosure(function(...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-    if targetPos and tostring(method) == "FireServer" then
-        if tostring(args[1]) == "RemoteEvent" then
-            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
-                args[2] = targetPos
-                return old(unpack(args))
-            end
+        local targetPos = nil
+        if SilentAimPlayersEnabled and PlayersPosition then
+            targetPos = PlayersPosition
+        elseif SilentAimNPCsEnabled and NPCPosition then
+            targetPos = NPCPosition
         end
-    end
 
-    -- NEW: if a RemoteFunction InvokeServer is used for TAP, restore the real mouse args
-    if tostring(method) == "InvokeServer" then
-        -- many RemoteFunction invocations use a string like "TAP" as first arg
-        if typeof(args[1]) == "string" and args[1] == "TAP" then
-            -- decompiled shows InvokeServer("TAP", tbl[1], tbl[2])
-            -- restore tbl[1] from realMouseHit if available
-            if realMouseHit then
-                args[2] = realMouseHit.p
-            end
-            -- args[3] could be HRP or position; restore if needed similarly using realMouseTarget
-            -- then call original
-            return old(unpack(args))
-        end
-    end
+        if targetPos and tostring(method) == "FireServer" then
+	        if tostring(args[1]) == "RemoteEvent" then
+	            if tostring(args[2]) ~= "true" and tostring(args[2]) ~= "false" then
+	                args[2] = targetPos
+	                return old(unpack(args))
+	            end
+	        end
+	    end
 
-    return old(...)
+	    if tostring(method) == "InvokeServer" then
+	        if typeof(args[1]) == "string" and args[1] == "TAP" then
+	            if realMouseHit then
+	                args[2] = realMouseHit.p
+	            end
+	            return old(unpack(args))
+	        end
+	    end
+        return old(...)
+    end)
+    setreadonly(gg, true)
 end)
 
 local HasTag = function(tagName)
