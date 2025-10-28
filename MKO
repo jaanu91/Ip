@@ -1,33 +1,3 @@
-
-local url = "https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Uo"
-local ok, src = pcall(function() return game:HttpGet(url) end)
-print("HttpGet ok:", ok)
-if ok then
-    print("Response length:", (type(src) == "string" and #src) or "not string")
-else
-    print("HttpGet error:", src)
-end
-
-local success, fnOrErr = pcall(function() return loadstring(src) end)
-print("loadstring ok:", success, fnOrErr and type(fnOrErr) or fnOrErr)
-
-local VSkillModule = nil
-if success and type(fnOrErr) == "function" then
-    local ok2, ret = pcall(fnOrErr)
-    print("executed module ok:", ok2, "type:", type(ret))
-    VSkillModule = ok2 and ret or nil
-else
-    print("module function not available")
-end
-
-print("VSkillModule:", VSkillModule)
-if VSkillModule then
-    for k, v in pairs(VSkillModule) do
-        print("VSkillModule key:", k, "type:", type(v))
-    end
-end
-
-
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local Character = player.Character or player.CharacterAdded:Wait()
