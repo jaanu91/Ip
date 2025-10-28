@@ -283,4 +283,43 @@ function OthersStuffsModule.StartFruitNotifier()
     end)
 end
 
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+local function antiBan()
+    if not localPlayer then
+        return
+    end
+
+    local character = localPlayer.Character
+    if character then
+        local charScriptsToRemove = {
+            "General", "Shiftlock", "FallDamage", "4444",
+            "CamBob", "JumpCD", "Looking", "Run"
+        }
+
+        for _, descendant in ipairs(character:GetDescendants()) do
+            if descendant:IsA("LocalScript") and table.find(charScriptsToRemove, descendant.Name) then
+                descendant:Destroy()
+            end
+        end
+    end
+
+    local playerScripts = localPlayer:FindFirstChild("PlayerScripts")
+    if playerScripts then
+        local playerScriptsToRemove = {
+            "RobloxMotor6DBugFix", "Clans", "Codes",
+            "CustomForceField", "MenuBloodSp", "PlayerList"
+        }
+
+        for _, descendant in ipairs(playerScripts:GetDescendants()) do
+            if descendant:IsA("LocalScript") and table.find(playerScriptsToRemove, descendant.Name) then
+                descendant:Destroy()
+            end
+        end
+    end
+end
+
+antiBan()
+
 return OthersStuffsModule
