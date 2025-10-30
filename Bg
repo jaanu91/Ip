@@ -625,22 +625,4 @@ function SilentAimModule:SetMiniToggleNpcSilentAim(state)
     end
 end
 
-function SilentAimModule:SyncMiniUI()
-	if MiniPlayerCreated and MiniPlayerState then
-		MiniPlayerState.value = SilentAimPlayersEnabled
-		if MiniPlayerGui and MiniPlayerGui:FindFirstChildOfClass("TextButton") then
-			local btn = MiniPlayerGui:FindFirstChildOfClass("TextButton")
-			btn.Text = "Player " .. (SilentAimPlayersEnabled and "ON" or "OFF")
-		end
-	end
-
-	if MiniNpcCreated and MiniNpcState then
-		MiniNpcState.value = SilentAimNPCsEnabled
-		if MiniNpcGui and MiniNpcGui:FindFirstChildOfClass("TextButton") then
-			local btn = MiniNpcGui:FindFirstChildOfClass("TextButton")
-			btn.Text = "NPC " .. (SilentAimNPCsEnabled and "ON" or "OFF")
-		end
-	end
-end
-
 return SilentAimModule
