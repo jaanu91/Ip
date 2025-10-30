@@ -296,7 +296,7 @@ local function clearHighlight()
     end
 end
 
-RunService.Heartbeat:Connect(function()
+RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
@@ -390,8 +390,6 @@ spawn(function()
     end
 end)
 
-local Mouse = nil
-
 if MouseModule and typeof(MouseModule) == "Instance" then
     local ok2, okResult = pcall(function()
         return require(MouseModule)
@@ -431,7 +429,7 @@ if MouseModule and typeof(MouseModule) == "Instance" then
         end
     end
 
-    RunService.Heartbeat:Connect(function()
+    RunService.RenderStepped:Connect(function()
         if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
             local targetCFrame = nil
 
@@ -449,10 +447,8 @@ if MouseModule and typeof(MouseModule) == "Instance" then
                     end
                 end)
 
-                local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")
-                if MouseModuleCheck then
-                    local ok, MouseData = pcall(require, MouseModuleCheck)
+                if MouseModule then
+                    local ok, MouseData = pcall(require, MouseModule)
                     if ok and type(MouseData) == "table" then
                         MouseData.Hit = targetCFrame
                         MouseData.Target = nil
@@ -521,16 +517,6 @@ function SilentAimModule:SetAutoKen(state)
 	AutoKen = state
 end
 
-function SilentAimModule:SetPlayerSilentAim(state)
-	UserWantsplayerAim = state
-	SilentAimPlayersEnabled = state
-end
-
-function SilentAimModule:SetNPCSilentAim(state)
-	UserWantsNPCAim = state
-	SilentAimNPCsEnabled = state
-end
-
 function SilentAimModule:SetZSkillorM1(state)
     ZSkillorM1 = state
 end
@@ -596,17 +582,75 @@ function SilentAimModule:SetPredictionAmount(num)
 	end
 end
 
+function SilentAimModule:SetPlayerSilentAim(state)
+    UserWantsplayerAim = state
+    SilentAimPlayersEnabled = state
+
+    if MiniPlayerCreated and MiniPlayerGui then
+        if MiniPlayerState then
+            MiniPlayerState.value = SilentAimPlayersEnabled
+        end
+
+        local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
+        if btn then
+            local grad = btn:FindFirstChildOfClass("UIGradient")
+            btn.Text = "Player" .. (SilentAimPlayersEnabled and " ON" or " OFF")
+            if grad then
+                grad.Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, SilentAimPlayersEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+                    ColorSequenceKeypoint.new(1, SilentAimPlayersEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+                }
+            end
+        end
+    end
+end
+
+function SilentAimModule:SetNPCSilentAim(state)
+    UserWantsNPCAim = state
+    SilentAimNPCsEnabled = state
+
+    if MiniNpcCreated and MiniNpcGui then
+        if MiniNpcState then
+            MiniNpcState.value = SilentAimNPCsEnabled
+        end
+
+        local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
+        if btn then
+            local grad = btn:FindFirstChildOfClass("UIGradient")
+            btn.Text = "NPC" .. (SilentAimNPCsEnabled and " ON" or " OFF")
+            if grad then
+                grad.Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, SilentAimNPCsEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+                    ColorSequenceKeypoint.new(1, SilentAimNPCsEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+                }
+            end
+        end
+    end
+end
+
 function SilentAimModule:SetMiniTogglePlayerSilentAim(state)
     if not MiniPlayerCreated and state then
         MiniPlayerState = { value = SilentAimPlayersEnabled }
         MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
             SilentAimPlayersEnabled = val
+            UserWantsplayerAim = val
         end)
         MiniPlayerCreated = true
     elseif MiniPlayerCreated then
-        MiniPlayerState.value = state
         if MiniPlayerGui then
             MiniPlayerGui.Enabled = state
+            local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
+            if btn then
+                local grad = btn:FindFirstChildOfClass("UIGradient")
+                btn.Text = "Player" .. (SilentAimPlayersEnabled and " ON" or " OFF")
+                if grad then
+                    grad.Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, SilentAimPlayersEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+                        ColorSequenceKeypoint.new(1, SilentAimPlayersEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+                    }
+                end
+                if MiniPlayerState then MiniPlayerState.value = SilentAimPlayersEnabled end
+            end
         end
     end
 end
@@ -616,32 +660,26 @@ function SilentAimModule:SetMiniToggleNpcSilentAim(state)
         MiniNpcState = { value = SilentAimNPCsEnabled }
         MiniNpcGui = createMiniToggle("NPC", UDim2.new(0,10,0,50), MiniNpcState, function(val)
             SilentAimNPCsEnabled = val
+            UserWantsNPCAim = val
         end)
         MiniNpcCreated = true
     elseif MiniNpcCreated then
-        MiniNpcState.value = state
         if MiniNpcGui then
             MiniNpcGui.Enabled = state
+            local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
+            if btn then
+                local grad = btn:FindFirstChildOfClass("UIGradient")
+                btn.Text = "NPC" .. (SilentAimNPCsEnabled and " ON" or " OFF")
+                if grad then
+                    grad.Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, SilentAimNPCsEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+                        ColorSequenceKeypoint.new(1, SilentAimNPCsEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+                    }
+                end
+                if MiniNpcState then MiniNpcState.value = SilentAimNPCsEnabled end
+            end
         end
     end
-end
-
-function SilentAimModule:SyncMiniUI()
-	if MiniPlayerCreated and MiniPlayerState then
-		MiniPlayerState.value = SilentAimPlayersEnabled
-		if MiniPlayerGui and MiniPlayerGui:FindFirstChildOfClass("TextButton") then
-			local btn = MiniPlayerGui:FindFirstChildOfClass("TextButton")
-			btn.Text = "Player " .. (SilentAimPlayersEnabled and "ON" or "OFF")
-		end
-	end
-
-	if MiniNpcCreated and MiniNpcState then
-		MiniNpcState.value = SilentAimNPCsEnabled
-		if MiniNpcGui and MiniNpcGui:FindFirstChildOfClass("TextButton") then
-			local btn = MiniNpcGui:FindFirstChildOfClass("TextButton")
-			btn.Text = "NPC " .. (SilentAimNPCsEnabled and "ON" or "OFF")
-		end
-	end
 end
 
 return SilentAimModule
