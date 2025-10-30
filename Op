@@ -296,7 +296,7 @@ local function clearHighlight()
     end
 end
 
-RunService.RenderStepped:Connect(function()
+table.insert(characterConnections, RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
@@ -429,7 +429,7 @@ if MouseModule and typeof(MouseModule) == "Instance" then
         end
     end
 
-    RunService.RenderStepped:Connect(function()
+    table.insert(characterConnections, RunService.RenderStepped:Connect(function()
         if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
             local targetCFrame = nil
 
