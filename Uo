@@ -66,11 +66,6 @@ UserInputService.TouchStarted:Connect(function(touch)
     local camera = workspace.CurrentCamera
     if not camera then return end
     
-    local guiObjects = UserInputService:GetGuiObjectsAtPosition(touch.Position.X, touch.Position.Y)
-    if guiObjects and #guiObjects > 0 then
-        return
-    end
-    
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = true
         
@@ -89,11 +84,6 @@ end)
 UserInputService.TouchEnded:Connect(function(touch)
     local camera = workspace.CurrentCamera
     if not camera then return end
-    
-    local guiObjects = UserInputService:GetGuiObjectsAtPosition(touch.Position.X, touch.Position.Y)
-    if guiObjects and #guiObjects > 0 then
-        return
-    end
     
     if touch.Position.X > camera.ViewportSize.X / 2 then
         rightTouchActive = false
