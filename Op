@@ -430,7 +430,7 @@ if MouseModule and typeof(MouseModule) == "Instance" then
         end  
     end  
 
-    RunService.RenderStepped:Connect(function()
+    RunService.Heartbeat:Connect(function()  
         if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then  
             local targetCFrame = nil  
 
