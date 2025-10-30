@@ -296,7 +296,7 @@ local function clearHighlight()
     end
 end
 
-table.insert(characterConnections, RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
@@ -416,7 +416,7 @@ if MouseModule and typeof(MouseModule) == "Instance" then
             end)
         end
 
-        table.insert(characterConnections, RunService.RenderStepped:Connect(function()
+        RunService.RenderStepped:Connect(function()
             if Mouse then
                 if PlayersPosition then
                     pcall(function()
