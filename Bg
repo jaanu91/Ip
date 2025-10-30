@@ -44,7 +44,6 @@ local MiniNpcState = nil
 local MiniPlayerCreated = false
 local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
-local Mouse = nil
 
 local characterConnections = {}
 local Skills = {"X"}
@@ -297,7 +296,7 @@ local function clearHighlight()
     end
 end
 
-RunService.Heartbeat:Connect(function()
+RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
@@ -430,7 +429,7 @@ if MouseModule and typeof(MouseModule) == "Instance" then
         end
     end
 
-    RunService.Heartbeat:Connect(function()
+    RunService.RenderStepped:Connect(function()
         if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then
             local targetCFrame = nil
 
@@ -448,10 +447,8 @@ if MouseModule and typeof(MouseModule) == "Instance" then
                     end
                 end)
 
-                local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")
-                if MouseModuleCheck then
-                    local ok, MouseData = pcall(require, MouseModuleCheck)
+                if MouseModule then
+                    local ok, MouseData = pcall(require, MouseModule)
                     if ok and type(MouseData) == "table" then
                         MouseData.Hit = targetCFrame
                         MouseData.Target = nil
