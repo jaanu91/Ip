@@ -390,46 +390,45 @@ spawn(function()
     end
 end)
 
+-- =====================
+-- Stable Mouse Handling
+-- =====================
 if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, Mouse = pcall(function()
-        return require(MouseModule)
-    end)
+    local success, Mouse = pcall(require, MouseModule)
+    if success and Mouse then
+        local function updateMouseTarget()
+	        if ZSkillorM1 then
+	            pcall(function()
+	                local targetPosition = nil
 
-    if ok2 and Mouse then
-        local Character = player.Character or player.CharacterAdded:Wait()
-        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+	                if PlayersPosition then
+	                    targetPosition = PlayersPosition
+	                elseif NPCPosition then
+	                    targetPosition = NPCPosition
+	                else
+	                    local Character = player.Character or player.CharacterAdded:Wait()
+	                    local Root = Character:FindFirstChild("HumanoidRootPart")
+	                    if Root then
+	                        targetPosition = Root.Position
+	                    end
+	                end
 
-        if RootPart then
-            pcall(function()
-                Mouse.Hit = CFrame.new(RootPart.Position)
-                Mouse.Target = RootPart
-            end)
-        else
-            task.spawn(function()
-                local Character = player.Character or player.CharacterAdded:Wait()
-                local RootPart = Character:WaitForChild("HumanoidRootPart")
+	                if targetPosition then
+	                    Mouse.Hit = CFrame.new(targetPosition)
+	                    Mouse.Target = workspace:FindPartOnRayWithIgnoreList(
+	                        Ray.new(camera.CFrame.Position, (targetPosition - camera.CFrame.Position).Unit * 9999),
+	                        {workspace._WorldOrigin, player.Character}
+	                    )
+	                end
+	            end)
+	        end
+		end
 
-                pcall(function()
-                    Mouse.Hit = CFrame.new(RootPart.Position)
-                    Mouse.Target = RootPart
-                end)
-            end)
-        end
+        RunService.RenderStepped:Connect(updateMouseTarget)
 
-        RunService.RenderStepped:Connect(function()
-            if Mouse then
-                if PlayersPosition then
-                    pcall(function()
-                        Mouse.Hit = CFrame.new(PlayersPosition)
-                        Mouse.Target = PlayersPosition
-                    end)
-                elseif NPCPosition then
-                    pcall(function()
-                        Mouse.Hit = CFrame.new(NPCPosition)
-                        Mouse.Target = NPCPosition
-                    end)
-                end
-            end
+        player.CharacterAdded:Connect(function()
+            task.wait(1)
+            updateMouseTarget()
         end)
     end
 end
