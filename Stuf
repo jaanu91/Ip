@@ -15,7 +15,6 @@ local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
 local FastAttackEnabled = false
-local FastShootEnabled = false
 local WalkWaterEnabled = false
 
 local savedSettings = {}
@@ -547,66 +546,6 @@ for _, v in pairs(getgc(true)) do
             end)
         end
     end
-end
-
-local function getNearestHumanoid()
-    local shortestDistance = math.huge
-    local nearestHumanoid = nil
-
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (humanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestHumanoid = plr.Character
-            end
-        end
-    end
-
-    for _, enemy in ipairs(workspace.Enemies:GetChildren()) do
-        if enemy:FindFirstChild("HumanoidRootPart") then
-            local distance = (humanoidRootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestHumanoid = enemy
-            end
-        end
-    end
-
-    return nearestHumanoid
-end
-
-local function getLeftUpperArm(humanoid)
-    if humanoid and humanoid.Parent then
-        return humanoid.Parent:FindFirstChild("LeftUpperArm")
-    end
-    return nil
-end
-
-local function shoot()
-    local target = getNearestHumanoid()
-    if target then
-        local leftUpperArm = getLeftUpperArm(target:FindFirstChild("Humanoid"))
-        if leftUpperArm then
-            local argsTemplate = { [1] = leftUpperArm.Position, [2] = {leftUpperArm} }
-            for i = 1, 100 do
-                game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/ShootGunEvent"):FireServer(unpack(argsTemplate))
-            end
-        end
-    end
-end
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if FastShootEnabled then
-	    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-	        shoot()
-		end
-    end
-end)
-
-function StuffsModule:SetFastShoot(state)
-    FastShootEnabled = state
 end
 
 function StuffsModule:SetFpsBoost(state)
