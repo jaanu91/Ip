@@ -382,7 +382,8 @@ OthersStuffsModule:ApplySettings(Settings, {
     Highlight = HighlightToggle,
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
     SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
-    Zskillmone =ZskillMOneToggle
+    Zskillmone = ZskillMOneToggle,
+    SilentAimPediction = SilentAimPedictionToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
