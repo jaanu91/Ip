@@ -70,6 +70,11 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.SilentAim:SetNPCSilentAim(Settings["SilentAimNPC"])
         Toggles.SilentAimNPC:UpdateToggle(nil, Settings["SilentAimNPC"])
     end
+    
+    if Settings["SilentAimPediction"] ~= nil then
+        Modules.SilentAim:SetPrediction(Settings["SilentAimPediction"])
+        Toggles.SilentAimPediction:UpdateToggle(nil, Settings["SilentAimPediction"])
+    end
 
     if Settings["SilentAimPredictionFuture"] then
         Modules.SilentAim:SetPredictionAmount(Settings["SilentAimPredictionFuture"])
@@ -122,11 +127,6 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
     if Settings["FastAttack"] ~= nil then
         Modules.Stuffs:SetFastAttack(Settings["FastAttack"])
         Toggles.FastAttack:UpdateToggle(nil, Settings["FastAttack"])
-    end
-    
-    if Settings["FastShoot"] ~= nil then
-        Modules.Stuffs:SetFastShoot(Settings["FastShoot"])
-        Toggles.FastShoot:UpdateToggle(nil, Settings["FastShoot"])
     end
 
     if Settings["WalkonWater"] ~= nil then
