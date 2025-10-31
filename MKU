@@ -61,13 +61,13 @@ Section:NewLabel("Status: " .. execStatus)
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Added Antiban ✔")
 Section:NewLabel("• Fixed Z Skills Work(Except Godhuman Z) ✔")
-Section:NewLabel("• Added Gun Fast Shoot ✔")
 Section:NewLabel("• Added Fruit M1 Closet Attack ✔")
-Section:NewLabel("• Fixed Buddy Sword X in Silent aimbot ✔")
+Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbo ✔")
+Section:NewLabel("• Added Select Target for Silent aim ✔")
 Section:NewLabel("• Added Auto Ken ✔")
 Section:NewLabel("• Added Select Target for Silent aim ✔")
+Section:NewLabel("• Added Bring Fruits ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -196,7 +196,7 @@ local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
 Section:NewButton("Join Discord", "Get Link Discord server", function()
-	local link = "https://discord.gg/cZ6HAFw6"
+	local link = "https://discord.gg/fKwqmB4C"
     if setclipboard then
         setclipboard(link)
         game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -292,11 +292,6 @@ local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(stat
     Settings["AutoKen"] = state
 end)
 
-local FastShootToggle = Section:NewToggle("・Fast Shoot", "Fast Shoot", function(state)
-    StuffsModule:SetFastShoot(state)
-    Settings["FastShoot"] = state
-end)
-
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -387,7 +382,6 @@ OthersStuffsModule:ApplySettings(Settings, {
     Highlight = HighlightToggle,
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
     SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
-    FastShoot = FastShootToggle,
     Zskillmone =ZskillMOneToggle
 })
 
