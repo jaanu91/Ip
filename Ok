@@ -37,13 +37,6 @@ elseif getexecutorname then
     end
 end
 
-local PlaceId = game.PlaceId
-local World2ID = 4442272183
-local World3ID = 7449423635
-
-local World2 = (PlaceId == World2ID)
-local World3 = (PlaceId == World3ID)
-
 local Window = Library.CreateLib("Sapi Hub BF PvP ˃ᴗ˂  |  " .. executor, UiSettingsModule.currentTheme)
 
 local Tab = Window:NewTab("⛓・Discord")
@@ -107,15 +100,13 @@ Section:NewToggle("・No Clip", "Use For Tween", function(state)
     RaidsModule:SetNoClip(state)
 end)
 
-if World2 then
-    Section:NewButton("Teleport Lab", "Teleport Lab Of Sea Two", function()
-		Tween2(CFrame.new(-6505.351, 255.138, -4506.073))
-	end)
-elseif World3 then
-    Section:NewButton("Teleport Lab", "Teleport Lab Of Sea Three", function()
-		Tween2(CFrame.new(-5038.623, 322.358, -2873.446))
-	end)
-end
+Section:NewButton("Teleport Lab(Sea Two)", "Teleport Lab Of Sea Two", function()
+	Tween2(CFrame.new(-6505.351, 255.138, -4506.073))
+end)
+
+Section:NewButton("Teleport Lab(Sea Third)", "Teleport Lab Of Sea Three", function()
+	Tween2(CFrame.new(-5038.623, 322.358, -2873.446))
+end)
 
 toggleButton.MouseButton1Click:Connect(function()
     Library:ToggleUI()
