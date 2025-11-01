@@ -68,8 +68,12 @@ Section:NewToggle("・Buy Chip", "Buy Chip From Selected Chip", function(state)
     RaidsModule:SetBuyChip(state)
 end)
 
-Section:NewToggle("・Start Raid", "Start Raid From Selected Chip", function(state)
-    RaidsModule:SetStartRaid(state)
+Section:NewToggle("・Start Raid(Second Sea)", "Start Raid From Selected Chip", function(state)
+    RaidsModule:SetStartRaidSecond(state)
+end)
+
+Section:NewToggle("・Start Raid(Third Sea)", "Start Raid From Selected Chip", function(state)
+    RaidsModule:SetStartRaidThird(state)
 end)
 
 Section:NewToggle("・Auto Next Island", "Auto Next Island", function(state)
