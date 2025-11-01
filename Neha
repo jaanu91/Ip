@@ -8,7 +8,8 @@ local workspace = game:GetService("Workspace")
 local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("WaterBase-Plane")
 
 local Auto_Buy_Chips_Raid = false
-local Auto_StartRaid = false
+local Auto_StartRaidSecond = false
+local Auto_StartRaidThird = false
 local AutoNextIsland = false
 local AutoKill = false
 local FastAttackEnabled = false
@@ -30,15 +31,6 @@ local function checkForWeapons()
 	end
 	return nil
 end
-
-local PlaceId = game.PlaceId
-local World2ID = 4442272183
-local World2VID = 79091703265657
-local World3ID = 7449423635
-
-local World2 = (PlaceId == World2ID)
-local World2V = (PlaceId == World2VID)
-local World3 = (PlaceId == World3ID)
 
 local SelectWeapon = checkForWeapons()
 
@@ -289,7 +281,7 @@ end)
 spawn(function()
     while task.wait(0.1) do
         pcall(function()
-            if not Auto_StartRaid then return end
+            if not Auto_StartRaidSecond then return end
 
             local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
             local mainGui = playerGui and playerGui:FindFirstChild("Main")
@@ -300,21 +292,48 @@ spawn(function()
                 local hasChip = backpack and backpack:FindFirstChild("Special Microchip")
 
                 if hasChip then
-                    while Auto_StartRaid and timerVisible == false and backpack:FindFirstChild("Special Microchip") do
-                        if World2 and World2V then
-                            local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("CircleIsland")
-                            cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
-                            cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
-                            if cd then
-                                fireclickdetector(cd)
-                            end
-                        elseif World3 then
-                            local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Boat Castle")
-                            cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
-                            cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
-                            if cd then
-                                fireclickdetector(cd)
-                            end
+                    while Auto_StartRaidSecond and timerVisible == false and backpack:FindFirstChild("Special Microchip") do                        
+                        local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("CircleIsland")
+                        cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
+                        cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
+                        if cd then
+                            fireclickdetector(cd)
+                        end
+
+                        task.wait(0.6)
+
+                        playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+                        mainGui = playerGui and playerGui:FindFirstChild("Main")
+                        timerVisible = mainGui and mainGui:FindFirstChild("Timer") and mainGui.Timer.Visible
+                        backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+                        if not backpack then break end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+spawn(function()
+    while task.wait(0.1) do
+        pcall(function()
+            if not Auto_StartRaidThird then return end
+
+            local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
+            local mainGui = playerGui and playerGui:FindFirstChild("Main")
+            local timerVisible = mainGui and mainGui:FindFirstChild("Timer") and mainGui.Timer.Visible
+
+            if timerVisible == false then
+                local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+                local hasChip = backpack and backpack:FindFirstChild("Special Microchip")
+
+                if hasChip then
+                    while Auto_StartRaidThird and timerVisible == false and backpack:FindFirstChild("Special Microchip") do
+                        local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Boat Castle")
+                        cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
+                        cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
+                        if cd then
+                            fireclickdetector(cd)
                         end
 
                         task.wait(0.6)
@@ -357,7 +376,7 @@ spawn(function()
                     if island and not visitedIslands[islandName] then
                         local distance = (island.Position - hrp.Position).Magnitude
 
-                        if distance <= 3000 then
+                        if distance <= 3400 then
                             Tween(island.CFrame)
                             visitedIslands[islandName] = true
                             wait(0.5)
@@ -517,8 +536,12 @@ function RaidsModule:SetNoClip(state: boolean)
     NoClip = state
 end
 
-function RaidsModule:SetStartRaid(state: boolean)
-    Auto_StartRaid = state
+function RaidsModule:SetStartRaidSecond(state: boolean)
+    Auto_StartRaidSecond = state
+end
+
+function RaidsModule:SetStartRaidThird(state: boolean)
+    Auto_StartRaidThird = state
 end
 
 function RaidsModule:SetAutoRaid(state: boolean)
