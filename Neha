@@ -33,9 +33,11 @@ end
 
 local PlaceId = game.PlaceId
 local World2ID = 4442272183
+local World2VID = 79091703265657
 local World3ID = 7449423635
 
 local World2 = (PlaceId == World2ID)
+local World2V = (PlaceId == World2VID)
 local World3 = (PlaceId == World3ID)
 
 local SelectWeapon = checkForWeapons()
@@ -299,7 +301,7 @@ spawn(function()
 
                 if hasChip then
                     while Auto_StartRaid and timerVisible == false and backpack:FindFirstChild("Special Microchip") do
-                        if World2 then
+                        if World2 and World2V then
                             local cd = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("CircleIsland")
                             cd = cd and cd:FindFirstChild("RaidSummon2") and cd.RaidSummon2:FindFirstChild("Button")
                             cd = cd and cd:FindFirstChild("Main") and cd.Main:FindFirstChild("ClickDetector")
