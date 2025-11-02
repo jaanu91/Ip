@@ -372,7 +372,7 @@ RunService.RenderStepped:Connect(function()
     if not lpHRP then return end
 
     local targetModel = nil
-    local desiredTargetPos = nil
+    local lookTargetPos = nil
 
     if SilentAimPlayersEnabled then
 	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
@@ -382,9 +382,9 @@ RunService.RenderStepped:Connect(function()
 			local hrp = getHRP(targetplayer.Character)
 			PlayersPosition = getPredictedPosition(hrp)
 			getgenv().PlayersPosition = PlayersPosition
+			lookTargetPos = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
-			desiredTargetPos = PlayersPosition
 		else
 			playersaimbot, PlayersPosition = nil, nil
 		end
@@ -401,6 +401,7 @@ RunService.RenderStepped:Connect(function()
 	        local hrp = getHRP(closestNPC)  
 	        NPCPosition = getPredictedPosition(hrp)  
 			getgenv().NPCPosition = NPCPosition
+			lookTargetPos = NPCPosition
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
@@ -413,15 +414,9 @@ RunService.RenderStepped:Connect(function()
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
 	end
-	if not desiredTargetPos and targetModel then
-        local hrp = getHRP(targetModel)
-        if hrp then
-            desiredTargetPos = hrp.Position
-        end
-    end
-    if currentTool and desiredTargetPos and isSkillReadyForTool(currentTool.Name) then
-        local targetCFrame = CFrame.lookAt(lpHRP.Position, desiredTargetPos)
-        lpHRP.CFrame = lpHRP.CFrame:Lerp(targetCFrame, math.clamp(dt * 20, 0, 1))
+    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) then
+        local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
+            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
     end
 end)
 
