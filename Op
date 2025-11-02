@@ -420,7 +420,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
     if currentTool and desiredTargetPos and isSkillReadyForTool(currentTool.Name) then
-        local targetCFrame = CFrame.lookAt(lpHRP.Position, targetFlatten)
+        local targetCFrame = CFrame.lookAt(lpHRP.Position, desiredTargetPos)
         lpHRP.CFrame = lpHRP.CFrame:Lerp(targetCFrame, math.clamp(dt * 20, 0, 1))
     end
 end)
