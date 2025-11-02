@@ -7,6 +7,7 @@ local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubuserconten
 local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
 local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local PlayerList = {"None"}
