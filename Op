@@ -416,7 +416,7 @@ RunService.RenderStepped:Connect(function()
 	end
     if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) then
         local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
-            lpHRP.CFrame = lpHRP.CFrame:Lerp(CFrame.new(lpHRP.Position, lpHRP.Position + lookVector), 0.2)
+            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
     end
 end)
 
