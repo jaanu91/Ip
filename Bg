@@ -344,6 +344,27 @@ local function clearHighlight()
     end
 end
 
+local function isSkillReadyForTool(toolName)
+    if not toolName then return false end
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if not playerGui then return false end
+    local skillsFolder = playerGui:FindFirstChild("Main") and playerGui.Main:FindFirstChild("Skills")
+    if not skillsFolder then return false end
+    local toolFrame = skillsFolder:FindFirstChild(toolName)
+    if not toolFrame then return false end
+
+    for _, skillKey in ipairs({"Z","X","C","V","F"}) do
+        local skill = toolFrame:FindFirstChild(skillKey)
+        if skill and skill:FindFirstChild("Cooldown") and skill.Cooldown:IsA("Frame") then
+            local cooldownSize = skill.Cooldown.Size.X.Scale
+            if cooldownSize == 1.0 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -351,6 +372,7 @@ RunService.RenderStepped:Connect(function()
     if not lpHRP then return end
 
     local targetModel = nil
+    local lookTargetPos = nil
 
     if SilentAimPlayersEnabled then
 	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
@@ -360,6 +382,7 @@ RunService.RenderStepped:Connect(function()
 			local hrp = getHRP(targetplayer.Character)
 			PlayersPosition = getPredictedPosition(hrp)
 			getgenv().PlayersPosition = PlayersPosition
+			lookTargetPos = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
 		else
@@ -378,17 +401,22 @@ RunService.RenderStepped:Connect(function()
 	        local hrp = getHRP(closestNPC)  
 	        NPCPosition = getPredictedPosition(hrp)  
 			getgenv().NPCPosition = NPCPosition
+			lookTargetPos = NPCPosition
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
 	        end  
 	    else  
 	        NPCaimbot, NPCPosition = nil, nil  
-	    end  
+	    end
 	elseif currentTargetType == "NPC" then
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
 	end
+    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) then
+        local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
+            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
+    end
 end)
 
 local function hookTool(tool)
