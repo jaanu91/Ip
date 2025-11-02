@@ -189,6 +189,54 @@ local function isAllyWithMe(targetplayer)
 	return false
 end
 
+-- =========================
+-- PC Keybind for Mini Toggles (G)
+-- =========================
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.G then
+        if MiniPlayerCreated and MiniPlayerGui and MiniPlayerGui.Enabled then
+            if MiniPlayerState then
+                MiniPlayerState.value = not MiniPlayerState.value
+                SilentAimPlayersEnabled = MiniPlayerState.value
+                UserWantsplayerAim = MiniPlayerState.value
+
+                local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
+                if btn then
+                    btn.Text = "Player" .. (MiniPlayerState.value and " ON" or " OFF")
+                    local grad = btn:FindFirstChildOfClass("UIGradient")
+                    if grad then
+                        grad.Color = ColorSequence.new{
+                            ColorSequenceKeypoint.new(0, MiniPlayerState.value and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+                            ColorSequenceKeypoint.new(1, MiniPlayerState.value and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+                        }
+                    end
+                end
+            end
+        end
+
+        if MiniNpcCreated and MiniNpcGui and MiniNpcGui.Enabled then
+            if MiniNpcState then
+                MiniNpcState.value = not MiniNpcState.value
+                SilentAimNPCsEnabled = MiniNpcState.value
+                UserWantsNPCAim = MiniNpcState.value
+
+                local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
+                if btn then
+                    btn.Text = "NPC" .. (MiniNpcState.value and " ON" or " OFF")
+                    local grad = btn:FindFirstChildOfClass("UIGradient")
+                    if grad then
+                        grad.Color = ColorSequence.new{
+                            ColorSequenceKeypoint.new(0, MiniNpcState.value and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
+                            ColorSequenceKeypoint.new(1, MiniNpcState.value and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
+                        }
+                    end
+                end
+            end
+        end
+    end
+end)
+
 local function isEnemy(targetplayer)
 	if not targetplayer or targetplayer == player then
 		return false
@@ -303,6 +351,7 @@ RunService.RenderStepped:Connect(function()
     if not lpHRP then return end
 
     local targetModel = nil
+    local lookTargetPos = nil
 
     if SilentAimPlayersEnabled then
 	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
@@ -312,11 +361,16 @@ RunService.RenderStepped:Connect(function()
 			local hrp = getHRP(targetplayer.Character)
 			PlayersPosition = getPredictedPosition(hrp)
 			getgenv().PlayersPosition = PlayersPosition
+			lookTargetPos = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
 		else
 			playersaimbot, PlayersPosition = nil, nil
 		end
+		if lookTargetPos then
+            local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
+            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
+        end
 	elseif currentTargetType == "player" then
 		playersaimbot, PlayersPosition = nil, nil
 		clearHighlight()
@@ -330,13 +384,18 @@ RunService.RenderStepped:Connect(function()
 	        local hrp = getHRP(closestNPC)  
 	        NPCPosition = getPredictedPosition(hrp)  
 			getgenv().NPCPosition = NPCPosition
+			lookTargetPos = NPCPosition
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
 	        end  
 	    else  
 	        NPCaimbot, NPCPosition = nil, nil  
-	    end  
+	    end
+		if lookTargetPos then
+            local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
+            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
+        end
 	elseif currentTargetType == "NPC" then
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
@@ -354,6 +413,10 @@ end
 
 local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
+end
+
+local function isNotValidCondition()
+    return (currentTool and currentTool.Name == "Lightning-Lightning")
 end
 
 spawn(function()
@@ -390,77 +453,79 @@ spawn(function()
     end
 end)
 
-if MouseModule and typeof(MouseModule) == "Instance" then
-    local ok2, okResult = pcall(function()
-        return require(MouseModule)
-    end)
+if not isNotValidCondition() then
+	if MouseModule and typeof(MouseModule) == "Instance" then
+        local ok2, okResult = pcall(function()
+            return require(MouseModule)
+        end)
 
-    if ok2 and okResult then  
-        if type(okResult) == "table" then  
-            Mouse = okResult  
+        if ok2 and okResult then  
+            if type(okResult) == "table" then  
+                Mouse = okResult  
+            else  
+                Mouse = nil  
+            end  
         else  
             Mouse = nil  
         end  
-    else  
-        Mouse = nil  
-    end  
 
-    if Mouse then  
-        local Character = player.Character or player.CharacterAdded:Wait()  
-        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")  
+        if Mouse then  
+            local Character = player.Character or player.CharacterAdded:Wait()  
+            local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")  
 
-        if RootPart then  
-            pcall(function()  
-                if type(Mouse) == "table" then  
-                    Mouse.Hit = CFrame.new(RootPart.Position)  
-                    Mouse.Target = RootPart  
-                end  
-            end)  
-        else  
-            task.spawn(function()  
-                local Character = player.Character or player.CharacterAdded:Wait()  
-                local RootPart = Character:WaitForChild("HumanoidRootPart")  
+            if RootPart then  
                 pcall(function()  
                     if type(Mouse) == "table" then  
                         Mouse.Hit = CFrame.new(RootPart.Position)  
                         Mouse.Target = RootPart  
                     end  
                 end)  
-            end)  
-        end  
-    end  
-
-    RunService.Heartbeat:Connect(function()  
-        if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then  
-            local targetCFrame = nil  
-
-            if PlayersPosition then  
-                targetCFrame = CFrame.new(PlayersPosition)  
-            elseif NPCPosition then  
-                targetCFrame = CFrame.new(NPCPosition)  
-            end  
-
-            if targetCFrame then  
-                pcall(function()  
-                    if type(Mouse) == "table" then  
-                        Mouse.Hit = targetCFrame  
-                        Mouse.Target = nil  
-                    end  
+            else  
+                task.spawn(function()  
+                    local Character = player.Character or player.CharacterAdded:Wait()  
+                    local RootPart = Character:WaitForChild("HumanoidRootPart")  
+                    pcall(function()  
+                        if type(Mouse) == "table" then  
+                            Mouse.Hit = CFrame.new(RootPart.Position)  
+                            Mouse.Target = RootPart  
+                        end  
+                    end)  
                 end)  
+            end  
+        end  
 
-                local ReplicatedStorage = game:GetService("ReplicatedStorage")  
-                local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")  
+        RunService.Heartbeat:Connect(function()  
+            if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then  
+                local targetCFrame = nil  
 
-                if MouseModuleCheck then  
-                    local ok, MouseData = pcall(require, MouseModuleCheck)  
-                    if ok and type(MouseData) == "table" then  
-                        MouseData.Hit = targetCFrame  
-                        MouseData.Target = nil  
+                if PlayersPosition then  
+                    targetCFrame = CFrame.new(PlayersPosition)  
+                elseif NPCPosition then  
+                    targetCFrame = CFrame.new(NPCPosition)  
+                end  
+
+                if targetCFrame then  
+                    pcall(function()  
+                        if type(Mouse) == "table" then  
+                            Mouse.Hit = targetCFrame  
+                            Mouse.Target = nil  
+                        end  
+                    end)  
+
+                    local ReplicatedStorage = game:GetService("ReplicatedStorage")  
+                    local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")  
+
+                    if MouseModuleCheck then  
+                        local ok, MouseData = pcall(require, MouseModuleCheck)  
+                        if ok and type(MouseData) == "table" then  
+                            MouseData.Hit = targetCFrame  
+                            MouseData.Target = nil  
+                        end  
                     end  
                 end  
             end  
-        end  
-    end)
+        end)
+    end
 end
 
 local HasTag = function(tagName)
