@@ -405,7 +405,6 @@ RunService.RenderStepped:Connect(function()
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
-				desiredTargetPos = NPCPosition
 	        end  
 	    else  
 	        NPCaimbot, NPCPosition = nil, nil  
