@@ -388,6 +388,12 @@ OthersStuffsModule:ApplySettings(Settings, {
 
 OthersStuffsModule.StartFruitNotifier()
 
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.M then
+        Library:ToggleUI()
+    end
+end)
+
 toggleButton.MouseButton1Click:Connect(function()
     Library:ToggleUI()
 end)
