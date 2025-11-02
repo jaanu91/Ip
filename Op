@@ -344,62 +344,26 @@ local function clearHighlight()
     end
 end
 
--- =========================
--- Tool and Cooldown Checker
--- =========================
-task.spawn(function()
-    while task.wait() do
-        local lpChar = player.Character
-        if not lpChar or not lpChar:FindFirstChild("HumanoidRootPart") then continue end
-        local hrp = lpChar.HumanoidRootPart
+local function isSkillReadyForTool(toolName)
+    if not toolName then return false end
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if not playerGui then return false end
+    local skillsFolder = playerGui:FindFirstChild("Main") and playerGui.Main:FindFirstChild("Skills")
+    if not skillsFolder then return false end
+    local toolFrame = skillsFolder:FindFirstChild(toolName)
+    if not toolFrame then return false end
 
-        local equippedTool = lpChar:FindFirstChildOfClass("Tool")
-        if equippedTool then
-            local toolName = equippedTool.Name
-            local playerGui = player:FindFirstChild("PlayerGui")
-            if playerGui then
-                local skillsFolder = playerGui:FindFirstChild("Main") and playerGui.Main:FindFirstChild("Skills")
-                if skillsFolder and skillsFolder:FindFirstChild(toolName) then
-                    local toolSkillFrame = skillsFolder[toolName]
-                    for _, skillKey in ipairs({"Z", "X", "C", "V", "F"}) do
-                        local skill = toolSkillFrame:FindFirstChild(skillKey)
-                        if skill and skill:FindFirstChild("Cooldown") then
-                            local cooldownFrame = skill.Cooldown
-                            local cooldownSize = cooldownFrame.Size.X.Scale
-
-                            if cooldownSize == 1.0 then
-                                local nearestTarget = nil
-                                if SilentAimPlayersEnabled and not SilentAimNPCsEnabled then
-                                    nearestTarget = getClosestplayer(hrp)
-                                elseif SilentAimNPCsEnabled and not SilentAimPlayersEnabled then
-                                    nearestTarget = getClosestNPC(hrp)
-                                elseif SilentAimNPCsEnabled and SilentAimPlayersEnabled then
-                                    local npc = getClosestNPC(hrp)
-                                    local plr = getClosestplayer(hrp)
-                                    if npc and plr then
-                                        local distNPC = (getHRP(npc).Position - hrp.Position).Magnitude
-                                        local distPlr = (getHRP(plr.Character).Position - hrp.Position).Magnitude
-                                        nearestTarget = distPlr < distNPC and plr or npc
-                                    else
-                                        nearestTarget = npc or plr
-                                    end
-                                end
-
-                                if nearestTarget then
-                                    local targetHRP = getHRP(nearestTarget.Character or nearestTarget)
-                                    if targetHRP then
-                                        hrp.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(targetHRP.Position.X, hrp.Position.Y, targetHRP.Position.Z))
-                                    end
-                                end
-                            end
-                            -- else if cooldown < 1.0 then ignore aiming
-                        end
-                    end
-                end
+    for _, skillKey in ipairs({"Z","X","C","V","F"}) do
+        local skill = toolFrame:FindFirstChild(skillKey)
+        if skill and skill:FindFirstChild("Cooldown") and skill.Cooldown:IsA("Frame") then
+            local cooldownSize = skill.Cooldown.Size.X.Scale
+            if cooldownSize == 1.0 then
+                return true
             end
         end
     end
-end)
+    return false
+end
 
 RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
@@ -408,7 +372,7 @@ RunService.RenderStepped:Connect(function()
     if not lpHRP then return end
 
     local targetModel = nil
-    local lookTargetPos = nil
+    local desiredTargetPos = nil
 
     if SilentAimPlayersEnabled then
 	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
@@ -420,6 +384,7 @@ RunService.RenderStepped:Connect(function()
 			getgenv().PlayersPosition = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
+			desiredTargetPos = PlayersPosition
 		else
 			playersaimbot, PlayersPosition = nil, nil
 		end
@@ -439,6 +404,7 @@ RunService.RenderStepped:Connect(function()
 	        if not targetModel then  
 	            targetModel = closestNPC  
 	            applyHighlight(targetModel, "NPC")  
+				desiredTargetPos = NPCPosition
 	        end  
 	    else  
 	        NPCaimbot, NPCPosition = nil, nil  
@@ -447,6 +413,16 @@ RunService.RenderStepped:Connect(function()
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
 	end
+	if not desiredTargetPos and targetModel then
+        local hrp = getHRP(targetModel)
+        if hrp then
+            desiredTargetPos = hrp.Position
+        end
+    end
+    if currentTool and desiredTargetPos and isSkillReadyForTool(currentTool.Name) then
+        local targetCFrame = CFrame.lookAt(lpHRP.Position, targetFlatten)
+        lpHRP.CFrame = lpHRP.CFrame:Lerp(targetCFrame, math.clamp(dt * 20, 0, 1))
+    end
 end)
 
 local function hookTool(tool)
