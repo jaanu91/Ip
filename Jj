@@ -231,15 +231,13 @@ attachExistingTools()
 RunService.RenderStepped:Connect(function()
 	if YamaHopEnabled and isValidCondition() and isSkillReadyForTool(currentTool and currentTool.Name) then
 		local ok, h = pcall(function() return humanoid end)
-		if ok and h and h.Parent then			
+		if ok and h and h.Parent then
 			pcall(function()
-				task.wait(0.3)					
+				task.wait(0.3)
 				EquipTool(SelectWeapon)
 				task.wait(0.2)
 				virtualClick(500, 300)
-				task.defer(function()
-					h:ChangeState(Enum.HumanoidStateType.Jumping)
-				end)
+				task.defer(function() h:ChangeState(Enum.HumanoidStateType.Jumping) end)
 				pcall(clickDodge)
 			end)
 		end
