@@ -21,6 +21,7 @@ local currentTool = nil
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
+local weaponsToCheck = {"Soul Guiter"}
 
 -- =========================
 -- Team Check
@@ -85,6 +86,12 @@ local function clickActivateAbility()
     end
 end
 
+local function clickDodge()
+    if CommE then
+        CommE:FireServer("Dodge")
+    end
+end
+
 local function startV3Loop()
     if v3LoopRunning then return end
     v3LoopRunning = true
@@ -106,6 +113,25 @@ end
 
 local function isValidCondition()
     return (currentTool and currentTool.Name == "Yama")
+end
+
+local function checkForWeapons()
+	for _, weaponName in ipairs(weaponsToCheck) do
+		if backpack:FindFirstChild(weaponName) or character:FindFirstChild(weaponName) then
+			return weaponName
+		end
+	end
+	return nil
+end
+
+local SelectWeapon = checkForWeapons()
+
+function EquipTool(ToolSe)
+    if game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe) then
+        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe)
+        wait()
+        game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+    end
 end
 
 -- =========================
@@ -137,7 +163,13 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 if ok and h and h.Parent then
                     task.defer(function()
                         pcall(function()
+	                        task.wait(0.3)
+	                        EquipTool(SelectWeapon)
+	                        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
+					        task.wait(0.1)
+					        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
                             h:ChangeState(Enum.HumanoidStateType.Jumping)
+                            pcall(clickDodge)
                         end)
                     end)
                 end
