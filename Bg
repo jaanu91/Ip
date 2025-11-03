@@ -365,6 +365,10 @@ local function isSkillReadyForTool(toolName)
     return false
 end
 
+local function isNotDoughValidCondition()
+    return (currentTool and currentTool.Name == "Dough-Dough")
+end
+
 RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -413,7 +417,7 @@ RunService.RenderStepped:Connect(function()
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
 	end
-    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) then
+    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) and not isNotDoughValidCondition() then
         local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
             lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
     end
