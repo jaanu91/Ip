@@ -9,6 +9,8 @@ local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
 local vim = game:GetService("VirtualInputManager")
+local vu = game:GetService("VirtualUser")
+local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local V3Enabled = false
@@ -132,6 +134,18 @@ end
 
 local SelectWeapon = checkForWeapons()
 
+local function virtualClick(x, y)
+    if UIS.TouchEnabled then
+        vim:SendTouchEvent(x, y, Enum.UserInputState.Begin, false, game)
+        task.wait(0.05)
+        vim:SendTouchEvent(x, y, Enum.UserInputState.End, false, game)
+    else
+        vu:Button1Down(Vector2.new(x, y), workspace.CurrentCamera.CFrame)
+        task.wait(0.05)
+        vu:Button1Up(Vector2.new(x, y), workspace.CurrentCamera.CFrame)
+    end
+end
+
 function EquipTool(ToolSe)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe) then
         local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe)
@@ -222,9 +236,7 @@ RunService.RenderStepped:Connect(function()
 				task.wait(0.3)					
 				EquipTool(SelectWeapon)
 				task.wait(0.2)
-				vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
-				task.wait(0.1)
-				vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
+				virtualClick(500, 300)
 				task.defer(function()
 					h:ChangeState(Enum.HumanoidStateType.Jumping)
 				end)
@@ -378,7 +390,6 @@ end)
 
 do
 	local player = game:GetService("Players").LocalPlayer
-	local vu = game:GetService("VirtualUser")
 	
 	if antiAfkEnabled then
 		player.Idled:Connect(function()
