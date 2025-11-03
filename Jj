@@ -132,8 +132,6 @@ end
 
 local SelectWeapon = checkForWeapons()
 
-equipSkullGuitar()
-
 local function virtualClick()
 	vim:SendMouseButtonEvent(
 		workspace.CurrentCamera.ViewportSize.X / 2, -- X position (center of screen)
