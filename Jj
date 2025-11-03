@@ -129,9 +129,7 @@ local function checkForWeapons()
 	return nil
 end
 
-local function getSelectedWeapon()
-	return checkForWeapons()
-end
+local SelectWeapon = checkForWeapons()
 
 function EquipTool(ToolSe)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe) then
@@ -171,7 +169,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                     task.defer(function()
                         pcall(function()
 	                        task.wait(0.3)
-	                        EquipTool(getSelectedWeapon())
+	                        EquipTool(SelectWeapon)
 	                        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
 					        task.wait(0.1)
 					        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
