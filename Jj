@@ -22,7 +22,7 @@ local currentTool = nil
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
-local weaponsToCheck = {"Soul Guiter"}
+local weaponsToCheck = {"Skull Guitar"}
 
 -- =========================
 -- Team Check
