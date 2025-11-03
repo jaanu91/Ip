@@ -11,9 +11,11 @@ local humanoid = char:WaitForChild("Humanoid")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
+local YamaHopEnabled = false 
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
+local antiAfkEnabled = false
 
 local currentTool = nil
 local ESPs = {}
@@ -102,6 +104,10 @@ local function stopV3Loop()
     v3Loop = nil
 end
 
+local function isValidCondition()
+    return (currentTool and currentTool.Name == "Yama")
+end
+
 -- =========================
 -- V Skill Detection
 -- =========================
@@ -115,6 +121,18 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
 
         if typeof(a1) == "string" and a1:upper() == "DODGE" then
             if BunnyHopEnabled then
+                local ok, h = pcall(function() return humanoid end)
+                if ok and h and h.Parent then
+                    task.defer(function()
+                        pcall(function()
+                            h:ChangeState(Enum.HumanoidStateType.Jumping)
+                        end)
+                    end)
+                end
+            end
+        end
+        if typeof(a1) == "string" and a1:upper() == "Z" then
+            if YamaHopEnabled and isValidCondition() then
                 local ok, h = pcall(function() return humanoid end)
                 if ok and h and h.Parent then
                     task.defer(function()
@@ -244,6 +262,28 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+do
+	local player = game:GetService("Players").LocalPlayer
+	local vu = game:GetService("VirtualUser")
+	local vim = game:GetService("VirtualInputManager")
+	
+	if antiAfkEnabled then
+		player.Idled:Connect(function()
+			pcall(function()
+		        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		        task.wait(1)
+		        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		    end)
+
+		    pcall(function()
+		        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
+		        task.wait(0.8)
+		        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
+		    end)
+		end)
+	end
+end
+
 -- =========================
 -- State Toggles
 -- =========================
@@ -260,10 +300,20 @@ function ESPModule:SetBunnyhop(state)
     BunnyHopEnabled = state
 end
 
+function ESPModule:SetYamahop(state)
+    YamaHopEnabled = state
+end
+
+function ESPModule:SetAntiAfk(state)
+    antiAfkEnabled = state
+end
+
 function ESPModule:SetBuso(state)
     BusoEnabled = state
     if state then
-        pcall(function() CommF:InvokeServer("Buso") end)
+	    if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
+	        pcall(function() CommF:InvokeServer("Buso") end)
+		end
     end
 end
 
@@ -281,11 +331,16 @@ local function onCharacterAdded(newChar)
     if BunnyHopEnabled then
         -- nothing extra needed, the hookmetamethod will keep working
     end
+    if YamaHopEnabled then
+        -- nothing extra needed, the hookmetamethod will keep working
+    end
     if V3Enabled then
         startV3Loop()
     end
     if BusoEnabled then
-        pcall(function() CommF:InvokeServer("Buso") end)
+        if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
+	        pcall(function() CommF:InvokeServer("Buso") end)
+		end
     end
 end
 
