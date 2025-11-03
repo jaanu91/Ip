@@ -9,6 +9,7 @@ local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
 local vim = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
@@ -137,6 +138,102 @@ function EquipTool(ToolSe)
     end
 end
 
+local function isSkillReadyForTool(toolName)
+    if not toolName then return false end
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if not playerGui then return false end
+    local skillsFolder = playerGui:FindFirstChild("Main") and playerGui.Main:FindFirstChild("Skills")
+    if not skillsFolder then return false end
+    local toolFrame = skillsFolder:FindFirstChild(toolName)
+    if not toolFrame then return false end
+
+    for _, skillKey in ipairs({"Z"}) do
+        local skill = toolFrame:FindFirstChild(skillKey)
+        if skill and skill:FindFirstChild("Cooldown") and skill.Cooldown:IsA("Frame") then
+            local cooldownSize = skill.Cooldown.Size.X.Scale
+            if cooldownSize == 1.0 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function watchTool(tool)
+    if not tool or typeof(tool) ~= "Instance" then return end
+    if tool:IsA("Tool") then
+        tool.Equipped:Connect(function()
+            currentTool = tool
+        end)
+        tool.Unequipped:Connect(function()
+            if currentTool == tool then
+                currentTool = nil
+            end
+        end)
+    end
+end
+
+local function attachExistingTools()
+    local backpack = player:FindFirstChild("Backpack")
+    local character = player.Character
+    if backpack then
+        for _, t in ipairs(backpack:GetChildren()) do
+            watchTool(t)
+        end
+    end
+    if character then
+        for _, t in ipairs(character:GetChildren()) do
+            watchTool(t)
+        end
+    end
+end
+
+player.ChildAdded:Connect(function(child)
+    if child.Name == "Backpack" or child == player.Character then
+        task.wait(0.1)
+        attachExistingTools()
+    end
+end)
+if player:FindFirstChild("Backpack") then
+    player.Backpack.ChildAdded:Connect(function(child)
+        watchTool(child)
+    end)
+end
+player.CharacterAdded:Connect(function(c)
+    char = c
+    humanoid = char:WaitForChild("Humanoid")
+    for _, t in ipairs(c:GetChildren()) do
+        watchTool(t)
+    end
+    c.ChildAdded:Connect(function(child)
+        watchTool(child)
+    end)
+end)
+
+attachExistingTools()
+
+RunService.RenderStepped:Connect(function()
+	if YamaHopEnabled and isValidCondition() and isSkillReadyForTool(currentTool and currentTool.Name) then
+		local ok, h = pcall(function() return humanoid end)
+		if ok and h and h.Parent then
+			task.defer(function()
+				pcall(function()
+					task.wait(0.3)
+					local SelectWeapon = checkForWeapons()
+					if SelectWeapon then
+						EquipTool(SelectWeapon)
+						vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
+						task.wait(0.1)
+						vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
+					end
+					h:ChangeState(Enum.HumanoidStateType.Jumping)
+					pcall(clickDodge)
+				end)
+			end)
+		end
+	end
+end)
+
 -- =========================
 -- V Skill Detection
 -- =========================
@@ -160,27 +257,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                 end
             end
         end
-        if typeof(a1) == "string" and a1:upper() == "Z" then
-			if YamaHopEnabled and isValidCondition() then
-				local ok, h = pcall(function() return humanoid end)
-				if ok and h and h.Parent then
-					task.defer(function()
-						pcall(function()
-							task.wait(0.3)
-							local SelectWeapon = checkForWeapons()
-							if SelectWeapon then
-								EquipTool(SelectWeapon)
-								vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
-								task.wait(0.1)
-								vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
-							end
-							h:ChangeState(Enum.HumanoidStateType.Jumping)
-							pcall(clickDodge)
-						end)
-					end)
-				end
-			end
-		end
     end
     return old(self, ...)
 end)
