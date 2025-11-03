@@ -129,8 +129,6 @@ local function checkForWeapons()
 	return nil
 end
 
-local SelectWeapon = checkForWeapons()
-
 function EquipTool(ToolSe)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe) then
         local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe)
@@ -163,23 +161,26 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
             end
         end
         if typeof(a1) == "string" and a1:upper() == "Z" then
-            if YamaHopEnabled and isValidCondition() then
-                local ok, h = pcall(function() return humanoid end)
-                if ok and h and h.Parent then
-                    task.defer(function()
-                        pcall(function()
-	                        task.wait(0.3)
-	                        EquipTool(SelectWeapon)
-	                        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
-					        task.wait(0.1)
-					        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
-                            h:ChangeState(Enum.HumanoidStateType.Jumping)
-                            pcall(clickDodge)
-                        end)
-                    end)
-                end
-            end
-        end
+			if YamaHopEnabled and isValidCondition() then
+				local ok, h = pcall(function() return humanoid end)
+				if ok and h and h.Parent then
+					task.defer(function()
+						pcall(function()
+							task.wait(0.3)
+							local SelectWeapon = checkForWeapons()
+							if SelectWeapon then
+								EquipTool(SelectWeapon)
+								vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
+								task.wait(0.1)
+								vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
+							end
+							h:ChangeState(Enum.HumanoidStateType.Jumping)
+							pcall(clickDodge)
+						end)
+					end)
+				end
+			end
+		end
     end
     return old(self, ...)
 end)
