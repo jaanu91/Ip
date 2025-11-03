@@ -9,8 +9,6 @@ local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
 local vim = game:GetService("VirtualInputManager")
-local vu = game:GetService("VirtualUser")
-local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local V3Enabled = false
@@ -134,16 +132,26 @@ end
 
 local SelectWeapon = checkForWeapons()
 
-local function virtualClick(x, y)
-    if UIS.TouchEnabled then
-        vim:SendTouchEvent(x, y, Enum.UserInputState.Begin, false, game)
-        task.wait(0.05)
-        vim:SendTouchEvent(x, y, Enum.UserInputState.End, false, game)
-    else
-        vu:Button1Down(Vector2.new(x, y), workspace.CurrentCamera.CFrame)
-        task.wait(0.05)
-        vu:Button1Up(Vector2.new(x, y), workspace.CurrentCamera.CFrame)
-    end
+equipSkullGuitar()
+
+local function virtualClick()
+	vim:SendMouseButtonEvent(
+		workspace.CurrentCamera.ViewportSize.X / 2, -- X position (center of screen)
+		workspace.CurrentCamera.ViewportSize.Y / 2, -- Y position (center of screen)
+		0,
+		true,
+		game,
+		1
+	)	
+	task.wait(0.05)	
+	vim:SendMouseButtonEvent(
+		workspace.CurrentCamera.ViewportSize.X / 2,
+		workspace.CurrentCamera.ViewportSize.Y / 2,
+		0,
+		false,
+		game,
+		1
+	)
 end
 
 function EquipTool(ToolSe)
@@ -236,7 +244,7 @@ RunService.RenderStepped:Connect(function()
 				task.wait(0.3)
 				EquipTool(SelectWeapon)
 				task.wait(0.2)
-				virtualClick(500, 300)
+				virtualClick()
 				task.defer(function() h:ChangeState(Enum.HumanoidStateType.Jumping) end)
 				pcall(clickDodge)
 			end)
@@ -388,20 +396,28 @@ end)
 
 do
 	local player = game:GetService("Players").LocalPlayer
-	
+
 	if antiAfkEnabled then
 		player.Idled:Connect(function()
 			pcall(function()
-		        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-		        task.wait(1)
-		        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-		    end)
-
-		    pcall(function()
-		        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
-		        task.wait(0.8)
-		        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
-		    end)
+				vim:SendMouseButtonEvent(
+					workspace.CurrentCamera.ViewportSize.X / 2, -- X position (center of screen)
+					workspace.CurrentCamera.ViewportSize.Y / 2, -- Y position (center of screen)
+					0,
+					true,
+					game,
+					1
+				)
+				task.wait(0.05)
+				vim:SendMouseButtonEvent(
+					workspace.CurrentCamera.ViewportSize.X / 2,
+					workspace.CurrentCamera.ViewportSize.Y / 2,
+					0,
+					false,
+					game,
+					1
+				)
+			end)
 		end)
 	end
 end
