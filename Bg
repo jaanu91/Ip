@@ -353,7 +353,7 @@ local function isSkillReadyForTool(toolName)
     local toolFrame = skillsFolder:FindFirstChild(toolName)
     if not toolFrame then return false end
 
-    for _, skillKey in ipairs({"Z","X","C","V","F"}) do
+    for _, skillKey in ipairs({"Z","X","C","V"}) do
         local skill = toolFrame:FindFirstChild(skillKey)
         if skill and skill:FindFirstChild("Cooldown") and skill.Cooldown:IsA("Frame") then
             local cooldownSize = skill.Cooldown.Size.X.Scale
