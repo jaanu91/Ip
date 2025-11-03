@@ -8,6 +8,7 @@ local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
 local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
+local vim = game:GetService("VirtualInputManager")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
@@ -116,6 +117,10 @@ local function isValidCondition()
 end
 
 local function checkForWeapons()
+	local backpack = player:FindFirstChild("Backpack")
+	local character = player.Character
+	if not backpack or not character then return nil end
+
 	for _, weaponName in ipairs(weaponsToCheck) do
 		if backpack:FindFirstChild(weaponName) or character:FindFirstChild(weaponName) then
 			return weaponName
@@ -124,7 +129,9 @@ local function checkForWeapons()
 	return nil
 end
 
-local SelectWeapon = checkForWeapons()
+local function getSelectedWeapon()
+	return checkForWeapons()
+end
 
 function EquipTool(ToolSe)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe) then
@@ -164,7 +171,7 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
                     task.defer(function()
                         pcall(function()
 	                        task.wait(0.3)
-	                        EquipTool(SelectWeapon)
+	                        EquipTool(getSelectedWeapon())
 	                        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
 					        task.wait(0.1)
 					        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
@@ -297,7 +304,6 @@ end)
 do
 	local player = game:GetService("Players").LocalPlayer
 	local vu = game:GetService("VirtualUser")
-	local vim = game:GetService("VirtualInputManager")
 	
 	if antiAfkEnabled then
 		player.Idled:Connect(function()
