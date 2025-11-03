@@ -20,6 +20,7 @@ local v3LoopRunning = false
 local antiAfkEnabled = false
 
 local currentTool = nil
+local yamaLoop = nil
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
@@ -234,21 +235,37 @@ end)
 
 attachExistingTools()
 
-RunService.RenderStepped:Connect(function()
-	if YamaHopEnabled and isValidCondition() and isSkillReadyForTool(currentTool and currentTool.Name) then
-		local ok, h = pcall(function() return humanoid end)
-		if ok and h and h.Parent then
-			pcall(function()
-				task.wait(0.3)
-				EquipTool(SelectWeapon)
-				task.wait(0.2)
-				virtualClick()
-				task.defer(function() h:ChangeState(Enum.HumanoidStateType.Jumping) end)
-				pcall(clickDodge)
-			end)
+local function startYamaHop()
+	if yamaLoop then return end
+	yamaLoop = task.spawn(function()
+		while YamaHopEnabled do
+			if isValidCondition() and isSkillReadyForTool(currentTool and currentTool.Name) then
+				local ok, h = pcall(function() return humanoid end)
+				if ok and h and h.Parent then
+					pcall(function()
+						EquipTool(SelectWeapon)
+						task.wait(0.15)
+						virtualClick()
+						task.wait(0.1)
+						h:ChangeState(Enum.HumanoidStateType.Jumping)
+						task.wait(0.05)
+						clickDodge()
+					end)
+				end
+			end
+			task.wait(0.4) 
 		end
+		yamaLoop = nil
+	end)
+end
+
+local function stopYamaHop()
+	YamaHopEnabled = false
+	if yamaLoop then
+		task.cancel(yamaLoop)
+		yamaLoop = nil
 	end
-end)
+end
 
 -- =========================
 -- V Skill Detection
@@ -437,7 +454,12 @@ function ESPModule:SetBunnyhop(state)
 end
 
 function ESPModule:SetYamahop(state)
-    YamaHopEnabled = state
+	YamaHopEnabled = state
+	if state then
+		startYamaHop()
+	else
+		stopYamaHop()
+	end
 end
 
 function ESPModule:SetAntiAfk(state)
@@ -468,7 +490,7 @@ local function onCharacterAdded(newChar)
         -- nothing extra needed, the hookmetamethod will keep working
     end
     if YamaHopEnabled then
-        -- nothing extra needed, the hookmetamethod will keep working
+        startYamaHop()
     end
     if V3Enabled then
         startV3Loop()
