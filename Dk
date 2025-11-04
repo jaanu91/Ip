@@ -212,6 +212,11 @@ end
 -- Mini UI Buttons
 -- =========================
 local function createMiniToggle(name, position, stateVarRef, realVarSetter)
+	local playerGui = player:WaitForChild("PlayerGui")
+    if playerGui:FindFirstChild(name .. "MiniToggleGui") then
+        playerGui[name .. "MiniToggleGui"]:Destroy()
+    end
+    
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = name .. "MiniToggleGui"
     screenGui.ResetOnSpawn = false
@@ -323,6 +328,10 @@ end
 -- =========================
 -- V Skill Detection
 -- =========================
+if _G.AimlockHooked then
+    return AimlockModule
+end
+_G.AimlockHooked = true
 local old
 old = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
@@ -423,40 +432,51 @@ UserInputService.TouchEnded:Connect(function(touch)
 	end
 end)
 
--- =========================
--- Damage Counter Watch
--- =========================
 local function watchDamageCounter()
-    if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
+	if dmgConn then
+		pcall(function() dmgConn:Disconnect() end)
+		dmgConn = nil
+	end
 
-    local ok, dmgTextLabel = pcall(function()
-        return player:WaitForChild("PlayerGui"):WaitForChild("Main", 2):WaitForChild("DmgCounter", 2):WaitForChild("Text", 2)
-    end)
+	task.spawn(function()
+		while true do
+			gui = player:FindFirstChild("PlayerGui"):FindFirstChild("Main")
+			if not gui then
+				warn("[DamageLog] Main GUI not found, retrying...")
+				task.wait(1)
+				continue
+			end
 
-    if not ok or not dmgTextLabel then
-        task.delay(0.5, function()
-            pcall(watchDamageCounter)
-        end)
-        return
-    end
+			dmgCounter = gui:FindFirstChild("DmgCounter")
+			if not dmgCounter then
+				warn("[DamageLog] DmgCounter not found, retrying...")
+				task.wait(1)
+				continue
+			end
 
-    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-        local dmgText = tonumber(dmgTextLabel.Text) or 0
-        if dmgText > 0 and canTilt() and currentHighlight then
-            tiltEnabled = true
-            if next(rightTouches) then
-                startTilt()
-            end
-        else
-            tiltEnabled = false
-            stopTiltSmooth()
-        end
-    end)
-
-    table.insert(characterConnections, dmgConn)
+			dmgTextLabel = dmgCounter:FindFirstChild("Text")
+			if not dmgTextLabel then
+				warn("[DamageLog] TextLabel inside DmgCounter not found, retrying...")
+				task.wait(1)
+				continue
+			end
+			
+			dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+		        local dmgText = tonumber(dmgTextLabel.Text) or 0
+		        if dmgText > 0 and canTilt() and currentHighlight then
+		            tiltEnabled = true
+		            if next(rightTouches) then
+		                startTilt()
+		            end
+		        else
+		            tiltEnabled = false
+		            stopTiltSmooth()
+		        end
+		    end)
+			table.insert(characterConnections, dmgConn)			
+			break
+		end
+	end)
 end
 
 local function watchHealth(humanoid)
@@ -579,7 +599,7 @@ local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
             if PredictionEnabled and enemyVelocity.Magnitude > 3 then
                 predictedPos = predictedPos + enemyVelocity * predictionTime
             end
-            local yOffset = math.clamp(dist / 40, 0, 0.09)
+            local yOffset = math.clamp(dist / 40, 0, 0.06)
             local lookVector = (predictedPos - camPos).Unit
             local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
             camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
