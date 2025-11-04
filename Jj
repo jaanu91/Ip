@@ -13,7 +13,7 @@ local RunService = game:GetService("RunService")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
-local YamaHopEnabled = false 
+local nododgecool = false 
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
@@ -24,7 +24,6 @@ local yamaLoop = nil
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
-local weaponsToCheck = {"Skull Guitar"}
 
 -- =========================
 -- Team Check
@@ -114,156 +113,22 @@ local function stopV3Loop()
     v3Loop = nil
 end
 
-local function isValidCondition()
-    return (currentTool and currentTool.Name == "Yama")
-end
-
-local function checkForWeapons()
-	local backpack = player:FindFirstChild("Backpack")
-	local character = player.Character
-	if not backpack or not character then return nil end
-
-	for _, weaponName in ipairs(weaponsToCheck) do
-		if backpack:FindFirstChild(weaponName) or character:FindFirstChild(weaponName) then
-			return weaponName
-		end
-	end
-	return nil
-end
-
-local SelectWeapon = checkForWeapons()
-
-local function virtualClick()
-	vim:SendMouseButtonEvent(
-		workspace.CurrentCamera.ViewportSize.X / 2, -- X position (center of screen)
-		workspace.CurrentCamera.ViewportSize.Y / 2, -- Y position (center of screen)
-		0,
-		true,
-		game,
-		1
-	)	
-	task.wait(0.05)	
-	vim:SendMouseButtonEvent(
-		workspace.CurrentCamera.ViewportSize.X / 2,
-		workspace.CurrentCamera.ViewportSize.Y / 2,
-		0,
-		false,
-		game,
-		1
-	)
-end
-
-function EquipTool(ToolSe)
-    if game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe) then
-        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(ToolSe)
-        wait()
-        game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
-    end
-end
-
-local function isSkillReadyForTool(toolName)
-    if not toolName then return false end
-    local playerGui = player:FindFirstChild("PlayerGui")
-    if not playerGui then return false end
-    local skillsFolder = playerGui:FindFirstChild("Main") and playerGui.Main:FindFirstChild("Skills")
-    if not skillsFolder then return false end
-    local toolFrame = skillsFolder:FindFirstChild(toolName)
-    if not toolFrame then return false end
-
-    for _, skillKey in ipairs({"Z"}) do
-        local skill = toolFrame:FindFirstChild(skillKey)
-        if skill and skill:FindFirstChild("Cooldown") and skill.Cooldown:IsA("Frame") then
-            local cooldownSize = skill.Cooldown.Size.X.Scale
-            if cooldownSize == 1.0 then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-local function watchTool(tool)
-    if not tool or typeof(tool) ~= "Instance" then return end
-    if tool:IsA("Tool") then
-        tool.Equipped:Connect(function()
-            currentTool = tool
-        end)
-        tool.Unequipped:Connect(function()
-            if currentTool == tool then
-                currentTool = nil
-            end
-        end)
-    end
-end
-
-local function attachExistingTools()
-    local backpack = player:FindFirstChild("Backpack")
-    local character = player.Character
-    if backpack then
-        for _, t in ipairs(backpack:GetChildren()) do
-            watchTool(t)
-        end
-    end
-    if character then
-        for _, t in ipairs(character:GetChildren()) do
-            watchTool(t)
-        end
-    end
-end
-
-player.ChildAdded:Connect(function(child)
-    if child.Name == "Backpack" or child == player.Character then
-        task.wait(0.1)
-        attachExistingTools()
-    end
-end)
-if player:FindFirstChild("Backpack") then
-    player.Backpack.ChildAdded:Connect(function(child)
-        watchTool(child)
-    end)
-end
-player.CharacterAdded:Connect(function(c)
-    char = c
-    humanoid = char:WaitForChild("Humanoid")
-    for _, t in ipairs(c:GetChildren()) do
-        watchTool(t)
-    end
-    c.ChildAdded:Connect(function(child)
-        watchTool(child)
-    end)
-end)
-
-attachExistingTools()
-
-local function startYamaHop()
-	if yamaLoop then return end
-	yamaLoop = task.spawn(function()
-		while YamaHopEnabled do
-			if isValidCondition() and isSkillReadyForTool(currentTool and currentTool.Name) then
-				local ok, h = pcall(function() return humanoid end)
-				if ok and h and h.Parent then
-					pcall(function()
-						EquipTool(SelectWeapon)
-						task.wait(0.15)
-						virtualClick()
-						task.wait(0.1)
-						h:ChangeState(Enum.HumanoidStateType.Jumping)
-						task.wait(0.05)
-						clickDodge()
-					end)
+function NoDodgeCool()
+	if nododgecool then
+		for i, v in next, getgc() do
+			if game:GetService("Players").LocalPlayer.Character.Dodge then
+				if typeof(v) == "function" and getfenv(v).script == game:GetService("Players").LocalPlayer.Character.Dodge then
+					for i2, v2 in next, getupvalues(v) do
+						if tostring(v2) == "0.1" then
+							repeat
+								wait(0.1)
+								setupvalue(v, i2, 0)
+							until not nododgecool
+						end
+					end
 				end
 			end
-			task.wait(0.4) 
 		end
-		yamaLoop = nil
-	end)
-end
-
-local function stopYamaHop()
-	YamaHopEnabled = false
-	if yamaLoop then
-		task.cancel(yamaLoop)
-		yamaLoop = nil
 	end
 end
 
@@ -453,12 +318,12 @@ function ESPModule:SetBunnyhop(state)
     BunnyHopEnabled = state
 end
 
-function ESPModule:SetYamahop(state)
-	YamaHopEnabled = state
+function ESPModule:SetNoDodgeCD(state)
+	nododgecool = state
 	if state then
-		startYamaHop()
+		NoDodgeCool()
 	else
-		stopYamaHop()
+		--ignore
 	end
 end
 
@@ -488,9 +353,6 @@ local function onCharacterAdded(newChar)
 
     if BunnyHopEnabled then
         -- nothing extra needed, the hookmetamethod will keep working
-    end
-    if YamaHopEnabled then
-        startYamaHop()
     end
     if V3Enabled then
         startV3Loop()
