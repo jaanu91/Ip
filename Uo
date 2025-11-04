@@ -90,44 +90,46 @@ end)
 -- Damage Counter Watch
 -- =========================
 local function watchDamageCounter()
-    if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
+	if dmgConn then
+		pcall(function() dmgConn:Disconnect() end)
+		dmgConn = nil
+	end
 
-    local gui = player:WaitForChild("PlayerGui"):WaitForChild("Main", 5)
-    if not gui then return end
+	task.spawn(function()
+		while true do
+			gui = player:FindFirstChild("PlayerGui"):FindFirstChild("Main")
+			if not gui then
+				warn("[DamageLog] Main GUI not found, retrying...")
+				task.wait(1)
+				continue
+			end
 
-    local dmgCounter = gui:FindFirstChild("DmgCounter")
-    if not dmgCounter then
-        table.insert(characterConnections, gui.ChildAdded:Connect(function(child)
-            if child.Name == "DmgCounter" then
-                watchDamageCounter()
-            end
-        end))
-        return
-    end
+			dmgCounter = gui:FindFirstChild("DmgCounter")
+			if not dmgCounter then
+				warn("[DamageLog] DmgCounter not found, retrying...")
+				task.wait(1)
+				continue
+			end
 
-    local dmgTextLabel = dmgCounter:FindFirstChild("Text")
-    if not dmgTextLabel then
-        table.insert(characterConnections, dmgCounter.ChildAdded:Connect(function(child)
-            if child.Name == "Text" then
-                watchDamageCounter()
-            end
-        end))
-        return
-    end
+			dmgTextLabel = dmgCounter:FindFirstChild("Text")
+			if not dmgTextLabel then
+				warn("[DamageLog] TextLabel inside DmgCounter not found, retrying...")
+				task.wait(1)
+				continue
+			end
 
-    dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-	    local dmgText = tonumber(dmgTextLabel.Text) or 0
-	    if dmgText > 0 and isValidStopCondition() and (rightTouchActive or keyHoldingActive) then
-	        DisableSilentAimbot()
-	    elseif not rightTouchActive and not keyHoldingActive then
-	        EnableSilentAimbot()
-	    end
+			dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+				local dmgText = tonumber(dmgTextLabel.Text) or 0
+				if dmgText > 0 and isValidStopCondition() and rightTouchActive then
+					DisableSilentAimbot()
+				elseif not rightTouchActive then
+					EnableSilentAimbot()
+				end
+			end)
+			table.insert(characterConnections, dmgConn)			
+			break
+		end
 	end)
-
-    table.insert(characterConnections, dmgConn)
 end
 
 -- =========================
