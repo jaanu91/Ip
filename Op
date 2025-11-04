@@ -11,6 +11,7 @@ local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 local MouseModule = RS:FindFirstChild("Mouse")
+local observationManager = getrenv()._G.OM;
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -566,8 +567,7 @@ task.spawn(function()
 		                kenButton:SetAttribute("Selected", true)
 		            end
 		        end
-		
-		        local observationManager = getrenv()._G.OM;
+				        
 		        if (observationManager and not observationManager.active) then
 					observationManager.radius = 0
 		            observationManager:setActive(true);
