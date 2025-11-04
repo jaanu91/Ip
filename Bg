@@ -11,6 +11,7 @@ local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 local MouseModule = RS:FindFirstChild("Mouse")
+local observationManager = getrenv()._G.OM;
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -379,13 +380,11 @@ RunService.RenderStepped:Connect(function()
     local lookTargetPos = nil
 
     if SilentAimPlayersEnabled then
-	    getgenv().SilentAimPlayersEnabled = SilentAimPlayersEnabled
 		local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
 		if targetplayer and targetplayer ~= player and targetplayer.Character then
 			playersaimbot = targetplayer.Name
 			local hrp = getHRP(targetplayer.Character)
 			PlayersPosition = getPredictedPosition(hrp)
-			getgenv().PlayersPosition = PlayersPosition
 			lookTargetPos = PlayersPosition
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
@@ -398,13 +397,11 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	if SilentAimNPCsEnabled then  
-		getgenv().SilentAimNPCsEnabled = SilentAimNPCsEnabled
 	    local closestNPC = getClosestNPC(lpHRP)  
 	    if closestNPC then  
 	        NPCaimbot = closestNPC.Name  
 	        local hrp = getHRP(closestNPC)  
 	        NPCPosition = getPredictedPosition(hrp)  
-			getgenv().NPCPosition = NPCPosition
 			lookTargetPos = NPCPosition
 	        if not targetModel then  
 	            targetModel = closestNPC  
@@ -533,11 +530,8 @@ if not isNotValidCondition() then
                         end  
                     end)  
 
-                    local ReplicatedStorage = game:GetService("ReplicatedStorage")  
-                    local MouseModuleCheck = ReplicatedStorage:FindFirstChild("Mouse")  
-
-                    if MouseModuleCheck then  
-                        local ok, MouseData = pcall(require, MouseModuleCheck)  
+                    if MouseModule then  
+                        local ok, MouseData = pcall(require, MouseModule)  
                         if ok and type(MouseData) == "table" then  
                             MouseData.Hit = targetCFrame  
                             MouseData.Target = nil  
@@ -573,8 +567,7 @@ task.spawn(function()
 		                kenButton:SetAttribute("Selected", true)
 		            end
 		        end
-		
-		        local observationManager = getrenv()._G.OM;
+				        
 		        if (observationManager and not observationManager.active) then
 					observationManager.radius = 0
 		            observationManager:setActive(true);
