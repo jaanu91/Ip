@@ -434,6 +434,7 @@ end
 
 local function isNotValidCondition()
     return (currentTool and currentTool.Name == "Lightning-Lightning")
+    or (currentTool and currentTool.Name == "Diamond-Diamond")
 end
 
 spawn(function()
