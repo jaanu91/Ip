@@ -46,7 +46,7 @@ local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
 
 local characterConnections = {}
-local Skills = {"Z", "X"}
+local Skills = {"X"}
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -371,7 +371,6 @@ end
 
 local function isNotValidCondition()
     return (currentTool and currentTool.Name == "Lightning-Lightning")
-    or (currentTool and currentTool.Name == "Diamond-Diamond")
 end
 
 RunService.RenderStepped:Connect(function()
@@ -435,7 +434,6 @@ end
 
 local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
-    or (currentTool and currentTool.Name == "Godhuman")
 end
 
 spawn(function()
