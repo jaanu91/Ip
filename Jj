@@ -143,11 +143,11 @@ local function IncreaseDodgeRange()
 
 			if dodge and typeof(v) == "function" and getfenv(v).script == dodge then
 				for i2, v2 in next, getupvalues(v) do
-					if type(v2) == "number" and v2 >= 20 and v2 <= 60 then
-						repeat
-							wait()
-							setupvalue(v, i2, v2 * 3) -- increase dodge range here
-						until not DodgeRangeEnabled
+					-- Check for range/distance value
+					if typeof(v2) == "number" and (v2 > 10 and v2 < 100) then
+						print("Old dodge range:", v2)
+						setupvalue(v, i2, v2 * 3)
+						print("New dodge range:", v2 * 2)
 					end
 				end
 			end
