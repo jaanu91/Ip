@@ -14,6 +14,7 @@ local RunService = game:GetService("RunService")
 local V3Enabled = false
 local BunnyHopEnabled = false
 local DodgeEnabled = false 
+local noGeppocool = false
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
@@ -126,6 +127,26 @@ local function NoDodgeCool()
 							wait()
 							setupvalue(v, i2, 0)
 						until not DodgeEnabled
+					end
+				end
+			end
+		end
+	end
+end
+
+function NoGeppoCool()
+	if noGeppocool then
+		for i, v in next, getgc() do
+			local character = game.Players.LocalPlayer.Character
+			if character and character:FindFirstChild("Geppo") then
+				if typeof(v) == "function" and getfenv(v).script == character.Geppo then
+					for i2, v2 in next, getupvalues(v) do
+						if tostring(v2) == "0" then
+							repeat
+								wait(0.1)
+								setupvalue(v, i2, 0)
+							until not noGeppocool
+						end
 					end
 				end
 			end
@@ -323,6 +344,15 @@ function ESPModule:SetNoDodgeCD(state)
 	DodgeEnabled = state
 	if state then
 		NoDodgeCool()
+	else
+		--ignore
+	end
+end
+
+function ESPModule:SetNoDodgeCD(state)
+	noGeppocool = state
+	if state then
+		NoGeppoCool()
 	else
 		--ignore
 	end
