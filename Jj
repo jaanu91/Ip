@@ -15,7 +15,6 @@ local V3Enabled = false
 local BunnyHopEnabled = false
 local DodgeEnabled = false 
 local DodgeRangeEnabled = false 
-local noGeppocool = false
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
@@ -135,46 +134,6 @@ local function NoDodgeCool()
 	end
 end
 
-local function IncreaseDodgeRange()
-	if DodgeRangeEnabled then
-		for i, v in next, getgc() do
-			local character = game.Players.LocalPlayer.Character
-			local dodge = character and character:FindFirstChild("Dodge")
-
-			if dodge and typeof(v) == "function" and getfenv(v).script == dodge then
-				for i2, v2 in next, getupvalues(v) do
-					-- Check for range/distance value
-					if typeof(v2) == "number" and (v2 > 10 and v2 < 100) then
-						print("Old dodge range:", v2)
-						setupvalue(v, i2, v2 * 8)
-						print("New dodge range:", v2 * 8)
-					end
-				end
-			end
-		end
-	end
-end
-
-function NoGeppoCool()
-	if noGeppocool then
-		for i, v in next, getgc() do
-			local character = game.Players.LocalPlayer.Character
-			if character and character:FindFirstChild("Skyjump") then
-				if typeof(v) == "function" and getfenv(v).script == character.Geppo then
-					for i2, v2 in next, getupvalues(v) do
-						if tostring(v2) == "9" then
-							repeat
-								wait(0.1)
-								setupvalue(v, i2, 0)
-							until not noGeppocool
-						end
-					end
-				end
-			end
-		end
-	end
-end
-
 -- =========================
 -- V Skill Detection
 -- =========================
@@ -201,6 +160,27 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
     end
     return old(self, ...)
 end)
+
+local function IncreaseDodgeRange()
+    local old
+    old = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        if (method == "InvokeServer" or method == "FireServer") and tostring(self) == "CommE" then
+            local a1 = args[1]
+            if typeof(a1) == "string" and a1:lower() == "dodge" then
+                if args[3] and type(args[3]) == "number" then
+                    print("[DodgeRange] Old range:", args[3])
+                    args[3] = 60
+                    print("[DodgeRange] New range:", args[3])
+                end
+            end
+        end
+
+        return old(self, unpack(args))
+    end)
+end
 
 -- =========================
 -- Global Player ESP with Colors
@@ -374,15 +354,6 @@ function ESPModule:SetDodgeRange(state)
 	DodgeRangeEnabled = state
 	if state then
 		IncreaseDodgeRange()
-	else
-		--ignore
-	end
-end
-
-function ESPModule:SetNoGeppoCD(state)
-	noGeppocool = state
-	if state then
-		NoGeppoCool()
 	else
 		--ignore
 	end
