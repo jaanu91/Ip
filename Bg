@@ -583,6 +583,12 @@ end);
 local function onCharacterAdded(char)
     clearConnections()
 
+    for _, child in ipairs(char:GetChildren()) do
+        if child:IsA("Tool") then
+            hookTool(child)
+        end
+    end
+
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
         if child:IsA("Tool") then hookTool(child) end
     end))
