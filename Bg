@@ -435,7 +435,7 @@ end
 
 local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
-    or (currentTool and currentTool.Name == "Sanguine Art")
+    or (currentTool and currentTool.Name == "Godhuman")
 end
 
 spawn(function()
