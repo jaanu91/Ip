@@ -46,7 +46,7 @@ local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
 
 local characterConnections = {}
-local Skills = {"X", "V"}
+local Skills = {"Z", "X"}
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -435,11 +435,7 @@ end
 
 local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
-    or (currentTool and currentTool.Name == "Diamond-Diamond")
-end
-
-local function isDiamondValidCondition()
-    return (currentTool and currentTool.Name == "Diamond-Diamond")
+    or (currentTool and currentTool.Name == "Sanguine Art")
 end
 
 spawn(function()
@@ -451,14 +447,12 @@ spawn(function()
             local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
 
             if tostring(self) == "RemoteEvent" and Method == "fireserver" then
-	            if not isDiamondValidCondition() then
-	                if typeof(V1) == "Vector3" then
-	                    if SilentAimPlayersEnabled and PlayersPosition then
-	                        return OldHook(self, PlayersPosition, V2, ...)
-	                    elseif SilentAimNPCsEnabled and NPCPosition then
-	                        return OldHook(self, NPCPosition, V2, ...)
-	                    end
-	                end
+                if typeof(V1) == "Vector3" then
+                    if SilentAimPlayersEnabled and PlayersPosition then
+                        return OldHook(self, PlayersPosition, V2, ...)
+                    elseif SilentAimNPCsEnabled and NPCPosition then
+                        return OldHook(self, NPCPosition, V2, ...)
+                    end
 				end
             elseif Method == "invokeserver" then  
 	            if isValidCondition() then
