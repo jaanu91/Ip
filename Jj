@@ -13,7 +13,7 @@ local RunService = game:GetService("RunService")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
-local nododgecool = false 
+local DodgeEnabled = false 
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
@@ -113,18 +113,19 @@ local function stopV3Loop()
     v3Loop = nil
 end
 
-function NoDodgeCool()
-	if nododgecool then
+local function NoDodgeCool()
+	if DodgeEnabled then
 		for i, v in next, getgc() do
-			if game:GetService("Players").LocalPlayer.Character.Dodge then
-				if typeof(v) == "function" and getfenv(v).script == game:GetService("Players").LocalPlayer.Character.Dodge then
-					for i2, v2 in next, getupvalues(v) do
-						if tostring(v2) == "0.1" then
-							repeat
-								wait(0.1)
-								setupvalue(v, i2, 0)
-							until not nododgecool
-						end
+			local character = game.Players.LocalPlayer.Character
+			local dodge = character and character:FindFirstChild("Dodge")
+
+			if dodge and typeof(v) == "function" and getfenv(v).script == dodge then
+				for i2, v2 in next, getupvalues(v) do
+					if tostring(v2) == "0.4" then
+						repeat
+							wait()
+							setupvalue(v, i2, 0)
+						until not DodgeEnabled
 					end
 				end
 			end
@@ -319,7 +320,7 @@ function ESPModule:SetBunnyhop(state)
 end
 
 function ESPModule:SetNoDodgeCD(state)
-	nododgecool = state
+	DodgeEnabled = state
 	if state then
 		NoDodgeCool()
 	else
