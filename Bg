@@ -369,6 +369,11 @@ local function isNotDoughValidCondition()
     return (currentTool and currentTool.Name == "Dough-Dough")
 end
 
+local function isNotValidCondition()
+    return (currentTool and currentTool.Name == "Lightning-Lightning")
+    or (currentTool and currentTool.Name == "Diamond-Diamond")
+end
+
 RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -413,7 +418,7 @@ RunService.RenderStepped:Connect(function()
 	    NPCaimbot, NPCPosition = nil, nil  
 	    clearHighlight()
 	end
-    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) and not isNotDoughValidCondition() then
+    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) and not (isNotDoughValidCondition() or isNotValidCondition()) then
         local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
             lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
     end
@@ -430,11 +435,6 @@ end
 
 local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
-end
-
-local function isNotValidCondition()
-    return (currentTool and currentTool.Name == "Lightning-Lightning")
-    or (currentTool and currentTool.Name == "Diamond-Diamond")
 end
 
 spawn(function()
