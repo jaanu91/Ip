@@ -349,7 +349,7 @@ function ESPModule:SetNoDodgeCD(state)
 	end
 end
 
-function ESPModule:SetNoDodgeCD(state)
+function ESPModule:SetNoGeppoCD(state)
 	noGeppocool = state
 	if state then
 		NoGeppoCool()
