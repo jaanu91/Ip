@@ -139,7 +139,7 @@ function NoGeppoCool()
 		for i, v in next, getgc() do
 			local character = game.Players.LocalPlayer.Character
 			if character and character:FindFirstChild("Skyjump") then
-				if typeof(v) == "function" and getfenv(v).script == character.Geppo then
+				if typeof(v) == "function" and getfenv(v).script == character.Skyjump then
 					for i2, v2 in next, getupvalues(v) do
 						if tostring(v2) == "0" then
 							repeat
