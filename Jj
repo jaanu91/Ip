@@ -146,8 +146,8 @@ local function IncreaseDodgeRange()
 					-- Check for range/distance value
 					if typeof(v2) == "number" and (v2 > 10 and v2 < 100) then
 						print("Old dodge range:", v2)
-						setupvalue(v, i2, v2 * 3)
-						print("New dodge range:", v2 * 2)
+						setupvalue(v, i2, v2 * 8)
+						print("New dodge range:", v2 * 8)
 					end
 				end
 			end
