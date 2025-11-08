@@ -20,7 +20,7 @@ local NPCaimbot = nil
 local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
-local Skills = {"Tap"}
+local Skills = {"TAP"}
 
 local PredictionAmount = 0.1
 local maxRange = 1000
