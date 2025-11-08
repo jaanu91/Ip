@@ -115,8 +115,10 @@ local function FPSBoost()
             v.Reflectance = 0
         elseif v:IsA("Decal") or v:IsA("Texture") then
             v:Destroy()
-        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = false
+        elseif v:IsA("ParticleEmitter") then
+            v.Lifetime = NumberRange.new(0, 0)
+        elseif v:IsA("Trail") then
+	        v.Enabled = false
         elseif v:IsA("Explosion") then
 	        v.BlastPressure = 1
 			v.BlastRadius = 1
@@ -133,8 +135,10 @@ local function FPSBoost()
             v.Reflectance = 0
 	    elseif v:IsA("Decal") or v:IsA("Texture") then
             v:Destroy()
-        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = false
+        elseif v:IsA("ParticleEmitter") then
+            v.Lifetime = NumberRange.new(0, 0)
+        elseif v:IsA("Trail") then
+	        v.Enabled = false
         elseif v:IsA("Explosion") then
 	        v.BlastPressure = 1
 			v.BlastRadius = 1
