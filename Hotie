@@ -442,11 +442,11 @@ function UiSettingsModule:SetWalkSpeed(value)
     end)
 end
 
-function SilentAimModule:SetPlayerSilentAimGun(state)
+function UiSettingsModule:SetPlayerSilentAimGun(state)
     SilentAimPlayersEnabled = state
 end
 
-function SilentAimModule:SetNPCSilentAimGun(state)
+function UiSettingsModule:SetNPCSilentAimGun(state)
     SilentAimNPCsEnabled = state
 end
 
