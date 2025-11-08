@@ -21,6 +21,9 @@ local NPCPosition = nil
 local currentHighlight = nil
 local currentTargetType = nil
 
+local PredictionAmount = 0.1
+local maxRange = 1000
+
 local function getHRP(model)
 	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
 	return model.HumanoidRootPart
