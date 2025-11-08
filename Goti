@@ -129,7 +129,7 @@ local function FPSBoost()
         end
     end
     workspace.DescendantAdded:Connect(function(v)
-	    task.wait()
+	    task.wait(0.2)
 		if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
