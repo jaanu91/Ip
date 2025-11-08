@@ -113,8 +113,13 @@ local function FPSBoost()
         if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            v:Destroy()
+        elseif v:IsA("Decal") or v:IsA("Texture") then  
+		    local success = pcall(function()
+		        v:Destroy()
+		    end)
+		    if not success then
+		        v.Transparency = 1
+		    end
         elseif v:IsA("ParticleEmitter") then
             v.Lifetime = NumberRange.new(0, 0)
         elseif v:IsA("Trail") then
@@ -133,8 +138,13 @@ local function FPSBoost()
 		if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
-	    elseif v:IsA("Decal") or v:IsA("Texture") then
-            v:Destroy()
+	    elseif v:IsA("Decal") or v:IsA("Texture") then  
+		    local success = pcall(function()
+		        v:Destroy()
+		    end)
+		    if not success then
+		        v.Transparency = 1
+		    end
         elseif v:IsA("ParticleEmitter") then
             v.Lifetime = NumberRange.new(0, 0)
         elseif v:IsA("Trail") then
