@@ -5,14 +5,19 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("WaterBase-Plane")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 local ScreenGui
 local FpsPingLabel
 local FpsBoostEnabled = false
 local InfiniteEnergy = false
 local FastAttackEnabled = false
-local FastShootEnabled = false
 local WalkWaterEnabled = false
+local fog = false
+local Lava = false
 
 local savedSettings = {}
 local connections = {}
@@ -87,131 +92,52 @@ RunService.RenderStepped:Connect(function(deltaTime)
 	)
 end)
 
-local function optimizeInstance(v)
-	if v:IsA("Part") or v:IsA("MeshPart") then
-		v.Material = Enum.Material.Plastic
-		v.Reflectance = 0
-	elseif v:IsA("Decal") or v:IsA("Texture") then
-		v.Transparency = 1
-	elseif v:IsA("ParticleEmitter") then
-		v.Lifetime = NumberRange.new(0, 0)
-	elseif v:IsA("Trail") then
-		v.Lifetime = 0
-	elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-		v.Enabled = false
+do
+	if FpsBoostEnabled then 
+		local decalsyeeted = true;
+		local g = game;
+		local w = g.Workspace;
+		local l = g.Lighting;
+		local t = w.Terrain;
+		(settings()).Rendering.QualityLevel = "Level01";
+		for i, v in pairs(g:GetDescendants()) do
+			if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+				v.Material = "Plastic";
+				v.Reflectance = 0;
+			elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
+				v.Transparency = 1;
+			elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+				v.Lifetime = NumberRange.new(0);
+			elseif v:IsA("Explosion") then
+				v.BlastPressure = 1;
+				v.BlastRadius = 1;
+			elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") then
+				v.Enabled = false;
+			end;
+		end;
 	end
 end
 
-local function optimizeUI(instance)
-    if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
-        instance.ImageTransparency = 0
-        
-    elseif instance:IsA("TextLabel") or instance:IsA("TextButton") then
-        instance.RichText = false -- turn off rich text if not needed
-        instance.TextStrokeTransparency = 1 -- disable stroke
-        instance.TextSize = math.min(instance.TextSize, 14) -- reduce text size slightly
-        instance.Font = Enum.Font.SourceSans -- simpler font uses less GPU
-    end
+do
+	if fog then
+		(game:GetService("Lighting")).LightingLayers:Destroy();
+		(game:GetService("Lighting")).Sky:Destroy();
+		game.Lighting.FogEnd = 9000000000;
+	end
 end
 
-local function applyFpsBoost()
-	local g = game
-	local w = g.Workspace
-	local l = g.Lighting
-	local t = w.Terrain
-
-	if not savedSettings.Terrain then
-		savedSettings.Terrain = {
-			WaterWaveSize = t.WaterWaveSize,
-			WaterWaveSpeed = t.WaterWaveSpeed,
-			WaterReflectance = t.WaterReflectance,
-			WaterTransparency = t.WaterTransparency,
-		}
-		savedSettings.Lighting = {
-			GlobalShadows = l.GlobalShadows,
-			FogEnd = l.FogEnd,
-			Brightness = l.Brightness,
-			EnvironmentSpecularScale =  l.EnvironmentSpecularScale,
-			EnvironmentDiffuseScale =  l.EnvironmentDiffuseScale,
-		}
-		savedSettings.QualityLevel = settings().Rendering.QualityLevel
-	end
-
-	t.WaterWaveSize = 0
-	t.WaterWaveSpeed = 0
-	t.WaterReflectance = 0
-	t.WaterTransparency = 1
-	l.GlobalShadows = false
-	l.FogEnd = 9e9
-	l.Brightness = 1
-	l.EnvironmentSpecularScale = 0
-	l.EnvironmentDiffuseScale = 0
-	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-
-	for _, e in pairs(l:GetChildren()) do
-		if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") 
-		or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-			e.Enabled = false
-		end
-	end
-	
-	for _, v in pairs(Lighting:GetChildren()) do
-	    if v:IsA("Sky") then
-	        v:Destroy()
-	    end
-	end
-	
-	for _, v in pairs(Lighting:GetChildren()) do
-	    if v:IsA("PostEffect") then
-	        v.Enabled = false
-	    end
-	end
-	
-	for _, obj in pairs(workspace:GetDescendants()) do
-	    if obj:IsA("Part") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
-	        obj.CastShadow = false
-	    end
-	end
-
-	for _, v in pairs(g:GetDescendants()) do
-		optimizeInstance(v)
-	end
-	
-	for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
-	    optimizeUI(gui)
-	end
-	
-	if setfpscap then
-		setfpscap(60)
-	end
-
-	table.insert(connections, g.DescendantAdded:Connect(optimizeInstance))
-	table.insert(connections, LocalPlayer.PlayerGui.DescendantAdded:Connect(optimizeUI))
-end
-
-local function restoreGraphics()
-	local g = game
-	local w = g.Workspace
-	local l = g.Lighting
-	local t = w.Terrain
-
-	for _, conn in ipairs(connections) do
-		if conn.Connected then conn:Disconnect() end
-	end
-	connections = {}
-
-	if savedSettings.Terrain then
-		for k, v in pairs(savedSettings.Terrain) do
-			t[k] = v
-		end
-	end
-	if savedSettings.Lighting then
-		for k, v in pairs(savedSettings.Lighting) do
-			l[k] = v
-		end
-	end
-	if savedSettings.QualityLevel then
-		settings().Rendering.QualityLevel = savedSettings.QualityLevel
+do
+	if Lava Then
+		for i, v in pairs(game.Workspace:GetDescendants()) do
+			if v.Name == "Lava" then
+				v:Destroy();
+			end;
+		end;
+		for i, v in pairs(game.ReplicatedStorage:GetDescendants()) do
+			if v.Name == "Lava" then
+				v:Destroy();
+			end;
+		end;
 	end
 end
 
@@ -545,55 +471,20 @@ for _, v in pairs(getgc(true)) do
     end
 end
 
-function FastShooted()
-    local plr = game:GetService("Players").LocalPlayer
-    local ShootGunEvent = game:GetService("ReplicatedStorage").Modules.Net["RE/ShootGunEvent"]
-    for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-        if v:FindFirstChild("Humanoid") and v:FindFirstChild("Humanoid").Health > 0 then
-            local toolEquiped = plr.Character:FindFirstChildOfClass("Tool")
-            if (v.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude < 50 then
-                local toolEquiped = plr.Character:FindFirstChildOfClass("Tool")
-                if toolEquiped.ToolTip == "Gun" then
-                    --plr.Character[SelectWeaponFarm].RemoteFunctionShoot:InvokeServer(v.HumanoidRootPart.Position, v.HumanoidRootPart)
-                    ShootGunEvent:FireServer(v.HumanoidRootPart.Position, {[1] = v.HumanoidRootPart})
-                end
-            end
-        end
-    end
-end
-
-function StuffsModule:SetFastShoot(state)
-    FastShootEnabled = state
-
-    if FastShootEnabled then
-        if not connections.FastShoot then
-            connections.FastShoot = RunService.Heartbeat:Connect(function()
-                pcall(function()
-                    if FastShootEnabled then
-                        FastShooted()
-                    end
-                end)
-            end)
-        end
-    else
-        if connections.FastShoot then
-            connections.FastShoot:Disconnect()
-            connections.FastShoot = nil
-        end
-    end
-end
-
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
-    if state then
-        applyFpsBoost()
-    else
-        restoreGraphics()
-    end
 end
 
 function StuffsModule:SetINFEnergy(state)
     InfiniteEnergy = state
+end
+
+function StuffsModule:SetFog(state)
+    fog = state
+end
+
+function StuffsModule:SetLava(state)
+    Lava = state
 end
 
 function StuffsModule:SetHopServer(state)
