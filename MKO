@@ -19,6 +19,7 @@ local currentTargetType = nil
 
 local characterConnections = {}
 local Skills = {"X"}
+local PredictionAmount = 0.2
 local maxRange = 1000
 
 local function getHRP(model)
@@ -31,6 +32,21 @@ local function clearConnections()
 		pcall(function() conn:Disconnect() end)
 	end
 	characterConnections = {}
+end
+
+local function getPredictedPosition(hrp)
+	if not hrp then return nil end
+
+	local humanoid = hrp.Parent:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return hrp.Position
+	end
+
+	if humanoid.WalkSpeed < 8 then
+		return hrp.Position
+	end
+
+	return hrp.Position + (hrp.Velocity * PredictionAmount)
 end
 
 local function createMiniToggle(name, position, stateVarRef, realVarSetter)
@@ -261,7 +277,7 @@ RunService.Heartbeat:Connect(function()
 		if targetplayer and targetplayer ~= player and targetplayer.Character then
 			playersaimbot = targetplayer.Name
 			local hrp = getHRP(targetplayer.Character)
-			PlayersPosition = hrp.Position
+			PlayersPosition = getPredictedPosition(hrp)
 			targetModel = targetplayer.Character
 			applyHighlight(targetModel, "player")
 		else
