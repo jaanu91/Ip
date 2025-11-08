@@ -1,0 +1,478 @@
+local UiSettingsModule = {}
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local fillFrame = player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("RaceEnergy"):WaitForChild("Fill")
+
+local V4Enabled = false
+local FruitCheck = false
+local TeleportFruit = false
+local SilentAimPlayersEnabled = false
+local SilentAimNPCsEnabled = false
+local sizeConn 
+local playersaimbot = nil
+local PlayersPosition = nil
+local NPCaimbot = nil
+local NPCPosition = nil
+local currentHighlight = nil
+local currentTargetType = nil
+
+local function getHRP(model)
+	if not model or not model:FindFirstChild("HumanoidRootPart") then return nil end
+	return model.HumanoidRootPart
+end
+
+local function clearConnections()
+	for _, conn in ipairs(characterConnections) do
+		pcall(function() conn:Disconnect() end)
+	end
+	characterConnections = {}
+end
+
+local function getPredictedPosition(hrp)
+	if not hrp then return nil end
+
+	local humanoid = hrp.Parent:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return hrp.Position
+	end
+
+	if humanoid.WalkSpeed < 5 then
+		return hrp.Position
+	end
+
+	return hrp.Position + (hrp.Velocity * PredictionAmount)
+end
+
+-- =========================
+-- Theme Data & Functions
+-- =========================
+UiSettingsModule.currentTheme = {
+    SchemeColor = Color3.fromRGB(64, 64, 64),
+    Background = Color3.fromRGB(0, 0, 0),
+    Header = Color3.fromRGB(0, 0, 0),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    ElementColor = Color3.fromRGB(20, 20, 20)
+}
+
+UiSettingsModule.themes = {
+    Red = Color3.fromRGB(220, 59, 48),
+    Green = Color3.fromRGB(48, 209, 88),
+    Purple = Color3.fromRGB(175, 82, 222),
+    Orange = Color3.fromRGB(255, 149, 0),
+    Pink = Color3.fromRGB(220, 105, 180),
+    Yellow = Color3.fromRGB(220, 204, 0),
+    Cyan = Color3.fromRGB(0, 220, 220),
+    Dark = Color3.fromRGB(100, 100, 100),
+    White = Color3.fromRGB(220, 220, 220),
+    Teal = Color3.fromRGB(64, 224, 208),
+    Lime = Color3.fromRGB(191, 220, 0),
+    Indigo = Color3.fromRGB(75, 0, 130)
+}
+
+UiSettingsModule.backgroundThemes = {
+    Blood = Color3.fromRGB(150, 40, 40),
+    Grape = Color3.fromRGB(120, 80, 140),
+    Ocean = Color3.fromRGB(70, 100, 160),
+    Synapse = Color3.fromRGB(90, 100, 90),
+    Pink = Color3.fromRGB(200, 100, 150),
+    Midnight = Color3.fromRGB(60, 80, 110),
+    Sentinel = Color3.fromRGB(80, 80, 80),
+    Dark = Color3.fromRGB(60, 60, 60),
+    Light = Color3.fromRGB(200, 200, 200),
+    Serpent = Color3.fromRGB(70, 90, 90)
+}
+
+function UiSettingsModule:updateSchemeColor(newColor, Library)
+    self.currentTheme.SchemeColor = newColor
+    local h, s, v = newColor:ToHSV()
+    self.currentTheme.Header = Color3.fromHSV(h, s * 0.6, v * 0.3)
+    self.currentTheme.ElementColor = Color3.fromHSV(h, s * 0.4, v * 0.2)
+    Library:ChangeColor(self.currentTheme)
+end
+
+function UiSettingsModule:updateBackgroundColor(newColor, Library)
+    self.currentTheme.Background = newColor
+    Library:ChangeColor(self.currentTheme)
+end
+
+function UiSettingsModule:updateTextColor(newColor, Library)
+    self.currentTheme.TextColor = newColor
+    Library:ChangeColor(self.currentTheme)
+end
+
+function UiSettingsModule:getThemeNames()
+    local names = {}
+    for name, _ in pairs(self.themes) do
+        table.insert(names, name)
+    end
+    return names
+end
+
+function UiSettingsModule:getBackgroundThemeNames()
+    local names = {}
+    for name, _ in pairs(self.backgroundThemes) do
+        table.insert(names, name)
+    end
+    return names
+end
+
+-- =========================
+-- Drag / Movable GUI
+-- =========================
+function UiSettingsModule:MakeDraggable(button)
+    local UserInputService = game:GetService("UserInputService")
+    local dragging, dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        button.Position = UDim2.new(
+          startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = button.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    button.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+local function getAwakenRemote()
+    local backpack = player:WaitForChild("Backpack")
+    local awakening = backpack:FindFirstChild("Awakening")
+    if awakening then
+        return awakening:FindFirstChild("RemoteFunction")
+    end
+    return nil
+end
+
+local function tryAwaken()
+    local awakenRemote = getAwakenRemote()
+    if awakenRemote and fillFrame.Size.X.Scale >= 0.9 then
+        awakenRemote:InvokeServer(true)
+    end
+end
+
+local function Tween(targetCFrame)
+	if not targetCFrame then return end
+	local info = TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+	local goal = {CFrame = hrp.CFrame + Vector3.new(0, 1, 0)}
+	local tween = TweenService:Create(targetCFrame, info, goal)
+	tween:Play()
+end
+
+spawn(function()
+    local notifiedFruits = {}
+    
+    while task.wait(0.5) do
+        if FruitCheck then
+            for _, v in pairs(workspace:GetChildren()) do
+                if v:IsA("Tool") and not notifiedFruits[v] then
+                    notifiedFruits[v] = true
+                    setthreadcontext(5)
+                    require(game:GetService("ReplicatedStorage").Notification).new(v.Name .. " Spawned"):Display()
+                end
+            end
+
+            for fruit in pairs(notifiedFruits) do
+                if not fruit.Parent then
+                    notifiedFruits[fruit] = nil
+                end
+            end
+        else
+            notifiedFruits = {}
+        end
+    end
+end)
+
+spawn(function()
+	while task.wait() do
+		if TeleportFruit then
+			for _, v in pairs(workspace:GetChildren()) do
+				if v:IsA("Tool") and v:FindFirstChild("Handle") then
+					Tween(v.Handle)
+				end
+			end
+		end
+	end
+end)
+
+local function isAllyWithMe(targetplayer)
+	local myGui = player:FindFirstChild("PlayerGui")
+	if not myGui then return false end
+
+	local scrolling = myGui:FindFirstChild("Main")
+		and myGui.Main:FindFirstChild("Allies")
+		and myGui.Main.Allies:FindFirstChild("Container")
+		and myGui.Main.Allies.Container:FindFirstChild("Allies")
+		and myGui.Main.Allies.Container.Allies:FindFirstChild("ScrollingFrame")
+
+	if scrolling then
+		for _, frame in pairs(scrolling:GetDescendants()) do
+			if frame:IsA("ImageButton") and frame.Name == targetplayer.Name then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isEnemy(targetplayer)
+	if not targetplayer or targetplayer == player then
+		return false
+	end
+
+	local myTeam = player.Team
+	local targetTeam = targetplayer.Team
+
+	if myTeam and targetTeam then
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Marines" then
+			return true
+		elseif myTeam.Name == "Marines" and targetTeam.Name == "Pirates" then
+			return true
+		end
+
+		if myTeam.Name == "Pirates" and targetTeam.Name == "Pirates" then
+			if isAllyWithMe(targetplayer) then
+				return false -- ally, not enemy
+			end
+			return true
+		end
+
+		if myTeam.Name == "Marines" and targetTeam.Name == "Marines" then
+			return false
+		end
+	end
+
+	return true
+end
+
+local function getClosestplayer(lpHRP)
+	if not lpHRP then return nil end
+	
+	local closest = nil
+	local closestDist = math.huge
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= player and isEnemy(pl) and pl.Character and pl.Character.Parent ~= nil then
+			local hum = pl.Character:FindFirstChildWhichIsA("Humanoid")
+			local hrp = getHRP(pl.Character)
+			if hum and hum.Health > 0 and hrp then
+				local dist = (hrp.Position - lpHRP.Position).Magnitude
+				if dist <= maxRange and dist < closestDist then
+					closestDist = dist
+					closest = pl
+				end
+			end
+		end
+	end
+	return closest
+end
+
+local function getClosestNPC(lpHRP)
+    if not lpHRP then return nil end
+
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if not enemiesFolder then return nil end
+
+    local closest = nil
+    local closestDist = math.huge
+    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+        if npc:IsA("Model") then
+            local hum = npc:FindFirstChildWhichIsA("Humanoid")
+            local hrp = getHRP(npc)
+            if hum and hum.Health > 0 and hrp then
+                local dist = (hrp.Position - lpHRP.Position).Magnitude
+                if dist <= maxRange and dist < closestDist then
+                    closestDist = dist
+                    closest = npc
+                end
+            end
+        end
+    end
+    return closest
+end
+
+local function applyHighlight(targetModel, targetType)
+    if not HighlightEnabled then return end
+    if not targetModel then return end
+    if currentHighlight and currentHighlight.Adornee == targetModel then return end
+
+    if currentHighlight then  
+        currentHighlight:Destroy()  
+        currentHighlight = nil  
+        currentTargetType = nil  
+    end  
+
+    local hl = Instance.new("Highlight")  
+    hl.FillColor = Color3.fromRGB(255, 255, 0)  
+    hl.OutlineColor = Color3.fromRGB(255, 255, 0)  
+    hl.FillTransparency = 0.5  
+    hl.OutlineTransparency = 0  
+    hl.Adornee = targetModel  
+    hl.Parent = targetModel  
+    currentHighlight = hl  
+    currentTargetType = targetType
+end
+
+local function clearHighlight()
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+        currentTargetType = nil
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    local lpChar = player.Character
+    if not lpChar then return end
+    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+    if not lpHRP then return end
+
+    local targetModel = nil
+
+    if SilentAimPlayersEnabled then
+		local targetplayer = getClosestplayer(lpHRP)
+		if targetplayer and targetplayer ~= player and targetplayer.Character then
+			playersaimbot = targetplayer.Name
+			local hrp = getHRP(targetplayer.Character)
+			PlayersPosition = getPredictedPosition(hrp)
+			targetModel = targetplayer.Character
+			applyHighlight(targetModel, "player")
+		else
+			playersaimbot, PlayersPosition = nil, nil
+		end
+	elseif currentTargetType == "player" then
+		playersaimbot, PlayersPosition = nil, nil
+		clearHighlight()
+	end
+
+	if SilentAimNPCsEnabled then  
+	    local closestNPC = getClosestNPC(lpHRP)  
+	    if closestNPC then  
+	        NPCaimbot = closestNPC.Name  
+	        local hrp = getHRP(closestNPC)  
+	        NPCPosition = getPredictedPosition(hrp)  
+	        if not targetModel then  
+	            targetModel = closestNPC  
+	            applyHighlight(targetModel, "NPC")  
+	        end  
+	    else  
+	        NPCaimbot, NPCPosition = nil, nil  
+	    end
+	elseif currentTargetType == "NPC" then
+	    NPCaimbot, NPCPosition = nil, nil  
+	    clearHighlight()
+	end
+end)
+
+spawn(function()
+    local ok, hookMeta = pcall(getrawmetatable, game)
+    if ok and hookMeta then
+        setreadonly(hookMeta, false)
+        local OldHook
+        OldHook = hookmetamethod(game, "__namecall", function(self, V1, V2, ...)
+            local Method = (getnamecallmethod and getnamecallmethod():lower()) or ""
+
+            if tostring(self) == "RemoteEvent" and Method == "fireserver" then
+                if typeof(V1) == "Vector3" then
+                    if SilentAimPlayersEnabled and PlayersPosition then
+                        return OldHook(self, V1, PlayersPosition, ...)
+                    elseif SilentAimNPCsEnabled and NPCPosition then
+                        return OldHook(self, V1, NPCPosition, ...)
+                    end
+				end           
+            end
+            
+            return OldHook(self, V1, V2, ...)
+        end)
+        setreadonly(hookMeta, true)
+    end
+end)
+
+function UiSettingsModule:SetWalkSpeed(value)
+    getgenv().WalkSpeedValue = value
+    local player = game:GetService("Players").LocalPlayer
+
+    local function applySpeed(char)
+        local humanoid = char:WaitForChild("Humanoid")
+        humanoid.WalkSpeed = value
+        humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if humanoid.WalkSpeed ~= value then
+                humanoid.WalkSpeed = value
+            end
+        end)
+    end
+
+    if player.Character then
+        applySpeed(player.Character)
+    end
+
+    player.CharacterAdded:Connect(function(char)
+        char:WaitForChild("Humanoid")
+        applySpeed(char)
+    end)
+end
+
+function SilentAimModule:SetPlayerSilentAimGun(state)
+    SilentAimPlayersEnabled = state
+end
+
+function SilentAimModule:SetNPCSilentAimGun(state)
+    SilentAimNPCsEnabled = state
+end
+
+function UiSettingsModule:SetV4(state)
+    V4Enabled = state
+    
+    if V4Enabled then
+        if not sizeConn then
+            sizeConn = fillFrame:GetPropertyChangedSignal("Size"):Connect(function()
+                tryAwaken()
+            end)
+        end
+    else
+        if sizeConn then
+            sizeConn:Disconnect()
+            sizeConn = nil
+        end
+    end
+end
+
+function UiSettingsModule:SetFruitCheck(state)
+    FruitCheck = state
+end
+
+function UiSettingsModule:SetTeleportFruit(state)
+    TeleportFruit = state
+end
+
+return UiSettingsModule
