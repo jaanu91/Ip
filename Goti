@@ -127,7 +127,7 @@ do
 end
 
 do
-	if Lava Then
+	if Lava then
 		for i, v in pairs(game.Workspace:GetDescendants()) do
 			if v.Name == "Lava" then
 				v:Destroy();
