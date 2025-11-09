@@ -7,8 +7,8 @@ local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubuserconten
 local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
 local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")  
 local TeleportService = game:GetService("TeleportService")
 local PlayerList = {"None"}
 
@@ -62,13 +62,15 @@ Section:NewLabel("Status: " .. execStatus)
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Fixed Z Skills Work(Except Godhuman Z) ✔")
+Section:NewLabel("• Improved Fps Boost ✔")
+Section:NewLabel("• Fixed Soul Guitar M1in Silent aim ✔")
+Section:NewLabel("• Added RTX Graphic(Visual Vibes) ✔")
+Section:NewLabel("• Added Custom Global Text ✔")
+Section:NewLabel("• Added Dash No CD ✔")
+Section:NewLabel("• Added Remove Fog or Lava ✔")
+Section:NewLabel("• Added Z Skills Work(Except Godhuman Z) ✔")
 Section:NewLabel("• Added Fruit M1 Closet Attack ✔")
-Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbo ✔")
-Section:NewLabel("• Added Select Target for Silent aim ✔")
-Section:NewLabel("• Added Auto Ken ✔")
-Section:NewLabel("• Added Select Target for Silent aim ✔")
-Section:NewLabel("• Added Bring Fruits ✔")
+Section:NewLabel("• Fixed Buddy Sword X in Silent aim ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -188,7 +190,7 @@ local HighlightToggle = Section:NewToggle("・Main Highlight", "Current Target H
     Settings["Highlight"] = state
 end)
 
-local ZskillMOneToggle = Section:NewToggle("・Z Skills(except Godhuman Z) Or M1(Portal)", "Silent Aim That Work Some Skills", function(state)
+local ZskillMOneToggle = Section:NewToggle("・Z|M1 Skills(except Godhuman Z)", "Silent Aim That Work Some Skills", function(state)
     SilentAimModule:SetZSkillorM1(state)
     Settings["Zskillmone"] = state
 end)
@@ -197,7 +199,7 @@ local Tab = Window:NewTab("✿・Features")
 local Section = Tab:NewSection("⚜・Settings")
 
 Section:NewButton("Join Discord", "Get Link Discord server", function()
-	local link = "https://discord.gg/b7AyM8gV"
+	local link = "https://discord.gg/fKwqmB4C"
     if setclipboard then
         setclipboard(link)
         game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -293,6 +295,21 @@ local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(stat
     Settings["AutoKen"] = state
 end)
 
+local LavaToggle = Section:NewToggle("・Remove Lava", "Remove Lava", function(state)
+    StuffsModule:SetLava(state)
+    Settings["Lava"] = state
+end)
+
+local FogToggle = Section:NewToggle("・Remove Fog", "Remove Fog", function(state)
+    StuffsModule:SetFog(state)
+    Settings["Fog"] = state
+end)
+
+local DodgeToggle = Section:NewToggle("・Dodge no cd", "Dodge no cd", function(state)
+    ESPModule:SetNoDodgeCD(state)
+    Settings["Dodge"] = state
+end)
+
 local Tab = Window:NewTab("⚙・Settings Manager")
 local Section = Tab:NewSection("💾・Settings")
 
@@ -327,6 +344,35 @@ end)
 
 Section:NewButton("Rejoin Server", "Rejoin your server", function()
     StuffsModule:SetRejoinServer()
+end)
+
+Section:NewDropdown("・Global Text Font", "Change font for all text", {
+    "Arcade",
+    "Cartoon",
+    "SciFi",
+    "Fantasy",
+    "Antique",
+    "Garamond",
+    "RobotoMono",
+    "FredokaOne",
+    "LuckiestGuy",
+    "PermanentMarker",
+    "SpecialElite",
+    "Oswald",
+    "Nunito"
+}, function(selected)
+    local fontEnum = Enum.Font[selected]
+    if fontEnum then
+        ESPModule:SetGlobalFont(fontEnum)
+        Settings["GlobalFont"] = selected
+    else
+        warn("Font not found:", selected)
+    end
+end)
+
+Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer lighting", {"Autumn", "Summer"}, function(selected)
+    ESPModule:SetRTXMode(selected)
+    Settings["RTXMode"] = selected
 end)
 
 Section:NewDropdown("Select Theme", "Choose a color theme", UiSettingsModule:getThemeNames(), function(selected)
@@ -384,7 +430,10 @@ OthersStuffsModule:ApplySettings(Settings, {
     SilentMiniToggleNPC = SilentMiniToggleNPCToggle,
     SilentMiniTogglePlayers = SilentMiniTogglePlayersToggle,
     Zskillmone = ZskillMOneToggle,
-    SilentAimPediction = SilentAimPedictionToggle
+    SilentAimPediction = SilentAimPedictionToggle,
+    Dodge = DodgeToggle,
+    Lava = LavaToggle,
+    Fog = FogToggle
 })
 
 OthersStuffsModule.StartFruitNotifier()
