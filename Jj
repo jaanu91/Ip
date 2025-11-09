@@ -21,7 +21,6 @@ local BusoEnabled = false
 local v3LoopRunning = false
 local antiAfkEnabled = false
 
-ESPModule.CurrentFont = Enum.Font.Arcade
 local currentTool = nil
 local yamaLoop = nil
 local ESPs = {}
@@ -349,7 +348,6 @@ function ESPModule:SetESP(state)
 end
 
 function ESPModule:SetGlobalFont(fontEnum)
-    self.CurrentFont = fontEnum
 
     local playerGui = player:FindFirstChild("PlayerGui")
     if playerGui then
@@ -358,7 +356,6 @@ function ESPModule:SetGlobalFont(fontEnum)
                 ui.Font = fontEnum
                 ui.TextStrokeTransparency = 1
                 ui.RichText = false
-                ui.TextSize = math.max(10, ui.TextSize * 0.8)
             end
         end
     end
@@ -367,7 +364,6 @@ function ESPModule:SetGlobalFont(fontEnum)
             ui.Font = fontEnum
             ui.TextStrokeTransparency = 1
             ui.RichText = false
-            ui.TextSize = math.max(10, ui.TextSize * 0.8)
         end
     end)
 end
