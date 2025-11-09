@@ -10,6 +10,7 @@ local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
 local vim = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
@@ -20,6 +21,7 @@ local BusoEnabled = false
 local v3LoopRunning = false
 local antiAfkEnabled = false
 
+ESPModule.CurrentFont = Enum.Font.Arcade
 local currentTool = nil
 local yamaLoop = nil
 local ESPs = {}
@@ -160,27 +162,6 @@ old = hookmetamethod(game, "__namecall", function(self, ...)
     end
     return old(self, ...)
 end)
-
-local function IncreaseDodgeRange()
-    local old
-    old = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-
-        if (method == "InvokeServer" or method == "FireServer") and tostring(self) == "CommE" then
-            local a1 = args[1]
-            if typeof(a1) == "string" and a1:lower() == "dodge" then
-                if args[3] and type(args[3]) == "number" then
-                    print("[DodgeRange] Old range:", args[3])
-                    args[3] = 60
-                    print("[DodgeRange] New range:", args[3])
-                end
-            end
-        end
-
-        return old(self, unpack(args))
-    end)
-end
 
 -- =========================
 -- Global Player ESP with Colors
@@ -350,15 +331,6 @@ function ESPModule:SetNoDodgeCD(state)
 	end
 end
 
-function ESPModule:SetDodgeRange(state)
-	DodgeRangeEnabled = state
-	if state then
-		IncreaseDodgeRange()
-	else
-		--ignore
-	end
-end
-
 function ESPModule:SetAntiAfk(state)
     antiAfkEnabled = state
 end
@@ -376,6 +348,93 @@ function ESPModule:SetESP(state)
 	ESPEnabled = state
 end
 
+function ESPModule:SetGlobalFont(fontEnum)
+    self.CurrentFont = fontEnum
+
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if playerGui then
+        for _, ui in pairs(playerGui:GetDescendants()) do
+            if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
+                ui.Font = fontEnum
+                ui.TextStrokeTransparency = 1
+                ui.RichText = false
+                ui.TextSize = math.max(10, ui.TextSize * 0.8)
+            end
+        end
+    end
+    playerGui.DescendantAdded:Connect(function(ui)
+        if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
+            ui.Font = fontEnum
+            ui.TextStrokeTransparency = 1
+            ui.RichText = false
+            ui.TextSize = math.max(10, ui.TextSize * 0.8)
+        end
+    end)
+end
+
+function ESPModule:SetRTXMode(mode)
+    local a = game.Lighting
+	a.Ambient = Color3.fromRGB(33, 33, 33)
+	a.Brightness = 6.67
+	a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+	a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
+	a.EnvironmentDiffuseScale = 0.105
+	a.EnvironmentSpecularScale = 0.522
+	a.GlobalShadows = true
+	a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
+	a.ShadowSoftness = 0.04
+	a.GeographicLatitude = -15.525
+	a.ExposureCompensation = 0.75
+
+	local b = Instance.new("BloomEffect", a)
+	b.Enabled = true
+	b.Intensity = 0.04
+	b.Size = 1900
+	b.Threshold = 0.915
+
+	local c = Instance.new("ColorCorrectionEffect", a)
+	c.Brightness = 0.176
+	c.Contrast = 0.39
+	c.Enabled = true
+	c.Saturation = 0.2
+	c.TintColor = Color3.fromRGB(217, 145, 57)
+
+	if mode == "Summer" then
+		c.TintColor = Color3.fromRGB(255, 220, 148)
+	elseif mode == "Autumn" then
+		c.TintColor = Color3.fromRGB(217, 145, 57)
+	else
+		b:Destroy()
+		c:Destroy()
+	end
+
+	local d = Instance.new("DepthOfFieldEffect", a)
+	d.Enabled = true
+	d.FarIntensity = 0.077
+	d.FocusDistance = 21.54
+	d.InFocusRadius = 20.77
+	d.NearIntensity = 0.277
+
+	local e = Instance.new("ColorCorrectionEffect", a)
+	e.Brightness = 0
+	e.Contrast = -0.07
+	e.Saturation = 0
+	e.Enabled = true
+	e.TintColor = Color3.fromRGB(255, 247, 239)
+
+	local e2 = Instance.new("ColorCorrectionEffect", a)
+	e2.Brightness = 0.2
+	e2.Contrast = 0.45
+	e2.Saturation = -0.1
+	e2.Enabled = true
+	e2.TintColor = Color3.fromRGB(255, 255, 255)
+
+	local s = Instance.new("SunRaysEffect", a)
+	s.Enabled = true
+	s.Intensity = 0.01
+	s.Spread = 0.146
+end
+
 -- =========================
 -- Character Respawn Handling
 -- =========================
@@ -388,6 +447,9 @@ local function onCharacterAdded(newChar)
     end
     if V3Enabled then
         startV3Loop()
+    end
+    if DodgeEnabled then
+        NoDodgeCool()
     end
     if BusoEnabled then
         if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
