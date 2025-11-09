@@ -8,15 +8,21 @@ local CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
 local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid") 
+local vim = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
+local DodgeEnabled = false 
+local DodgeRangeEnabled = false 
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
 local antiAfkEnabled = false
 
 local currentTool = nil
+local yamaLoop = nil
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
@@ -84,6 +90,12 @@ local function clickActivateAbility()
     end
 end
 
+local function clickDodge()
+    if CommE then
+        CommE:FireServer("Dodge")
+    end
+end
+
 local function startV3Loop()
     if v3LoopRunning then return end
     v3LoopRunning = true
@@ -101,6 +113,26 @@ local function stopV3Loop()
     if not v3LoopRunning then return end
     v3LoopRunning = false
     v3Loop = nil
+end
+
+local function NoDodgeCool()
+	if DodgeEnabled then
+		for i, v in next, getgc() do
+			local character = game.Players.LocalPlayer.Character
+			local dodge = character and character:FindFirstChild("Dodge")
+
+			if dodge and typeof(v) == "function" and getfenv(v).script == dodge then
+				for i2, v2 in next, getupvalues(v) do
+					if tostring(v2) == "0.4" then
+						repeat
+							wait()
+							setupvalue(v, i2, 0)
+						until not DodgeEnabled
+					end
+				end
+			end
+		end
+	end
 end
 
 -- =========================
@@ -247,22 +279,28 @@ end)
 
 do
 	local player = game:GetService("Players").LocalPlayer
-	local vu = game:GetService("VirtualUser")
-	local vim = game:GetService("VirtualInputManager")
-	
+
 	if antiAfkEnabled then
 		player.Idled:Connect(function()
 			pcall(function()
-		        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-		        task.wait(1)
-		        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-		    end)
-
-		    pcall(function()
-		        vim:SendTouchEvent(500, 300, Enum.UserInputState.Begin, false, game)
-		        task.wait(0.8)
-		        vim:SendTouchEvent(500, 300, Enum.UserInputState.End, false, game)
-		    end)
+				vim:SendMouseButtonEvent(
+					workspace.CurrentCamera.ViewportSize.X / 2, -- X position (center of screen)
+					workspace.CurrentCamera.ViewportSize.Y / 2, -- Y position (center of screen)
+					0,
+					true,
+					game,
+					1
+				)
+				task.wait(0.05)
+				vim:SendMouseButtonEvent(
+					workspace.CurrentCamera.ViewportSize.X / 2,
+					workspace.CurrentCamera.ViewportSize.Y / 2,
+					0,
+					false,
+					game,
+					1
+				)
+			end)
 		end)
 	end
 end
@@ -283,6 +321,15 @@ function ESPModule:SetBunnyhop(state)
     BunnyHopEnabled = state
 end
 
+function ESPModule:SetNoDodgeCD(state)
+	DodgeEnabled = state
+	if state then
+		NoDodgeCool()
+	else
+		--ignore
+	end
+end
+
 function ESPModule:SetAntiAfk(state)
     antiAfkEnabled = state
 end
@@ -300,6 +347,87 @@ function ESPModule:SetESP(state)
 	ESPEnabled = state
 end
 
+function ESPModule:SetGlobalFont(fontEnum)
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if playerGui then
+        for _, ui in pairs(playerGui:GetDescendants()) do
+            if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
+                ui.Font = fontEnum
+                ui.TextStrokeTransparency = 1
+            end
+        end
+    end
+    playerGui.DescendantAdded:Connect(function(ui)
+        if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
+            ui.Font = fontEnum
+            ui.TextStrokeTransparency = 1
+        end
+    end)
+end
+
+function ESPModule:SetRTXMode(mode)
+    local a = game.Lighting
+	a.Ambient = Color3.fromRGB(33, 33, 33)
+	a.Brightness = 6.67
+	a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+	a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
+	a.EnvironmentDiffuseScale = 0.105
+	a.EnvironmentSpecularScale = 0.522
+	a.GlobalShadows = true
+	a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
+	a.ShadowSoftness = 0.04
+	a.GeographicLatitude = -15.525
+	a.ExposureCompensation = 0.75
+
+	local b = Instance.new("BloomEffect", a)
+	b.Enabled = true
+	b.Intensity = 0.04
+	b.Size = 1900
+	b.Threshold = 0.915
+
+	local c = Instance.new("ColorCorrectionEffect", a)
+	c.Brightness = 0.176
+	c.Contrast = 0.39
+	c.Enabled = true
+	c.Saturation = 0.2
+	c.TintColor = Color3.fromRGB(217, 145, 57)
+
+	if mode == "Summer" then
+		c.TintColor = Color3.fromRGB(255, 220, 148)
+	elseif mode == "Autumn" then
+		c.TintColor = Color3.fromRGB(217, 145, 57)
+	else
+		b:Destroy()
+		c:Destroy()
+	end
+
+	local d = Instance.new("DepthOfFieldEffect", a)
+	d.Enabled = true
+	d.FarIntensity = 0.077
+	d.FocusDistance = 21.54
+	d.InFocusRadius = 20.77
+	d.NearIntensity = 0.277
+
+	local e = Instance.new("ColorCorrectionEffect", a)
+	e.Brightness = 0
+	e.Contrast = -0.07
+	e.Saturation = 0
+	e.Enabled = true
+	e.TintColor = Color3.fromRGB(255, 247, 239)
+
+	local e2 = Instance.new("ColorCorrectionEffect", a)
+	e2.Brightness = 0.2
+	e2.Contrast = 0.45
+	e2.Saturation = -0.1
+	e2.Enabled = true
+	e2.TintColor = Color3.fromRGB(255, 255, 255)
+
+	local s = Instance.new("SunRaysEffect", a)
+	s.Enabled = true
+	s.Intensity = 0.01
+	s.Spread = 0.146
+end
+
 -- =========================
 -- Character Respawn Handling
 -- =========================
@@ -312,6 +440,9 @@ local function onCharacterAdded(newChar)
     end
     if V3Enabled then
         startV3Loop()
+    end
+    if DodgeEnabled then
+        NoDodgeCool()
     end
     if BusoEnabled then
         if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
