@@ -11,7 +11,6 @@ local camera = workspace.CurrentCamera
 local RS = game:GetService("ReplicatedStorage")
 local commE = RS:WaitForChild("Remotes"):WaitForChild("CommE")
 local MouseModule = RS:FindFirstChild("Mouse")
-local observationManager = getrenv()._G.OM;
 
 local Services = setmetatable({}, {
     __index = function(self, serviceName)
@@ -48,6 +47,7 @@ local MiniPlayerGui, MiniNpcGui = nil, nil
 
 local characterConnections = {}
 local Skills = {"X"}
+local Booms = {"TAP"}
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -370,6 +370,10 @@ local function isNotDoughValidCondition()
     return (currentTool and currentTool.Name == "Dough-Dough")
 end
 
+local function isNotValidCondition()
+    return (currentTool and currentTool.Name == "Lightning-Lightning")
+end
+
 RunService.RenderStepped:Connect(function()
     local lpChar = player.Character
     if not lpChar then return end
@@ -433,10 +437,6 @@ local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
 end
 
-local function isNotValidCondition()
-    return (currentTool and currentTool.Name == "Lightning-Lightning")
-end
-
 spawn(function()
     local ok, hookMeta = pcall(getrawmetatable, game)
     if ok and hookMeta then
@@ -452,7 +452,7 @@ spawn(function()
                     elseif SilentAimNPCsEnabled and NPCPosition then
                         return OldHook(self, NPCPosition, V2, ...)
                     end
-                end
+				end
             elseif Method == "invokeserver" then  
 	            if isValidCondition() then
 	                if type(V1) == "string" and table.find(Skills, V1) then  
@@ -463,6 +463,14 @@ spawn(function()
 	                    end  
 	                end    
 				end
+            elseif tostring(self) == "RemoteEvent" and Method == "fireserver" then
+                if type(V1) == "string" and table.find(Booms, V1) then
+                    if SilentAimPlayersEnabled and PlayersPosition then
+                        return OldHook(self, V1, PlayersPosition, nil, ...)
+                    elseif SilentAimNPCsEnabled and NPCPosition then
+                        return OldHook(self, V1, NPCPosition, nil, ...)
+                    end
+				end           
             end
             
             return OldHook(self, V1, V2, ...)
@@ -567,7 +575,8 @@ task.spawn(function()
 		                kenButton:SetAttribute("Selected", true)
 		            end
 		        end
-				        
+		        
+				local observationManager = getrenv()._G.OM;
 		        if (observationManager and not observationManager.active) then
 					observationManager.radius = 0
 		            observationManager:setActive(true);
@@ -581,6 +590,12 @@ end);
 
 local function onCharacterAdded(char)
     clearConnections()
+
+    for _, child in ipairs(char:GetChildren()) do
+        if child:IsA("Tool") then
+            hookTool(child)
+        end
+    end
 
     table.insert(characterConnections, char.ChildAdded:Connect(function(child)
         if child:IsA("Tool") then hookTool(child) end
