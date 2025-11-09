@@ -348,14 +348,12 @@ function ESPModule:SetESP(state)
 end
 
 function ESPModule:SetGlobalFont(fontEnum)
-
     local playerGui = player:FindFirstChild("PlayerGui")
     if playerGui then
         for _, ui in pairs(playerGui:GetDescendants()) do
             if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
                 ui.Font = fontEnum
                 ui.TextStrokeTransparency = 1
-                ui.RichText = false
             end
         end
     end
@@ -363,7 +361,6 @@ function ESPModule:SetGlobalFont(fontEnum)
         if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
             ui.Font = fontEnum
             ui.TextStrokeTransparency = 1
-            ui.RichText = false
         end
     end)
 end
