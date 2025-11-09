@@ -452,7 +452,14 @@ spawn(function()
                     elseif SilentAimNPCsEnabled and NPCPosition then
                         return OldHook(self, NPCPosition, V2, ...)
                     end
-				end
+				end				
+				if type(V1) == "string" and table.find(Booms, V1) then
+                    if SilentAimPlayersEnabled and PlayersPosition then
+                        return OldHook(self, V1, PlayersPosition, nil, ...)
+                    elseif SilentAimNPCsEnabled and NPCPosition then
+                        return OldHook(self, V1, NPCPosition, nil, ...)
+                    end
+				end   
             elseif Method == "invokeserver" then  
 	            if isValidCondition() then
 	                if type(V1) == "string" and table.find(Skills, V1) then  
@@ -462,15 +469,7 @@ spawn(function()
 		                    return OldHook(self, V1, NPCPosition, nil, ...)
 	                    end  
 	                end    
-				end
-            elseif tostring(self) == "RemoteEvent" and Method == "fireserver" then
-                if type(V1) == "string" and table.find(Booms, V1) then
-                    if SilentAimPlayersEnabled and PlayersPosition then
-                        return OldHook(self, V1, PlayersPosition, nil, ...)
-                    elseif SilentAimNPCsEnabled and NPCPosition then
-                        return OldHook(self, V1, NPCPosition, nil, ...)
-                    end
-				end           
+				end             
             end
             
             return OldHook(self, V1, V2, ...)
