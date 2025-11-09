@@ -178,6 +178,18 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.SilentAim:SetZSkillorM1(Settings["Zskillmone"])
         Toggles.Zskillmone:UpdateToggle(nil, Settings["Zskillmone"])
     end
+    if Settings["Dodge"] ~= nil then
+        Modules.ESP:SetNoDodgeCD(Settings["Dodge"])
+        Toggles.Dodge:UpdateToggle(nil, Settings["Dodge"])
+    end
+    if Settings["Lava"] ~= nil then
+        Modules.Stuffs:SetLava(Settings["Lava"])
+        Toggles.Lava:UpdateToggle(nil, Settings["Lava"])
+    end
+    if Settings["Fog"] ~= nil then
+        Modules.Stuffs:SetFog(Settings["Fog"])
+        Toggles.Fog:UpdateToggle(nil, Settings["Fog"])
+    end
 end
 
 local FruitsToCheck = {
