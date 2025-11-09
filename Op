@@ -48,7 +48,6 @@ local MiniPlayerGui, MiniNpcGui = nil, nil
 local characterConnections = {}
 local Skills = {"X"}
 local Booms = {"TAP"}
-local Dooms = {"Z"}
 
 local PredictionAmount = 0.1
 local maxRange = 1000
@@ -438,10 +437,6 @@ local function isValidCondition()
     return (currentTool and currentTool.Name == "Buddy Sword")
 end
 
-local function isSanguinValidCondition()
-    return (currentTool and currentTool.Name == "Sanguine Art")
-end
-
 spawn(function()
     local ok, hookMeta = pcall(getrawmetatable, game)
     if ok and hookMeta then
@@ -474,16 +469,7 @@ spawn(function()
 		                    return OldHook(self, V1, NPCPosition, nil, ...)
 	                    end  
 	                end    
-				end
-				if isSanguinValidCondition() then
-	                if type(V1) == "string" and table.find(Dooms, V1) then  
-	                    if SilentAimPlayersEnabled and PlayersPosition then  
-	                        return OldHook(self, V1, PlayersPosition, nil, ...)
-	                    elseif SilentAimNPCsEnabled and NPCPosition then
-		                    return OldHook(self, V1, NPCPosition, nil, ...)
-	                    end  
-	                end    
-				end
+				end				
 			end
             
             return OldHook(self, V1, V2, ...)
@@ -491,6 +477,78 @@ spawn(function()
         setreadonly(hookMeta, true)
     end
 end)
+
+if not isNotValidCondition() then
+	if MouseModule and typeof(MouseModule) == "Instance" then
+        local ok2, okResult = pcall(function()
+            return require(MouseModule)
+        end)
+
+        if ok2 and okResult then  
+            if type(okResult) == "table" then  
+                Mouse = okResult  
+            else  
+                Mouse = nil  
+            end  
+        else  
+            Mouse = nil  
+        end  
+
+        if Mouse then  
+            local Character = player.Character or player.CharacterAdded:Wait()  
+            local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")  
+
+            if RootPart then  
+                pcall(function()  
+                    if type(Mouse) == "table" then  
+                        Mouse.Hit = CFrame.new(RootPart.Position)  
+                        Mouse.Target = RootPart  
+                    end  
+                end)  
+            else  
+                task.spawn(function()  
+                    local Character = player.Character or player.CharacterAdded:Wait()  
+                    local RootPart = Character:WaitForChild("HumanoidRootPart")  
+                    pcall(function()  
+                        if type(Mouse) == "table" then  
+                            Mouse.Hit = CFrame.new(RootPart.Position)  
+                            Mouse.Target = RootPart  
+                        end  
+                    end)  
+                end)  
+            end  
+        end  
+
+        RunService.Heartbeat:Connect(function()  
+            if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then  
+                local targetCFrame = nil  
+
+                if PlayersPosition then  
+                    targetCFrame = CFrame.new(PlayersPosition)  
+                elseif NPCPosition then  
+                    targetCFrame = CFrame.new(NPCPosition)  
+                end  
+
+                if targetCFrame then  
+                    pcall(function()  
+                        if type(Mouse) == "table" then  
+                            Mouse.Hit = targetCFrame  
+                            Mouse.Target = nil  
+                        end  
+                    end)  
+
+                    if MouseModule then  
+                        local ok, MouseData = pcall(require, MouseModule)  
+                        if ok and type(MouseData) == "table" then  
+                            MouseData.Hit = targetCFrame  
+                            MouseData.Target = nil  
+                        end  
+                    end  
+                end  
+            end  
+        end)
+    end
+end
 
 local HasTag = function(tagName)
   local char = player.Character
