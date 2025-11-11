@@ -370,7 +370,7 @@ Section:NewDropdown("・Global Text Font", "Change font for all text", {
     end
 end)
 
-Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer lighting", {"Autumn", "Summer"}, function(selected)
+Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer or Spring or Winter", {"Autumn", "Summer", "Spring", "Winter"}, function(selected)
     ESPModule:SetRTXMode(selected)
     Settings["RTXMode"] = selected
 end)
