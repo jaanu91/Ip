@@ -375,22 +375,14 @@ function ESPModule:SetRTXMode(mode)
 	local Terrain = workspace.Terrain
 	local currentSeason = mode -- Store for later use
 
-	-- Clean up existing lighting effects
-	for _, v in pairs(Lighting:GetChildren()) do
-		if v:IsA("Atmosphere") or v:IsA("BloomEffect") or v:IsA("ColorCorrectionEffect")
-		or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
-			v:Destroy()
-		end
-	end
-
 	-- Core lighting settings
 	Lighting.Technology = Enum.Technology.Future
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.35
-	Lighting.Brightness = 7
+	Lighting.ShadowSoftness = 0.60
+	Lighting.Brightness = 2.2
 	Lighting.EnvironmentDiffuseScale = 1
 	Lighting.EnvironmentSpecularScale = 1
-	Lighting.ExposureCompensation = 0.75
+	Lighting.ExposureCompensation = 0.2
 	Lighting.Ambient = Color3.fromRGB(40, 40, 40)
 	Lighting.OutdoorAmbient = Color3.fromRGB(60, 60, 60)
 
@@ -406,16 +398,13 @@ function ESPModule:SetRTXMode(mode)
 	Bloom.Threshold = 0.9
 	Bloom.Size = 2000
 
-	-- Particle color per season 
-	local particleColor = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-
 	if mode == "Summer" then
 		Lighting.ColorShift_Top = Color3.fromRGB(255, 250, 225)
 		Lighting.ColorShift_Bottom = Color3.fromRGB(170, 210, 255)
 		Atmosphere.Color = Color3.fromRGB(255, 255, 255)
 		Atmosphere.Decay = Color3.fromRGB(210, 210, 190)
 		Atmosphere.Density = 0.35
-		Atmosphere.Haze = 2
+		Atmosphere.Haze = 1
 		CC.TintColor = Color3.fromRGB(255, 235, 190)
 		CC.Brightness = 0.15
 		CC.Contrast = 0.25
@@ -433,7 +422,7 @@ function ESPModule:SetRTXMode(mode)
 		Atmosphere.Color = Color3.fromRGB(255, 200, 160)
 		Atmosphere.Decay = Color3.fromRGB(200, 130, 80)
 		Atmosphere.Density = 0.4
-		Atmosphere.Haze = 3
+		Atmosphere.Haze = 2
 		CC.TintColor = Color3.fromRGB(230, 160, 70)
 		CC.Brightness = 0.1
 		CC.Contrast = 0.35
@@ -491,18 +480,10 @@ function ESPModule:SetRTXMode(mode)
 	workspace.DescendantAdded:Connect(function(obj)
 		if obj:IsA("Part") or obj:IsA("MeshPart") then
 			obj.CastShadow = true
-			obj.Reflectance = 0.05
 		elseif obj:IsA("ParticleEmitter") then
 			obj.Color = particleColor
 		end
 	end)
-
-	-- Recolor all existing ParticleEmitters too
-	for _, particle in pairs(workspace:GetDescendants()) do
-		if particle:IsA("ParticleEmitter") then
-			particle.Color = particleColor
-		end
-	end
 end
 
 -- =========================
