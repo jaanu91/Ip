@@ -383,13 +383,15 @@ function ESPModule:SetRTXMode(mode)
 
 	Lighting.Technology = Enum.Technology.Future
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.60
-	Lighting.Brightness = 2
+	Lighting.ShadowSoftness = 0.35
+	Lighting.Brightness = 4
 	Lighting.EnvironmentDiffuseScale = 1
 	Lighting.EnvironmentSpecularScale = 1
 	Lighting.ExposureCompensation = 0
-	Lighting.Ambient = Color3.fromRGB(40, 40, 40)
-	Lighting.OutdoorAmbient = Color3.fromRGB(60, 60, 60)
+	Lighting.ClockTime = 8
+	Lighting.GeographicLatitude = 66
+	Lighting.Ambient = Color3.fromRGB(25, 25, 25)
+	Lighting.OutdoorAmbient = Color3.fromRGB(50, 50, 50)
 
 	local Atmosphere = Instance.new("Atmosphere", Lighting)
 	local CC = Instance.new("ColorCorrectionEffect", Lighting)
@@ -397,9 +399,9 @@ function ESPModule:SetRTXMode(mode)
 	local DOF = Instance.new("DepthOfFieldEffect", Lighting)
 	local Bloom = Instance.new("BloomEffect", Lighting)
 
-	Bloom.Intensity = 0.1
+	Bloom.Intensity = 0.15
 	Bloom.Threshold = 0.6
-	Bloom.Size = 2000
+	Bloom.Size = 1800
 
 	if mode == "Summer" then
 		Lighting.ColorShift_Top = Color3.fromRGB(255, 250, 225)
