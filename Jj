@@ -493,9 +493,6 @@ function ESPModule:SetRTXMode(mode)
 			obj.CastShadow = true
 			obj.Reflectance = 0.05
 		elseif obj:IsA("ParticleEmitter") then
-			obj.LightEmission = 0.5
-			obj.Brightness = 1.2
-			obj.Enabled = true
 			obj.Color = particleColor
 		end
 	end)
