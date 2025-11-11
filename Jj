@@ -11,6 +11,7 @@ local humanoid = char:WaitForChild("Humanoid")
 local vim = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local workspace = game:GetService("Workspace")
 
 local V3Enabled = false
 local BunnyHopEnabled = false
@@ -351,81 +352,160 @@ function ESPModule:SetGlobalFont(fontEnum)
     local playerGui = player:FindFirstChild("PlayerGui")
     if playerGui then
         for _, ui in pairs(playerGui:GetDescendants()) do
-            if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
-                ui.Font = fontEnum
-                ui.TextStrokeTransparency = 1
+	        if not ui:IsDescendantOf(playerGui:FindFirstChild("ScreenGui")) then
+	            if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
+	                ui.Font = fontEnum
+	                ui.TextStrokeTransparency = 1
+				end
             end
         end
     end
     playerGui.DescendantAdded:Connect(function(ui)
-        if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
-            ui.Font = fontEnum
-            ui.TextStrokeTransparency = 1
+	    if not ui:IsDescendantOf(playerGui:FindFirstChild("ScreenGui")) then
+		    if ui:IsA("TextLabel") or ui:IsA("TextButton") or ui:IsA("TextBox") then
+	            ui.Font = fontEnum
+	            ui.TextStrokeTransparency = 1
+			end
         end
     end)
 end
 
 function ESPModule:SetRTXMode(mode)
-    local a = game.Lighting
-	a.Ambient = Color3.fromRGB(33, 33, 33)
-	a.Brightness = 6.67
-	a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-	a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
-	a.EnvironmentDiffuseScale = 0.105
-	a.EnvironmentSpecularScale = 0.522
-	a.GlobalShadows = true
-	a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
-	a.ShadowSoftness = 0.04
-	a.GeographicLatitude = -15.525
-	a.ExposureCompensation = 0.75
+	local Lighting = game:GetService("Lighting")
+	local Terrain = workspace.Terrain
+	local currentSeason = mode -- Store for later use
 
-	local b = Instance.new("BloomEffect", a)
-	b.Enabled = true
-	b.Intensity = 0.04
-	b.Size = 1900
-	b.Threshold = 0.915
-
-	local c = Instance.new("ColorCorrectionEffect", a)
-	c.Brightness = 0.176
-	c.Contrast = 0.39
-	c.Enabled = true
-	c.Saturation = 0.2
-	c.TintColor = Color3.fromRGB(217, 145, 57)
-
-	if mode == "Summer" then
-		c.TintColor = Color3.fromRGB(255, 220, 148)
-	elseif mode == "Autumn" then
-		c.TintColor = Color3.fromRGB(217, 145, 57)
-	else
-		b:Destroy()
-		c:Destroy()
+	-- Clean up existing lighting effects
+	for _, v in pairs(Lighting:GetChildren()) do
+		if v:IsA("Atmosphere") or v:IsA("BloomEffect") or v:IsA("ColorCorrectionEffect")
+		or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+			v:Destroy()
+		end
 	end
 
-	local d = Instance.new("DepthOfFieldEffect", a)
-	d.Enabled = true
-	d.FarIntensity = 0.077
-	d.FocusDistance = 21.54
-	d.InFocusRadius = 20.77
-	d.NearIntensity = 0.277
+	-- Core lighting settings
+	Lighting.Technology = Enum.Technology.Future
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = 0.35
+	Lighting.Brightness = 7
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	Lighting.ExposureCompensation = 0.75
+	Lighting.Ambient = Color3.fromRGB(40, 40, 40)
+	Lighting.OutdoorAmbient = Color3.fromRGB(60, 60, 60)
 
-	local e = Instance.new("ColorCorrectionEffect", a)
-	e.Brightness = 0
-	e.Contrast = -0.07
-	e.Saturation = 0
-	e.Enabled = true
-	e.TintColor = Color3.fromRGB(255, 247, 239)
+	-- Create atmosphere and post effects
+	local Atmosphere = Instance.new("Atmosphere", Lighting)
+	local CC = Instance.new("ColorCorrectionEffect", Lighting)
+	local SR = Instance.new("SunRaysEffect", Lighting)
+	local DOF = Instance.new("DepthOfFieldEffect", Lighting)
+	local Bloom = Instance.new("BloomEffect", Lighting)
 
-	local e2 = Instance.new("ColorCorrectionEffect", a)
-	e2.Brightness = 0.2
-	e2.Contrast = 0.45
-	e2.Saturation = -0.1
-	e2.Enabled = true
-	e2.TintColor = Color3.fromRGB(255, 255, 255)
+	-- Default bloom setup
+	Bloom.Intensity = 0.1
+	Bloom.Threshold = 0.9
+	Bloom.Size = 2000
 
-	local s = Instance.new("SunRaysEffect", a)
-	s.Enabled = true
-	s.Intensity = 0.01
-	s.Spread = 0.146
+	-- Particle color per season 
+	local particleColor = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+
+	if mode == "Summer" then
+		Lighting.ColorShift_Top = Color3.fromRGB(255, 250, 225)
+		Lighting.ColorShift_Bottom = Color3.fromRGB(170, 210, 255)
+		Atmosphere.Color = Color3.fromRGB(255, 255, 255)
+		Atmosphere.Decay = Color3.fromRGB(210, 210, 190)
+		Atmosphere.Density = 0.35
+		Atmosphere.Haze = 2
+		CC.TintColor = Color3.fromRGB(255, 235, 190)
+		CC.Brightness = 0.15
+		CC.Contrast = 0.25
+		CC.Saturation = 0.2
+		SR.Intensity = 0.15
+		SR.Spread = 0.2
+		DOF.FocusDistance = 25
+		DOF.InFocusRadius = 30
+		Terrain.WaterColor = Color3.fromRGB(100, 160, 255)
+		particleColor = ColorSequence.new(Color3.fromRGB(255, 245, 200)) -- warm light dust
+
+	elseif mode == "Autumn" then
+		Lighting.ColorShift_Top = Color3.fromRGB(255, 220, 160)
+		Lighting.ColorShift_Bottom = Color3.fromRGB(140, 100, 70)
+		Atmosphere.Color = Color3.fromRGB(255, 200, 160)
+		Atmosphere.Decay = Color3.fromRGB(200, 130, 80)
+		Atmosphere.Density = 0.4
+		Atmosphere.Haze = 3
+		CC.TintColor = Color3.fromRGB(230, 160, 70)
+		CC.Brightness = 0.1
+		CC.Contrast = 0.35
+		CC.Saturation = -0.05
+		SR.Intensity = 0.1
+		SR.Spread = 0.15
+		DOF.FocusDistance = 20
+		DOF.InFocusRadius = 20
+		Terrain.WaterColor = Color3.fromRGB(180, 130, 90)
+		particleColor = ColorSequence.new(Color3.fromRGB(255, 170, 80)) -- leaf-like glow
+
+	elseif mode == "Spring" then
+		Lighting.ColorShift_Top = Color3.fromRGB(210, 255, 220)
+		Lighting.ColorShift_Bottom = Color3.fromRGB(180, 220, 190)
+		Atmosphere.Color = Color3.fromRGB(210, 255, 220)
+		Atmosphere.Decay = Color3.fromRGB(180, 230, 180)
+		Atmosphere.Density = 0.25
+		Atmosphere.Haze = 1.5
+		CC.TintColor = Color3.fromRGB(210, 255, 210)
+		CC.Brightness = 0.2
+		CC.Contrast = 0.2
+		CC.Saturation = 0.3
+		SR.Intensity = 0.12
+		SR.Spread = 0.17
+		DOF.FocusDistance = 30
+		DOF.InFocusRadius = 25
+		Terrain.WaterColor = Color3.fromRGB(120, 200, 140)
+		particleColor = ColorSequence.new(Color3.fromRGB(190, 255, 200)) -- green pastel tone
+
+	elseif mode == "Winter" then
+		Lighting.ColorShift_Top = Color3.fromRGB(200, 230, 255)
+		Lighting.ColorShift_Bottom = Color3.fromRGB(150, 170, 190)
+		Atmosphere.Color = Color3.fromRGB(190, 220, 255)
+		Atmosphere.Decay = Color3.fromRGB(160, 190, 220)
+		Atmosphere.Density = 0.45
+		Atmosphere.Haze = 2.5
+		CC.TintColor = Color3.fromRGB(200, 230, 255)
+		CC.Brightness = 0.05
+		CC.Contrast = 0.3
+		CC.Saturation = -0.1
+		SR.Intensity = 0.08
+		SR.Spread = 0.1
+		DOF.FocusDistance = 22
+		DOF.InFocusRadius = 15
+		Terrain.WaterColor = Color3.fromRGB(180, 220, 255)
+		particleColor = ColorSequence.new(Color3.fromRGB(220, 240, 255)) -- snow mist tone
+	end
+
+	-- Reflective terrain look
+	Terrain.WaterWaveSize = 0.15
+	Terrain.WaterTransparency = 0.2
+	Terrain.WaterReflectance = 0.4
+
+	-- 🌾 Update particles automatically when added
+	workspace.DescendantAdded:Connect(function(obj)
+		if obj:IsA("Part") or obj:IsA("MeshPart") then
+			obj.CastShadow = true
+			obj.Reflectance = 0.05
+		elseif obj:IsA("ParticleEmitter") then
+			obj.LightEmission = 0.5
+			obj.Brightness = 1.2
+			obj.Enabled = true
+			obj.Color = particleColor
+		end
+	end)
+
+	-- Recolor all existing ParticleEmitters too
+	for _, particle in pairs(workspace:GetDescendants()) do
+		if particle:IsA("ParticleEmitter") then
+			particle.Color = particleColor
+		end
+	end
 end
 
 -- =========================
