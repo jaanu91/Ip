@@ -454,11 +454,13 @@ spawn(function()
                     end
 				end				
 				if type(V1) == "string" and table.find(Booms, V1) then
-                    if SilentAimPlayersEnabled and PlayersPosition then
-                        return OldHook(self, V1, PlayersPosition, nil, ...)
-                    elseif SilentAimNPCsEnabled and NPCPosition then
-                        return OldHook(self, V1, NPCPosition, nil, ...)
-                    end
+					if ZSkillorM1 then 
+	                    if SilentAimPlayersEnabled and PlayersPosition then
+	                        return OldHook(self, V1, PlayersPosition, nil, ...)
+	                    elseif SilentAimNPCsEnabled and NPCPosition then
+	                        return OldHook(self, V1, NPCPosition, nil, ...)
+	                    end
+					end
 				end   
             elseif Method == "invokeserver" then  
 	            if isValidCondition() then
