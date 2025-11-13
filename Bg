@@ -372,6 +372,7 @@ end
 
 local function isNotValidCondition()
     return (currentTool and currentTool.Name == "Lightning-Lightning")
+    or (currentTool and currentTool.Name == "Portal-Portal")
 end
 
 RunService.RenderStepped:Connect(function()
