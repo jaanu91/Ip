@@ -1,15 +1,14 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/land9678/Sapi-Hub-V1/refs/heads/main/KavoUI.txt"))()
-local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Hot"))()
-local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Jj"))()
-local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Op"))()
-local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Goti"))()
+local AimlockModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Dk"))()
+local ESPModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Gk"))()
+local SilentAimModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Bg"))()
+local StuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Stuf"))()
 local OthersStuffsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Mot"))()
-local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Hotie"))()
+local UiSettingsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Vot"))()
 local ZSkillModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/jaanu91/Ip/refs/heads/main/Teku"))()
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local UserInputService = game:GetService("UserInputService")  
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")  
 local TeleportService = game:GetService("TeleportService")
 local PlayerList = {"None"}
 
@@ -63,13 +62,15 @@ Section:NewLabel("Status: " .. execStatus)
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
-Section:NewLabel("• Fixed Z Skills Work(Except Godhuman Z) ✔")
+Section:NewLabel("• Improved Fps Boost ✔")
+Section:NewLabel("• Fixed Soul Guitar M1in Silent aim ✔")
+Section:NewLabel("• Added RTX Graphic(Visual Vibes) ✔")
+Section:NewLabel("• Added Custom Global Text ✔")
+Section:NewLabel("• Added Dash No CD ✔")
+Section:NewLabel("• Added Remove Fog or Lava ✔")
+Section:NewLabel("• Added Z Skills Work(Except Godhuman Z) ✔")
 Section:NewLabel("• Added Fruit M1 Closet Attack ✔")
-Section:NewLabel("• Added Buddy Sword X Fixed in Silent aimbo ✔")
-Section:NewLabel("• Added Select Target for Silent aim ✔")
-Section:NewLabel("• Added Auto Ken ✔")
-Section:NewLabel("• Added Select Target for Silent aim ✔")
-Section:NewLabel("• Added Bring Fruits ✔")
+Section:NewLabel("• Fixed Buddy Sword X in Silent aim ✔")
 
 local Tab = Window:NewTab("❖・Aimbot")
 local Section = Tab:NewSection("☘・Settings")
@@ -189,7 +190,7 @@ local HighlightToggle = Section:NewToggle("・Main Highlight", "Current Target H
     Settings["Highlight"] = state
 end)
 
-local ZskillMOneToggle = Section:NewToggle("・Z Skills(except Godhuman Z) Or M1(Portal)", "Silent Aim That Work Some Skills", function(state)
+local ZskillMOneToggle = Section:NewToggle("・Z|M1 Skills(except Godhuman Z)", "Silent Aim That Work Some Skills", function(state)
     SilentAimModule:SetZSkillorM1(state)
     Settings["Zskillmone"] = state
 end)
@@ -247,16 +248,6 @@ local FpsBoostToggle = Section:NewToggle("・Fps Boost", "Increase Fps", functio
     Settings["FpsBoost"] = state
 end)
 
-local LavaToggle = Section:NewToggle("・Remove Lava", "Remove Lava", function(state)
-    StuffsModule:SetLava(state)
-    Settings["Lava"] = state
-end)
-
-local FogToggle = Section:NewToggle("・Remove Fog", "Remove Fog", function(state)
-    StuffsModule:SetFog(state)
-    Settings["Fog"] = state
-end)
-
 local INFEnergyToggle = Section:NewToggle("・INF Energy", "Max Energy", function(state)
     StuffsModule:SetINFEnergy(state)
     Settings["INFEnergy"] = state
@@ -304,6 +295,16 @@ local AutoKenToggle = Section:NewToggle("・Auto Ken", " AutoKen", function(stat
     Settings["AutoKen"] = state
 end)
 
+local LavaToggle = Section:NewToggle("・Remove Lava", "Remove Lava", function(state)
+    StuffsModule:SetLava(state)
+    Settings["Lava"] = state
+end)
+
+local FogToggle = Section:NewToggle("・Remove Fog", "Remove Fog", function(state)
+    StuffsModule:SetFog(state)
+    Settings["Fog"] = state
+end)
+
 local DodgeToggle = Section:NewToggle("・Dodge no cd", "Dodge no cd", function(state)
     ESPModule:SetNoDodgeCD(state)
     Settings["Dodge"] = state
@@ -329,7 +330,7 @@ end)
 
 Section:NewButton("Reset Settings", "Clear saved settings", function()
     OthersStuffsModule.ResetSettings()
-    Settings = {}
+    Settings = {} -- also clear local
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Sapi Hub",
         Text = "Settings Reset!",
@@ -369,7 +370,7 @@ Section:NewDropdown("・Global Text Font", "Change font for all text", {
     end
 end)
 
-Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer lighting", {"Autumn", "Summer", "Spring", "Winter"}, function(selected)
+Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer or Spring or Winter", {"Autumn", "Summer", "Spring", "Winter"}, function(selected)
     ESPModule:SetRTXMode(selected)
     Settings["RTXMode"] = selected
 end)
