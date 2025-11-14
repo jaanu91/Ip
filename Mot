@@ -464,4 +464,8 @@ spawn(function()
     end
 end)
 
+function SilentAimModule:SetPlayerSilentAim(state)
+    SilentAimPlayersEnabled = state
+end
+
 return OthersStuffsModule
