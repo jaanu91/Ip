@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")  
 local TeleportService = game:GetService("TeleportService")
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 local PlayerList = {"None"}
 
 local toggleGui = Instance.new("ScreenGui")
@@ -26,6 +27,7 @@ toggleButton.BorderSizePixel = 0
 toggleButton.ZIndex = 9999
 toggleButton.Image = "rbxassetid://76926193047725"
 toggleButton.Parent = toggleGui
+toggleButton.Visible = isMobile
 
 local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
@@ -443,7 +445,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
     if input.KeyCode == Enum.KeyCode.M then
         Library:ToggleUI()
-        toggleButton.Visible = Library.UI.Visible
     elseif UserInputService.KeyboardEnabled and input.KeyCode == Enum.KeyCode.G then
         Settings["SilentAimPlayers"] = not Settings["SilentAimPlayers"]
         SilentAimModule:SetPlayerSilentAim(Settings["SilentAimPlayers"])
