@@ -190,54 +190,6 @@ local function isAllyWithMe(targetplayer)
 	return false
 end
 
--- =========================
--- PC Keybind for Mini Toggles (G)
--- =========================
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.G then
-        if MiniPlayerCreated and MiniPlayerGui and MiniPlayerGui.Enabled then
-            if MiniPlayerState then
-                MiniPlayerState.value = not MiniPlayerState.value
-                SilentAimPlayersEnabled = MiniPlayerState.value
-                UserWantsplayerAim = MiniPlayerState.value
-
-                local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
-                if btn then
-                    btn.Text = "Player" .. (MiniPlayerState.value and " ON" or " OFF")
-                    local grad = btn:FindFirstChildOfClass("UIGradient")
-                    if grad then
-                        grad.Color = ColorSequence.new{
-                            ColorSequenceKeypoint.new(0, MiniPlayerState.value and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
-                            ColorSequenceKeypoint.new(1, MiniPlayerState.value and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
-                        }
-                    end
-                end
-            end
-        end
-
-        if MiniNpcCreated and MiniNpcGui and MiniNpcGui.Enabled then
-            if MiniNpcState then
-                MiniNpcState.value = not MiniNpcState.value
-                SilentAimNPCsEnabled = MiniNpcState.value
-                UserWantsNPCAim = MiniNpcState.value
-
-                local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
-                if btn then
-                    btn.Text = "NPC" .. (MiniNpcState.value and " ON" or " OFF")
-                    local grad = btn:FindFirstChildOfClass("UIGradient")
-                    if grad then
-                        grad.Color = ColorSequence.new{
-                            ColorSequenceKeypoint.new(0, MiniNpcState.value and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
-                            ColorSequenceKeypoint.new(1, MiniNpcState.value and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
-                        }
-                    end
-                end
-            end
-        end
-    end
-end)
-
 local function isEnemy(targetplayer)
 	if not targetplayer or targetplayer == player then
 		return false
