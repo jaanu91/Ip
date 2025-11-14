@@ -295,6 +295,9 @@ function OthersStuffsModule.StartFruitNotifier()
     end)
 end
 
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local Character = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
 
 local SilentAimPlayersEnabled = false
