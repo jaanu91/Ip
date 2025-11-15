@@ -147,9 +147,13 @@ end
 
 do
 	if fog then
-		(game:GetService("Lighting")).LightingLayers:Destroy();
-		(game:GetService("Lighting")).Sky:Destroy();
-		game.Lighting.FogEnd = 9000000000;
+		local c = game.Lighting
+	    c.FogEnd = 100000
+	    for r, v in pairs(c:GetDescendants()) do
+	        if v:IsA("Atmosphere") then
+	            v:Destroy()
+	        end
+	    end
 	end
 end
 
