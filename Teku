@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-
+local soru = player.PlayerGui.MobileContextButtons.ContextButtonFrame.BoundActionSoru
 local currentTool = nil
 local godhumanZActive = false
 local dmgConn = nil
@@ -154,6 +154,7 @@ end
 -- ========= START AIMLOCK =========
 local function startAimlock()
 	if not ZSkillsEnabled then return end
+	if not soru:GetAttribute("Selected") then return end
 	if aimlockActive then return end
 
 	nearestTarget = GetNearestTarget(1000)
@@ -164,6 +165,11 @@ local function startAimlock()
 	aimRenderConn = RunService.RenderStepped:Connect(function()
 		if not ZSkillsEnabled then
 			stopAimlock("ZSkills disabled mid-aim")
+			return
+		end
+		
+		if not soru:GetAttribute("Selected") then
+			stopAimlock("Soru deselected")
 			return
 		end
 
@@ -244,6 +250,8 @@ UserInputService.TouchEnded:Connect(function(touch)
 		end
 	end
 end)
+
+
 
 -- ========= SKILL HOOK =========
 if not getgenv().ZSkillHooked then
