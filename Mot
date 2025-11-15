@@ -190,6 +190,64 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
         Modules.Stuffs:SetFog(Settings["Fog"])
         Toggles.Fog:UpdateToggle(nil, Settings["Fog"])
     end
+	if Settings["PredictionAmount"] then
+	    Modules.Aimlock:SetPredictionTime(Settings["PredictionAmount"])
+	    if Toggles.PredictionAmount then
+	        Toggles.PredictionAmount:UpdateDropdown(Settings["PredictionAmount"])
+	    end
+	end
+
+	if Settings["SilentAimDistanceLimit"] then
+	    Modules.SilentAim:SetDistanceLimit(Settings["SilentAimDistanceLimit"])
+	    if Toggles.SilentAimDistanceLimit then
+	        Toggles.SilentAimDistanceLimit:UpdateDropdown(Settings["SilentAimDistanceLimit"])
+	    end
+	end
+	
+	if Settings["SilentAimPredictionFuture"] then
+	    Modules.SilentAim:SetPredictionAmount(Settings["SilentAimPredictionFuture"])
+	    if Toggles.SilentAimPredictionFuture then
+	        Toggles.SilentAimPredictionFuture:UpdateDropdown(Settings["SilentAimPredictionFuture"])
+	    end
+	end
+	
+	if Settings["RTXMode"] then
+	    Modules.ESP:SetRTXMode(Settings["RTXMode"])
+	    if Toggles.RTXMode then
+	        Toggles.RTXMode:UpdateDropdown(Settings["RTXMode"])
+	    end
+	end
+	
+	if Settings["Themes"] then
+	    Modules.Ui:updateSchemeColor(Settings["Themes"])
+	    if Toggles.Themes then
+	        Toggles.Themes:UpdateDropdown(Settings["Themes"])
+	    end
+	end
+	
+	if Settings["BackgroundThemes"] then
+	    Modules.Ui:updateBackgroundColor(Settings["BackgroundThemes"])
+	    if Toggles.BackgroundThemes then
+	        Toggles.BackgroundThemes:UpdateDropdown(Settings["BackgroundThemes"])
+	    end
+	end
+	
+	if Settings["TextColor"] then
+	    Modules.Ui:updateTextColor(Settings["TextColor"])
+	    if Toggles.TextColor then
+	        Toggles.TextColor:UpdateDropdown(Settings["TextColor"])
+	    end
+	end
+
+	if Settings["GlobalFont"] then
+	    local fontEnum = Enum.Font[Settings["GlobalFont"]]
+	    if fontEnum then
+	        Modules.ESP:SetGlobalFont(fontEnum)
+	        if Toggles.GlobalFont then
+	            Toggles.GlobalFont:UpdateDropdown(Settings["GlobalFont"])
+	        end
+	    end
+	end
 end
 
 local FruitsToCheck = {
