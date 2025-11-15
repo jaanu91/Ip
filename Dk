@@ -720,31 +720,84 @@ function AimlockModule:SetNpcAimlock(state)
 end
 
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
+    AimlockPlayerEnabled = state
+
     if not MiniPlayerCreated and state then
-        MiniPlayerState = { value = AimlockPlayerEnabled }
+        MiniPlayerState = { value = state }
         MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
             AimlockPlayerEnabled = val
+            if val then
+                watchDamageCounter()
+                startRenderLoop()
+            else
+                watchDamageActive = false
+                if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
+            end
         end)
         MiniPlayerCreated = true
+        if AimlockPlayerEnabled then
+            watchDamageCounter()
+            startRenderLoop()
+        end
     elseif MiniPlayerCreated then
         MiniPlayerState.value = state
+        AimlockPlayerEnabled = state
         if MiniPlayerGui then
             MiniPlayerGui.Enabled = state
+            local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
+            if btn then
+                btn.Text = "Player" .. (state and " ON" or " OFF")
+            end
+        end
+
+        if state then
+            watchDamageCounter()
+            startRenderLoop()
+        else
+            watchDamageActive = false
+            if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
         end
     end
 end
 
 function AimlockModule:SetMiniToggleNpcAimlock(state)
+    AimlockNpcEnabled = state
+
     if not MiniNpcCreated and state then
-        MiniNpcState = { value = AimlockNpcEnabled }
+        MiniNpcState = { value = state }
         MiniNpcGui = createMiniToggle("NPC", UDim2.new(0,10,0,50), MiniNpcState, function(val)
             AimlockNpcEnabled = val
+            if val then
+                watchDamageCounter()
+                startRenderLoop()
+            else
+                watchDamageActive = false
+                if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
+            end
         end)
         MiniNpcCreated = true
+
+        if AimlockNpcEnabled then
+            watchDamageCounter()
+            startRenderLoop()
+        end
     elseif MiniNpcCreated then
         MiniNpcState.value = state
+        AimlockNpcEnabled = state
         if MiniNpcGui then
             MiniNpcGui.Enabled = state
+            local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
+            if btn then
+                btn.Text = "NPC" .. (state and " ON" or " OFF")
+            end
+        end
+
+        if state then
+            watchDamageCounter()
+            startRenderLoop()
+        else
+            watchDamageActive = false
+            if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
         end
     end
 end
