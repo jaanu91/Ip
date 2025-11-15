@@ -345,10 +345,6 @@ Section:NewButton("Reset Settings", "Clear saved settings", function()
     })
 end)
 
-Section:NewButton("Hop Server", "New server", function()
-    StuffsModule:SetHopServer()
-end)
-
 Section:NewButton("Rejoin Server", "Rejoin your server", function()
     StuffsModule:SetRejoinServer()
 end)
