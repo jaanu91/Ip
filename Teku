@@ -195,7 +195,6 @@ end
 -- ========= START AIMLOCK =========
 local function startAimlock()
 	if not ZSkillsEnabled then return end
-	if not soru:GetAttribute("Selected") then return end
 	if aimlockActive then return end
 
 	nearestTarget = GetNearestTarget(1000)
@@ -208,12 +207,7 @@ local function startAimlock()
 			stopAimlock("ZSkills disabled mid-aim")
 			return
 		end
-		
-		if not soru:GetAttribute("Selected") then
-			stopAimlock("Soru deselected")
-			return
-		end
-
+				
 		if aimlockActive and nearestTarget and nearestTarget:FindFirstChild("HumanoidRootPart") then
 			local cam = workspace.CurrentCamera
 			if cam then
