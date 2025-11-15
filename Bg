@@ -30,7 +30,9 @@ local PredictionEnabled = false
 local HighlightEnabled = false 
 local AutoKen = false
 local ZSkillorM1= false
+local autoKenRunning = false
 
+local renderConnection = nil
 local currentTool = nil
 local playersaimbot = nil
 local PlayersPosition = nil
@@ -327,58 +329,70 @@ local function isNotValidCondition()
     or (currentTool and currentTool.Name == "Portal-Portal")
 end
 
-RunService.RenderStepped:Connect(function()
-    local lpChar = player.Character
-    if not lpChar then return end
-    local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
-    if not lpHRP then return end
-    if not SilentAimPlayersEnabled and not SilentAimNPCsEnabled then
-        return
-    end
+local function startRenderLoop()
+    if renderConnection then return end
 
-    local targetModel = nil
-    local lookTargetPos = nil
+    renderConnection = RunService.RenderStepped:Connect(function()
+        local lpChar = player.Character
+        if not lpChar then return end
+        local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
+        if not lpHRP then return end
 
-    if SilentAimPlayersEnabled then
-		local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
-		if targetplayer and targetplayer ~= player and targetplayer.Character then
-			playersaimbot = targetplayer.Name
-			local hrp = getHRP(targetplayer.Character)
-			PlayersPosition = getPredictedPosition(hrp)
-			lookTargetPos = PlayersPosition
-			targetModel = targetplayer.Character
-			applyHighlight(targetModel, "player")
-		else
-			playersaimbot, PlayersPosition = nil, nil
-		end
-	elseif currentTargetType == "player" then
-		playersaimbot, PlayersPosition = nil, nil
-		clearHighlight()
-	end
+        if not SilentAimPlayersEnabled and not SilentAimNPCsEnabled then
+            return
+        end
 
-	if SilentAimNPCsEnabled then  
-	    local closestNPC = getClosestNPC(lpHRP)  
-	    if closestNPC then  
-	        NPCaimbot = closestNPC.Name  
-	        local hrp = getHRP(closestNPC)  
-	        NPCPosition = getPredictedPosition(hrp)  
-			lookTargetPos = NPCPosition
-	        if not targetModel then  
-	            targetModel = closestNPC  
-	            applyHighlight(targetModel, "NPC")  
-	        end  
-	    else  
-	        NPCaimbot, NPCPosition = nil, nil  
+        local targetModel = nil
+        local lookTargetPos = nil
+
+        if SilentAimPlayersEnabled then
+            local targetplayer = Selectedplayer or getClosestplayer(lpHRP)
+            if targetplayer and targetplayer ~= player and targetplayer.Character then
+                playersaimbot = targetplayer.Name
+                local hrp = getHRP(targetplayer.Character)
+                PlayersPosition = getPredictedPosition(hrp)
+                lookTargetPos = PlayersPosition
+                targetModel = targetplayer.Character
+                applyHighlight(targetModel, "player")
+            else
+                playersaimbot, PlayersPosition = nil, nil
+            end
+        elseif currentTargetType == "player" then
+            playersaimbot, PlayersPosition = nil, nil
+            clearHighlight()
+        end
+
+        if SilentAimNPCsEnabled then  
+            local closestNPC = getClosestNPC(lpHRP)  
+            if closestNPC then  
+                NPCaimbot = closestNPC.Name  
+                local hrp = getHRP(closestNPC)  
+                NPCPosition = getPredictedPosition(hrp)
+                lookTargetPos = NPCPosition
+                if not targetModel then  
+                    targetModel = closestNPC  
+                    applyHighlight(targetModel, "NPC")  
+                end  
+            else  
+                NPCaimbot, NPCPosition = nil, nil  
+            end
+        elseif currentTargetType == "NPC" then
+            NPCaimbot, NPCPosition = nil, nil  
+            clearHighlight()
+        end
+        if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) and not isNotDoughValidCondition() then
+	        local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
+	            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
 	    end
-	elseif currentTargetType == "NPC" then
-	    NPCaimbot, NPCPosition = nil, nil  
-	    clearHighlight()
-	end
-    if currentTool and lookTargetPos and isSkillReadyForTool(currentTool.Name) and not isNotDoughValidCondition() then
-        local lookVector = (Vector3.new(lookTargetPos.X, lpHRP.Position.Y, lookTargetPos.Z) - lpHRP.Position).Unit
-            lpHRP.CFrame = CFrame.new(lpHRP.Position, lpHRP.Position + lookVector)
+    end)
+end
+
+local function stopRenderLoop()
+    if renderConnection then
+        renderConnection:Disconnect()
+        renderConnection = nil
     end
-end)
+end
 
 local function hookTool(tool)
     currentTool = tool
@@ -518,41 +532,36 @@ local HasTag = function(tagName)
   return Services.CollectionService:HasTag(char, tagName);
 end
 
-task.spawn(function()
-	while true do
-		local char = player.Character or player.CharacterAdded:Wait();
-		char:WaitForChild("Humanoid");
-		char:WaitForChild("HumanoidRootPart");
-		if not AutoKen then
-		    task.wait(0.5)
-		else
-		    task.wait(0.1)
-		end
-		
-		if AutoKen then
-		    if HasTag("Ken") then
-				local playerGui = player:FindFirstChild("PlayerGui")
-		        if playerGui then
-		            local kenButton = playerGui:FindFirstChild("MobileContextButtons")
-	                and playerGui.MobileContextButtons:FindFirstChild("ContextButtonFrame")
-	                and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+local function startAutoKenLoop()
+    if autoKenRunning then return end
+    autoKenRunning = true
 
-		            if kenButton and kenButton:GetAttribute("Selected") ~= true then
-		                kenButton:SetAttribute("Selected", true)
-		            end
-		        end
-		        
-				local observationManager = getrenv()._G.OM;
-		        if (observationManager and not observationManager.active) then
-					observationManager.radius = 0
-		            observationManager:setActive(true);
-		            commE:FireServer("Ken", true);
-		        end
-		    end
-		    wait();
-		end
-	end
-end);
+    task.spawn(function()
+        while AutoKen do
+            task.wait(0.1)
+
+            if HasTag("Ken") then
+                local playerGui = player:FindFirstChild("PlayerGui")
+                if playerGui then
+                    local kenButton = playerGui:FindFirstChild("MobileContextButtons")
+                    and playerGui.MobileContextButtons.ContextButtonFrame:FindFirstChild("BoundActionKen")
+
+                    if kenButton and kenButton:GetAttribute("Selected") ~= true then
+                        kenButton:SetAttribute("Selected", true)
+                    end
+                end
+
+                local observationManager = getrenv()._G.OM
+                if observationManager and not observationManager.active then
+                    observationManager.radius = 0
+                    observationManager:setActive(true)
+                    commE:FireServer("Ken", true)
+                end
+            end
+        end
+        autoKenRunning = false
+    end)
+end
 
 local function onCharacterAdded(char)
     clearConnections()
@@ -578,7 +587,11 @@ player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then onCharacterAdded(player.Character) end
 
 function SilentAimModule:SetAutoKen(state)
-	AutoKen = state
+    AutoKen = state
+
+    if state then
+        startAutoKenLoop()
+    end
 end
 
 function SilentAimModule:SetZSkillorM1(state)
@@ -650,21 +663,11 @@ function SilentAimModule:SetPlayerSilentAim(state)
     UserWantsplayerAim = state
     SilentAimPlayersEnabled = state
 
-    if MiniPlayerCreated and MiniPlayerGui then
-        if MiniPlayerState then
-            MiniPlayerState.value = SilentAimPlayersEnabled
-        end
-
-        local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
-        if btn then
-            local grad = btn:FindFirstChildOfClass("UIGradient")
-            btn.Text = "Player" .. (SilentAimPlayersEnabled and " ON" or " OFF")
-            if grad then
-                grad.Color = ColorSequence.new{
-                    ColorSequenceKeypoint.new(0, SilentAimPlayersEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
-                    ColorSequenceKeypoint.new(1, SilentAimPlayersEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
-                }
-            end
+    if state then
+        startRenderLoop()
+    else
+        if not SilentAimNPCsEnabled then
+            stopRenderLoop()
         end
     end
 end
@@ -673,22 +676,27 @@ function SilentAimModule:SetNPCSilentAim(state)
     UserWantsNPCAim = state
     SilentAimNPCsEnabled = state
 
-    if MiniNpcCreated and MiniNpcGui then
-        if MiniNpcState then
-            MiniNpcState.value = SilentAimNPCsEnabled
+    if state then
+        startRenderLoop()
+    else
+        if not SilentAimPlayersEnabled then
+            stopRenderLoop()
         end
+    end
+end
 
-        local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
-        if btn then
-            local grad = btn:FindFirstChildOfClass("UIGradient")
-            btn.Text = "NPC" .. (SilentAimNPCsEnabled and " ON" or " OFF")
-            if grad then
-                grad.Color = ColorSequence.new{
-                    ColorSequenceKeypoint.new(0, SilentAimNPCsEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
-                    ColorSequenceKeypoint.new(1, SilentAimNPCsEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
-                }
-            end
-        end
+local function UpdateSilentAimState()
+    SilentAimPlayersEnabled = MiniPlayerState and MiniPlayerState.value or false
+    SilentAimNPCsEnabled    = MiniNpcState and MiniNpcState.value or false
+
+    UserWantsplayerAim = SilentAimPlayersEnabled
+    UserWantsNPCAim    = SilentAimNPCsEnabled
+
+    if SilentAimPlayersEnabled or SilentAimNPCsEnabled then
+        startRenderLoop()
+    else
+        stopRenderLoop()
+        clearHighlight()
     end
 end
 
@@ -696,25 +704,13 @@ function SilentAimModule:SetMiniTogglePlayerSilentAim(state)
     if not MiniPlayerCreated and state then
         MiniPlayerState = { value = SilentAimPlayersEnabled }
         MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
-            SilentAimPlayersEnabled = val
-            UserWantsplayerAim = val
+            MiniPlayerState.value = val
+            UpdateSilentAimState()
         end)
         MiniPlayerCreated = true
     elseif MiniPlayerCreated then
         if MiniPlayerGui then
             MiniPlayerGui.Enabled = state
-            local btn = MiniPlayerGui:FindFirstChildWhichIsA("TextButton", true)
-            if btn then
-                local grad = btn:FindFirstChildOfClass("UIGradient")
-                btn.Text = "Player" .. (SilentAimPlayersEnabled and " ON" or " OFF")
-                if grad then
-                    grad.Color = ColorSequence.new{
-                        ColorSequenceKeypoint.new(0, SilentAimPlayersEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
-                        ColorSequenceKeypoint.new(1, SilentAimPlayersEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
-                    }
-                end
-                if MiniPlayerState then MiniPlayerState.value = SilentAimPlayersEnabled end
-            end
         end
     end
 end
@@ -723,25 +719,13 @@ function SilentAimModule:SetMiniToggleNpcSilentAim(state)
     if not MiniNpcCreated and state then
         MiniNpcState = { value = SilentAimNPCsEnabled }
         MiniNpcGui = createMiniToggle("NPC", UDim2.new(0,10,0,50), MiniNpcState, function(val)
-            SilentAimNPCsEnabled = val
-            UserWantsNPCAim = val
+            MiniNpcState.value = val
+            UpdateSilentAimState()
         end)
         MiniNpcCreated = true
     elseif MiniNpcCreated then
         if MiniNpcGui then
             MiniNpcGui.Enabled = state
-            local btn = MiniNpcGui:FindFirstChildWhichIsA("TextButton", true)
-            if btn then
-                local grad = btn:FindFirstChildOfClass("UIGradient")
-                btn.Text = "NPC" .. (SilentAimNPCsEnabled and " ON" or " OFF")
-                if grad then
-                    grad.Color = ColorSequence.new{
-                        ColorSequenceKeypoint.new(0, SilentAimNPCsEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 100, 50)),
-                        ColorSequenceKeypoint.new(1, SilentAimNPCsEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 200, 50))
-                    }
-                end
-                if MiniNpcState then MiniNpcState.value = SilentAimNPCsEnabled end
-            end
         end
     end
 end
