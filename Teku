@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local PlayerGui = player:WaitForChild("PlayerGui")
 
 local currentTool = nil
 local godhumanZActive = false
@@ -207,7 +207,7 @@ local function startAimlock()
 			stopAimlock("ZSkills disabled mid-aim")
 			return
 		end
-				
+
 		if aimlockActive and nearestTarget and nearestTarget:FindFirstChild("HumanoidRootPart") then
 			local cam = workspace.CurrentCamera
 			if cam then
@@ -285,8 +285,6 @@ UserInputService.TouchEnded:Connect(function(touch)
 		end
 	end
 end)
-
-
 
 -- ========= SKILL HOOK =========
 if not getgenv().ZSkillHooked then
