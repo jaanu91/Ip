@@ -15,7 +15,6 @@ local UserInputService = game:GetService("UserInputService")
 local V3Enabled = false
 local BunnyHopEnabled = false
 local DodgeEnabled = false 
-local DodgeRangeEnabled = false 
 local ESPEnabled = false
 local BusoEnabled = false
 local v3LoopRunning = false
@@ -23,7 +22,6 @@ local antiAfkEnabled = false
 
 local NoDodgeCoroutine
 local currentTool = nil
-local yamaLoop = nil
 local ESPs = {}
 local cooldownTime = 31
 local v3Loop = nil
