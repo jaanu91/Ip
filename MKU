@@ -102,7 +102,7 @@ local PredictionToggle = Section:NewToggle("・Prediction", "Predict enemy movem
     Settings["Prediction"] = state
 end)
 
-Section:NewDropdown("・Prediction Amount | Default 0.1s", "Select max Prediction for Aimlock", {"0.2", "0.3", "0.4"}, function(selected)
+local PredictionAimlockAmountDropdown = Section:NewDropdown("・Prediction Amount | Default 0.1s", "Select max Prediction for Aimlock", {"0.2", "0.3", "0.4"}, function(selected)
     local num = tonumber(selected)
     if num then
         AimlockModule:SetPredictionTime(num)
@@ -138,7 +138,7 @@ local SilentAimPedictionToggle = Section:NewToggle("・SilentAim Prediction", "P
     Settings["SilentAimPediction"] = state
 end)
 
-Section:NewDropdown("・Prediction Future | Default 0.1s", "Select max Prediction for Silent Aim", {"0.2", "0.3", "0.4"}, function(selected)
+local PredictionAmountDropdown = Section:NewDropdown("・Prediction Future | Default 0.1s", "Select max Prediction for Silent Aim", {"0.2", "0.3", "0.4"}, function(selected)
     local num = tonumber(selected)
     if num then
         SilentAimModule:SetPredictionAmount(num)
@@ -146,7 +146,7 @@ Section:NewDropdown("・Prediction Future | Default 0.1s", "Select max Predictio
     end
 end)
 
-Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance for aimbot", {"200", "400", "600"}, function(selected)
+local DistanceAmountDropdown = Section:NewDropdown("・Distance Limit | Default 1000m", "Select max distance for aimbot", {"200", "400", "600"}, function(selected)
     local num = tonumber(selected)
     if num then
         SilentAimModule:SetDistanceLimit(num)
@@ -349,7 +349,7 @@ Section:NewButton("Rejoin Server", "Rejoin your server", function()
     StuffsModule:SetRejoinServer()
 end)
 
-Section:NewDropdown("・Global Text Font", "Change font for all text", {
+local GlobalTextDropdown = Section:NewDropdown("・Global Text Font", "Change font for all text", {
     "Arcade",
     "Cartoon",
     "SciFi",
@@ -373,29 +373,32 @@ Section:NewDropdown("・Global Text Font", "Change font for all text", {
     end
 end)
 
-Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer or Spring or Winter", {"Autumn", "Summer", "Spring", "Winter"}, function(selected)
+local RTXModeDropdown = Section:NewDropdown("・RTX Graphics Mode", "Choose between Autumn or Summer lighting", {"Autumn", "Summer", "Spring", "Winter"}, function(selected)
     ESPModule:SetRTXMode(selected)
     Settings["RTXMode"] = selected
 end)
 
-Section:NewDropdown("Select Theme", "Choose a color theme", UiSettingsModule:getThemeNames(), function(selected)
+local ThemesDropdown = Section:NewDropdown("Select Theme", "Choose a color theme", UiSettingsModule:getThemeNames(), function(selected)
     local newColor = UiSettingsModule.themes[selected]
     if newColor then
         UiSettingsModule:updateSchemeColor(newColor, Library)
+        Settings["Themes"] = selected
     end
 end)
 
-Section:NewDropdown("Select Background Theme", "Choose a color background", UiSettingsModule:getBackgroundThemeNames(), function(selected)
+local BackgroundThemesDropdown = Section:NewDropdown("Select Background Theme", "Choose a color background", UiSettingsModule:getBackgroundThemeNames(), function(selected)
     local newColor = UiSettingsModule.backgroundThemes[selected]
     if newColor then
         UiSettingsModule:updateBackgroundColor(newColor, Library)
+        Settings["BackgroundThemes"] = selected
     end
 end)
 
-Section:NewDropdown("Select TextColor", "Choose a textcolor", UiSettingsModule:getThemeNames(), function(selected)
+local TextColorDropdown = Section:NewDropdown("Select TextColor", "Choose a textcolor", UiSettingsModule:getThemeNames(), function(selected)
     local newColor = UiSettingsModule.themes[selected]
     if newColor then
         UiSettingsModule:updateTextColor(newColor, Library)
+        Settings["TextColor"] = selected
     end
 end)
 
@@ -436,7 +439,15 @@ OthersStuffsModule:ApplySettings(Settings, {
     SilentAimPediction = SilentAimPedictionToggle,
     Dodge = DodgeToggle,
     Lava = LavaToggle,
-    Fog = FogToggle
+    Fog = FogToggle,
+    PredictionAmount = PredictionAimlockAmountDropdown,
+    SilentAimPredictionFuture = PredictionAmountDropdown,
+    SilentAimDistanceLimit = DistanceAmountDropdown,
+    GlobalFont = GlobalTextDropdown,
+    RTXMode = RTXModeDropdown,
+    Themes = ThemesDropdown,
+    BackgroundThemes = BackgroundThemesDropdown,
+    TextColor = TextColorDropdown
 })
 
 OthersStuffsModule.StartFruitNotifier()
