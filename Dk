@@ -27,6 +27,8 @@ local MiniPlayerCreated = false
 local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
 local characterConnections = {}
+local renderConnTilt = nil
+local watchDamageActive = false
 
 local function clearConnections()
 	for _, conn in ipairs(characterConnections) do
@@ -433,50 +435,49 @@ UserInputService.TouchEnded:Connect(function(touch)
 end)
 
 local function watchDamageCounter()
-	if dmgConn then
-		pcall(function() dmgConn:Disconnect() end)
-		dmgConn = nil
-	end
+    if dmgConn then
+        pcall(function() dmgConn:Disconnect() end)
+        dmgConn = nil
+    end
 
-	task.spawn(function()
-		while true do
-			gui = player:FindFirstChild("PlayerGui"):FindFirstChild("Main")
-			if not gui then
-				warn("[DamageLog] Main GUI not found, retrying...")
-				task.wait(1)
-				continue
-			end
+    watchDamageActive = true
 
-			dmgCounter = gui:FindFirstChild("DmgCounter")
-			if not dmgCounter then
-				warn("[DamageLog] DmgCounter not found, retrying...")
-				task.wait(1)
-				continue
-			end
+    task.spawn(function()
+        while watchDamageActive do
+            local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main")
+            if not gui then
+                task.wait(1)
+                continue
+            end
 
-			dmgTextLabel = dmgCounter:FindFirstChild("Text")
-			if not dmgTextLabel then
-				warn("[DamageLog] TextLabel inside DmgCounter not found, retrying...")
-				task.wait(1)
-				continue
-			end
-			
-			dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-		        local dmgText = tonumber(dmgTextLabel.Text) or 0
-		        if dmgText > 0 and canTilt() and currentHighlight then
-		            tiltEnabled = true
-		            if next(rightTouches) then
-		                startTilt()
-		            end
-		        else
-		            tiltEnabled = false
-		            stopTiltSmooth()
-		        end
-		    end)
-			table.insert(characterConnections, dmgConn)			
-			break
-		end
-	end)
+            local dmgCounter = gui:FindFirstChild("DmgCounter")
+            if not dmgCounter then
+                task.wait(1)
+                continue
+            end
+
+            local dmgTextLabel = dmgCounter:FindFirstChild("Text")
+            if not dmgTextLabel then
+                task.wait(1)
+                continue
+            end
+
+            dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+                local dmgText = tonumber(dmgTextLabel.Text) or 0
+                if dmgText > 0 and canTilt() and currentHighlight then
+                    tiltEnabled = true
+                    if next(rightTouches) then
+                        startTilt()
+                    end
+                else
+                    tiltEnabled = false
+                    stopTiltSmooth()
+                end
+            end)
+            table.insert(characterConnections, dmgConn)
+            break
+        end
+    end)
 end
 
 local function watchHealth(humanoid)
@@ -564,56 +565,78 @@ local function setAimlockTarget(targetModel)
     end
 end
 
-local renderConnTilt = RunService.RenderStepped:Connect(function(dt)
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    if AimlockPlayerEnabled then
-        if not cachedEnemy or not cachedEnemy.Parent or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
-            cachedEnemy = getNearestEnemy(500)
-        end
-    else
-        cachedEnemy = nil
-    end
-    
-    if AimlockNpcEnabled then
-        if not cachedBoss or not cachedBoss.Parent or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
-            cachedBoss = getNearestBoss(500)
-        end
-    else
-        cachedBoss = nil
+local function startRenderLoop()
+    if renderConnTilt then
+        return
     end
 
-    if not tiltEnabled then
-        local targetHRP = nil
-        if AimlockPlayerEnabled then targetHRP = cachedEnemy end
-        if AimlockNpcEnabled then targetHRP = cachedBoss end
+    renderConnTilt = RunService.RenderStepped:Connect(function(dt)
+        if not AimlockPlayerEnabled and not AimlockNpcEnabled then
+            renderConnTilt:Disconnect()
+            renderConnTilt = nil
+            return
+        end
 
-        if targetHRP then
-            local camCFrame = camera.CFrame
-            local camPos = camCFrame.Position
-            local dist = (targetHRP.Position - camPos).Magnitude
-            local predictionTime = PredictionAmount
-            local enemyVelocity = targetHRP.Velocity
-            local predictedPos = targetHRP.Position
-            if PredictionEnabled and enemyVelocity.Magnitude > 3 then
-                predictedPos = predictedPos + enemyVelocity * predictionTime
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then 
+            return 
+        end
+
+        if AimlockPlayerEnabled then
+            if not cachedEnemy 
+                or not cachedEnemy.Parent 
+                or not cachedEnemy.Parent:FindFirstChildOfClass("Humanoid") 
+                or cachedEnemy.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
+                cachedEnemy = getNearestEnemy(500)
             end
-            local yOffset = math.clamp(dist / 40, 0, 0.06)
-            local lookVector = (predictedPos - camPos).Unit
-            local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
-            camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
+        else
+            cachedEnemy = nil
         end
-    end
 
-    if AimlockPlayerEnabled and cachedEnemy and currentTarget ~= cachedEnemy.Parent then
-        setAimlockTarget(cachedEnemy.Parent)
-    elseif AimlockNpcEnabled and cachedBoss and currentTarget ~= cachedBoss.Parent then
-        setAimlockTarget(cachedBoss.Parent)
-    elseif not cachedEnemy and not cachedBoss and currentTarget then
-        setAimlockTarget(nil)
-    end
-end)
+        if AimlockNpcEnabled then
+            if not cachedBoss 
+                or not cachedBoss.Parent 
+                or not cachedBoss.Parent:FindFirstChildOfClass("Humanoid") 
+                or cachedBoss.Parent:FindFirstChildOfClass("Humanoid").Health <= 0 then
+                cachedBoss = getNearestBoss(500)
+            end
+        else
+            cachedBoss = nil
+        end
+
+        if not tiltEnabled then
+            local targetHRP = nil
+            if AimlockPlayerEnabled then targetHRP = cachedEnemy end
+            if AimlockNpcEnabled then targetHRP = cachedBoss end
+
+            if targetHRP then
+                local camCFrame = camera.CFrame
+                local camPos = camCFrame.Position
+                local dist = (targetHRP.Position - camPos).Magnitude
+                local predictionTime = PredictionAmount
+                local enemyVelocity = targetHRP.Velocity
+                local predictedPos = targetHRP.Position
+
+                if PredictionEnabled and enemyVelocity.Magnitude > 3 then
+                    predictedPos = predictedPos + enemyVelocity * predictionTime
+                end
+
+                local yOffset = math.clamp(dist / 40, 0, 0.06)
+                local lookVector = (predictedPos - camPos).Unit
+                local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
+                camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
+            end
+        end
+
+        if AimlockPlayerEnabled and cachedEnemy and currentTarget ~= cachedEnemy.Parent then
+            setAimlockTarget(cachedEnemy.Parent)
+        elseif AimlockNpcEnabled and cachedBoss and currentTarget ~= cachedBoss.Parent then
+            setAimlockTarget(cachedBoss.Parent)
+        elseif not cachedEnemy and not cachedBoss and currentTarget then
+            setAimlockTarget(nil)
+        end
+    end)
+end
 
 -- =========================
 -- lifecycle
@@ -670,10 +693,30 @@ end
 -- =========================
 function AimlockModule:SetPlayerAimlock(state)
     AimlockPlayerEnabled = state
+    if not state and not AimlockNpcEnabled then
+	    watchDamageActive = false
+        if dmgConn then
+            pcall(function() dmgConn:Disconnect() end)
+            dmgConn = nil
+        end
+    else
+        watchDamageCounter()
+        startRenderLoop()
+    end
 end
 
 function AimlockModule:SetNpcAimlock(state)
     AimlockNpcEnabled = state
+    if not state and not AimlockPlayerEnabled then
+	    watchDamageActive = false
+        if dmgConn then
+            pcall(function() dmgConn:Disconnect() end)
+            dmgConn = nil
+        end
+    else
+        watchDamageCounter()
+        startRenderLoop()
+    end
 end
 
 function AimlockModule:SetMiniTogglePlayerAimlock(state)
