@@ -2,6 +2,7 @@ local UiSettingsModule = {}
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
@@ -11,6 +12,8 @@ local V4Enabled = false
 local FruitCheck = false
 local TeleportFruit = false
 local sizeConn 
+local fruitLoop = nil
+local teleportLoop = nil
 
 -- =========================
 -- Theme Data & Functions
@@ -153,16 +156,20 @@ local function Tween(targetCFrame)
 	tween:Play()
 end
 
-spawn(function()
-    local notifiedFruits = {}
-    
-    while task.wait(0.5) do
-        if FruitCheck then
+local function startFruitLoop()
+    if fruitLoop then return end
+
+    fruitLoop = task.spawn(function()
+        local notifiedFruits = {}
+
+        while FruitCheck do
+            task.wait(0.5)
+
             for _, v in pairs(workspace:GetChildren()) do
                 if v:IsA("Tool") and not notifiedFruits[v] then
                     notifiedFruits[v] = true
                     setthreadcontext(5)
-                    require(game:GetService("ReplicatedStorage").Notification).new(v.Name .. " Spawned"):Display()
+                    require(game.ReplicatedStorage.Notification).new(v.Name .. " Spawned"):Display()
                 end
             end
 
@@ -171,23 +178,28 @@ spawn(function()
                     notifiedFruits[fruit] = nil
                 end
             end
-        else
-            notifiedFruits = {}
         end
-    end
-end)
 
-spawn(function()
-	while task.wait() do
-		if TeleportFruit then
-			for _, v in pairs(workspace:GetChildren()) do
-				if v:IsA("Tool") and v:FindFirstChild("Handle") then
-					Tween(v.Handle)
-				end
-			end
-		end
-	end
-end)
+        fruitLoop = nil
+    end)
+end
+
+local function startTeleportLoop()
+    if teleportLoop then return end
+
+    teleportLoop = task.spawn(function()
+        while TeleportFruit do
+            task.wait()
+            for _, v in pairs(workspace:GetChildren()) do
+                if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                    Tween(v.Handle)
+                end
+            end
+        end
+
+        teleportLoop = nil
+    end)
+end
 
 function UiSettingsModule:SetWalkSpeed(value)
     getgenv().WalkSpeedValue = value
@@ -232,10 +244,16 @@ end
 
 function UiSettingsModule:SetFruitCheck(state)
     FruitCheck = state
+    if state then
+        startFruitLoop()
+    end
 end
 
 function UiSettingsModule:SetTeleportFruit(state)
     TeleportFruit = state
+    if state then
+        startTeleportLoop()
+    end
 end
 
 return UiSettingsModule
