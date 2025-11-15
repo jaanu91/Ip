@@ -193,43 +193,43 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
 	if Settings["PredictionAmount"] then
 	    Modules.Aimlock:SetPredictionTime(Settings["PredictionAmount"])
 	    if Toggles.PredictionAmount then
-	        Toggles.PredictionAmount:Refresh(Settings["PredictionAmount"])
+	        Toggles.PredictionAmount:Refresh({Settings["PredictionAmount"]})
 	    end
 	end
 	if Settings["SilentAimDistanceLimit"] then
 	    Modules.SilentAim:SetDistanceLimit(Settings["SilentAimDistanceLimit"])
 	    if Toggles.SilentAimDistanceLimit then
-	        Toggles.SilentAimDistanceLimit:Refresh(Settings["SilentAimDistanceLimit"])
+	        Toggles.SilentAimDistanceLimit:Refresh({Settings["SilentAimDistanceLimit"]})
 	    end
 	end	
 	if Settings["SilentAimPredictionFuture"] then
 	    Modules.SilentAim:SetPredictionAmount(Settings["SilentAimPredictionFuture"])
 	    if Toggles.SilentAimPredictionFuture then
-	        Toggles.SilentAimPredictionFuture:Refresh(Settings["SilentAimPredictionFuture"])
+	        Toggles.SilentAimPredictionFuture:Refresh({Settings["SilentAimPredictionFuture"]})
 	    end
 	end	
 	if Settings["RTXMode"] then
 	    Modules.ESP:SetRTXMode(Settings["RTXMode"])
 	    if Toggles.RTXMode then
-	        Toggles.RTXMode:Refresh(Settings["RTXMode"])
+	        Toggles.RTXMode:Refresh({Settings["RTXMode"]})
 	    end
 	end	
 	if Settings["Themes"] then
 	    Modules.Ui:updateSchemeColor(Settings["Themes"])
 	    if Toggles.Themes then
-	        Toggles.Themes:Refresh(Settings["Themes"])
+	        Toggles.Themes:Refresh({Settings["Themes"]})
 	    end
 	end	
 	if Settings["BackgroundThemes"] then
 	    Modules.Ui:updateBackgroundColor(Settings["BackgroundThemes"])
 	    if Toggles.BackgroundThemes then
-	        Toggles.BackgroundThemes:Refresh(Settings["BackgroundThemes"])
+	        Toggles.BackgroundThemes:Refresh({Settings["BackgroundThemes"]})
 	    end
 	end	
 	if Settings["TextColor"] then
 	    Modules.Ui:updateTextColor(Settings["TextColor"])
 	    if Toggles.TextColor then
-	        Toggles.TextColor:Refresh(Settings["TextColor"])
+	        Toggles.TextColor:Refresh({Settings["TextColor"]})
 	    end
 	end
 	if Settings["GlobalFont"] then
@@ -237,7 +237,7 @@ function OthersStuffsModule:ApplySettings(Settings, Modules, Toggles)
 	    if fontEnum then
 	        Modules.ESP:SetGlobalFont(fontEnum)
 	        if Toggles.GlobalFont then
-	            Toggles.GlobalFont:Refresh(Settings["GlobalFont"])
+	            Toggles.GlobalFont:Refresh({Settings["GlobalFont"]})
 	        end
 	    end
 	end
