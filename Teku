@@ -4,10 +4,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local soru = player.PlayerGui
-	:WaitForChild("MobileContextButtons")
-	:WaitForChild("ContextButtonFrame")
-	:WaitForChild("BoundActionSoru")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local currentTool = nil
 local godhumanZActive = false
@@ -21,6 +18,8 @@ local aimRenderConn = nil
 local aimTimeoutTask = nil
 local nearestTarget = nil
 local ZSkillsEnabled = false
+local TargetInfo = false 
+local uiConn = nil
 
 -- ========= SAFE DISCONNECT =========
 local function clearConnections()
@@ -121,6 +120,44 @@ local function GetNearestTarget(maxDistance)
 
 	return closest
 end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TargetUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
+
+local targetFrame = Instance.new("Frame")
+targetFrame.Name = "TargetFrame"
+targetFrame.Size = UDim2.new(0.25, 0, 0.08, 0)
+targetFrame.Position = UDim2.new(0.5, 0, 0.05, 0)
+targetFrame.AnchorPoint = Vector2.new(0.5, 0)
+targetFrame.BackgroundTransparency = 1
+targetFrame.Visible = false
+targetFrame.Parent = screenGui
+
+local targetName = Instance.new("TextLabel")
+targetName.Name = "TargetName"
+targetName.Size = UDim2.new(1, 0, 0.5, 0)
+targetName.BackgroundTransparency = 1
+targetName.TextScaled = true
+targetName.Font = Enum.Font.GothamBold
+targetName.TextColor3 = Color3.new(1, 1, 1)
+targetName.Parent = targetFrame
+
+local hpBackground = Instance.new("Frame")
+hpBackground.Name = "HealthBarBackground"
+hpBackground.Size = UDim2.new(1, 0, 0.35, 0)
+hpBackground.Position = UDim2.new(0, 0, 0.55, 0)
+hpBackground.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+hpBackground.BorderSizePixel = 0
+hpBackground.Parent = targetFrame
+
+local hpFill = Instance.new("Frame")
+hpFill.Name = "HealthBarFill"
+hpFill.Size = UDim2.new(1, 0, 1, 0)
+hpFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+hpFill.BorderSizePixel = 0
+hpFill.Parent = hpBackground
 
 -- ========= TOOL HOOK =========
 local function hookTool(tool)
@@ -324,6 +361,43 @@ function ZSkillModule:SetZSkills(state)
 	if not state then
 		stopAimlock("ZSkills disabled")
 		clearConnections()
+	end
+end
+
+function ZSkillModule:SetInfo(state)
+	TargetInfo = state
+
+	if state then
+		if uiConn == nil then
+			uiConn = RunService.RenderStepped:Connect(function()
+				local target = GetNearestTarget(1000)
+
+				if target and target:FindFirstChild("Humanoid") then
+					local hp = target.Humanoid
+
+					targetName.Text = target.Name
+					local fill = math.clamp(hp.Health / hp.MaxHealth, 0, 1)
+					hpFill.Size = UDim2.new(fill, 0, 1, 0)
+
+					hpBackground.Visible = true
+					hpFill.Visible = true
+					targetFrame.Visible = true
+				else
+					targetName.Text = "No target available"
+
+					hpBackground.Visible = false
+					hpFill.Visible = false
+					targetFrame.Visible = true
+				end
+			end)
+		end
+	else
+		if uiConn then
+			uiConn:Disconnect()
+			uiConn = nil
+		end
+
+		targetFrame.Visible = false
 	end
 end
 
