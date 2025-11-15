@@ -4,13 +4,21 @@ local PingsOrFpsEnabled = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local waterPart = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("WaterBase-Plane")
+local Workspace = game:GetService("Workspace")
+local waterPart = Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("WaterBase-Plane")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local Lighting = game:GetService("Lighting")
-local Terrain = workspace:FindFirstChildOfClass("Terrain")
+local Terrain = Workspace:FindFirstChildOfClass("Terrain")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Modules = ReplicatedStorage:WaitForChild("Modules")
+local Net = Modules:WaitForChild("Net")
+local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+local ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
+local GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
 
 local ScreenGui
 local FpsPingLabel
@@ -20,6 +28,10 @@ local FastAttackEnabled = false
 local WalkWaterEnabled = false
 local fog = false
 local Lava = false
+
+local fastConn
+local energyConnection
+local fpsBoostConn
 
 local savedSettings = {}
 local connections = {}
@@ -34,65 +46,78 @@ local function createGui()
 
 	FpsPingLabel = Instance.new("TextLabel")
 	FpsPingLabel.Name = "FpsPingLabel"
-	FpsPingLabel.Size = UDim2.new(0, 120, 0, 20) -- wider for both values
-	FpsPingLabel.Position = UDim2.new(1, -10, 0, 10) -- top-right corner
+	FpsPingLabel.Size = UDim2.new(0, 120, 0, 20)
+	FpsPingLabel.Position = UDim2.new(1, -10, 0, 10)
 	FpsPingLabel.AnchorPoint = Vector2.new(1, 0) 
 	FpsPingLabel.BackgroundTransparency = 1
 	FpsPingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	FpsPingLabel.Font = Enum.Font.SourceSansBold
 	FpsPingLabel.TextSize = 18
 	FpsPingLabel.TextXAlignment = Enum.TextXAlignment.Right
-	FpsPingLabel.RichText = true -- allow color tags
+	FpsPingLabel.RichText = true
 	FpsPingLabel.Parent = ScreenGui
 end
 
 local lastTime = tick()
 local frameCount = 0
 local fps = 0
+local fpsConn
 
-RunService.RenderStepped:Connect(function(deltaTime)
-	if not PingsOrFpsEnabled then
-		if ScreenGui then
-			ScreenGui.Enabled = false
-		end
-		return
-	end
+local function startFPSLoop()
+    if fpsConn then return end
+    
+    fpsConn = RunService.RenderStepped:Connect(function(deltaTime)
+        if not PingsOrFpsEnabled then
+            ScreenGui.Enabled = false
+            return
+        end
+        
+        createGui()
+        ScreenGui.Enabled = true
+        
+        frameCount = frameCount + 1
+        if tick() - lastTime >= 1 then
+            fps = frameCount
+            frameCount = 0
+            lastTime = tick()
+        end
 
-	createGui()
-	ScreenGui.Enabled = true
+        local ping = math.floor(LocalPlayer:GetNetworkPing() * 2000)
 
-	frameCount = frameCount + 1
-	if tick() - lastTime >= 1 then
-		fps = frameCount
-		frameCount = 0
-		lastTime = tick()
-	end
+        local fpsColor
+        if fps >= 50 then
+            fpsColor = "00FF00"
+        elseif fps >= 30 then
+            fpsColor = "FFA500"
+        else
+            fpsColor = "FF0000"
+        end
 
-	local ping = math.floor(LocalPlayer:GetNetworkPing() * 2000)
+        local pingColor
+        if ping <= 80 then
+            pingColor = "00FF00"
+        elseif ping <= 150 then
+            pingColor = "FFFF00"
+        else
+            pingColor = "FF0000"
+        end
 
-	local fpsColor
-	if fps >= 50 then
-		fpsColor = "00FF00" -- Green
-	elseif fps >= 30 then
-		fpsColor = "FFA500" -- Orange
-	else
-		fpsColor = "FF0000" -- Red
-	end
+        FpsPingLabel.Text = string.format(
+            '<font color="#%s">FPS: %d</font>  |  <font color="#%s">Ping: %dms</font>',
+            fpsColor,
+            fps,
+            pingColor,
+            ping
+        )
+    end)
+end
 
-	local pingColor
-	if ping <= 80 then
-		pingColor = "00FF00" -- Green
-	elseif ping <= 150 then
-		pingColor = "FFFF00" -- Yellow
-	else
-		pingColor = "FF0000" -- Red
-	end
-
-	FpsPingLabel.Text = string.format(
-		'<font color="#%s">FPS: %d</font>  |  <font color="#%s">Ping: %dms</font>',
-		fpsColor, fps, pingColor, ping
-	)
-end)
+local function stopFPSLoop()
+    if fpsConn then
+        fpsConn:Disconnect()
+        fpsConn = nil
+    end
+end
 
 local function FPSBoost()
 	Lighting.FogEnd = 1e9
@@ -109,7 +134,7 @@ local function FPSBoost()
 	    Terrain.WaterTransparency = 1
 	end
 	
-    for _, v in ipairs(workspace:GetDescendants()) do
+    for _, v in ipairs(Workspace:GetDescendants()) do
         if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
@@ -128,7 +153,13 @@ local function FPSBoost()
 			v.Enabled = false
         end
     end
-    workspace.DescendantAdded:Connect(function(v)
+    
+    if fpsBoostConn then
+	    fpsBoostConn:Disconnect()
+	    fpsBoostConn = nil
+	end
+	
+	fpsBoostConn = Workspace.DescendantAdded:Connect(function(v)
 	    task.wait(0.1)
         if v:IsA("ParticleEmitter") then
             v.Lifetime = NumberRange.new(0, 0)
@@ -172,101 +203,31 @@ do
 	end
 end
 
-local function infinitestam()
-    local energy = LocalPlayer.Character:WaitForChild("Energy")
-    energy.Changed:Connect(function()
-        if InfiniteEnergy then
-            energy.Value = energy.MaxValue or 100
-        end
-    end)
-end
+local function infinitestam(state)
+    InfiniteEnergy = state
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local energy = character:FindFirstChild("Energy")
+    if not energy then return end
 
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    infinitestam()
-end)
-
-if LocalPlayer.Character then
-    infinitestam()
-end
-
-function Hop()
-    local PlaceID = game.PlaceId
-    local AllIDs = {}
-    local foundAnything = ""
-    local actualHour = os.date("!*t").hour
-    local Deleted = false
-    function TPReturner()
-        local Site;
-        if foundAnything == "" then
-            Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
-        else
-            Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+    if not state then
+        if energyConnection then
+            energyConnection:Disconnect()
+            energyConnection = nil
         end
-        local ID = ""
-        if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
-            foundAnything = Site.nextPageCursor
-        end
-        local num = 0;
-        for i,v in pairs(Site.data) do
-            local Possible = true
-            ID = tostring(v.id)
-            if tonumber(v.maxPlayers) > tonumber(v.playing) then
-                for _,Existing in pairs(AllIDs) do
-                    if num ~= 0 then
-                        if ID == tostring(Existing) then
-                            Possible = false
-                        end
-                    else
-                        if tonumber(actualHour) ~= tonumber(Existing) then
-                            local delFile = pcall(function()
-                                -- delfile("NotSameServers.json")
-                                AllIDs = {}
-                                table.insert(AllIDs, actualHour)
-                            end)
-                        end
-                    end
-                    num = num + 1
-                end
-                if Possible == true then
-                    table.insert(AllIDs, ID)
-                    wait(.1)
-                    pcall(function()
-                        -- writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
-                        wait()
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
-                    end)
-                    wait(.1)
-                end
+        return
+    end
+    
+    if not energyConnection then
+        energyConnection = energy.Changed:Connect(function()
+            if InfiniteEnergy then
+                energy.Value = energy.MaxValue
             end
-        end
+        end)
     end
-    function Teleport() 
-        while wait(.1) do
-            pcall(function()
-                TPReturner()
-                if foundAnything ~= "" then
-                    TPReturner()
-                end
-            end)
-        end
-    end
-    Teleport()
 end
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
-local Player = Players.LocalPlayer
-local Modules = ReplicatedStorage:WaitForChild("Modules")
-local Net = Modules:WaitForChild("Net")
-local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
-local RegisterHit = Net:WaitForChild("RE/RegisterHit")
-local ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
-local GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
 
 local Config = {
     AttackDistance = 200,
@@ -301,7 +262,7 @@ function FastAttack.new()
     pcall(function()
         self.CombatFlags = require(Modules.Flags).COMBAT_REMOTE_THREAD
         self.ShootFunction = getupvalue(require(ReplicatedStorage.Controllers.CombatController).Attack, 9)
-        local LocalScript = Player:WaitForChild("PlayerScripts"):FindFirstChildOfClass("LocalScript")
+        local LocalScript = LocalPlayer:WaitForChild("PlayerScripts"):FindFirstChildOfClass("LocalScript")
         if LocalScript and getsenv then
             self.HitFunction = getsenv(LocalScript)._G.SendHitsToServer
         end
@@ -375,7 +336,7 @@ function FastAttack:GetCombo()
 end
 
 function FastAttack:ShootInTarget(TargetPosition)
-    local Character = Player.Character
+    local Character = LocalPlayer.Character
     if not self:IsEntityAlive(Character) then return end
     
     local Equipped = Character:FindFirstChildOfClass("Tool")
@@ -452,7 +413,7 @@ end
 
 function FastAttack:Attack()
     if not Config.AutoClickEnabled or (tick() - self.Debounce) < Config.AttackCooldown then return end
-    local Character = Player.Character
+    local Character = LocalPlayer.Character
     if not Character or not self:IsEntityAlive(Character) then return end
     
     local Humanoid = Character.Humanoid
@@ -482,37 +443,45 @@ function FastAttack:Attack()
 end
 
 local AttackInstance = FastAttack.new()
-table.insert(AttackInstance.Connections, RunService.Stepped:Connect(function()
-    if FastAttackEnabled then
-        AttackInstance:Attack()
-    end
-end))
-
-for _, v in pairs(getgc(true)) do
-    if typeof(v) == "function" and iscclosure(v) then
-        local name = debug.getinfo(v).name
-        if name == "Attack" or name == "attack" or name == "RegisterHit" then
-            hookfunction(v, function(...)
-                if FastAttackEnabled then
-                    AttackInstance:Attack()
-                end
-                return v(...)
-            end)
+local function startFastAttack()
+    if fastConn then return end
+    fastConn = RunService.Stepped:Connect(function()
+        if FastAttackEnabled then
+            AttackInstance:Attack()
         end
+    end)
+end
+
+local function stopFastAttack()
+    if fastConn then
+        fastConn:Disconnect()
+        fastConn = nil
     end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    infinitestam()
+end)
+
+if LocalPlayer.Character then
+    infinitestam()
 end
 
 function StuffsModule:SetFpsBoost(state)
     FpsBoostEnabled = state
     if state then
-	    FPSBoost()
-	else
-		-- ignore 
-	end
+        FPSBoost()
+    else
+        if fpsBoostConn then
+            fpsBoostConn:Disconnect()
+            fpsBoostConn = nil
+        end
+    end
 end
 
 function StuffsModule:SetINFEnergy(state)
-    InfiniteEnergy = state
+    infinitestam(state)
 end
 
 function StuffsModule:SetFog(state)
@@ -523,16 +492,17 @@ function StuffsModule:SetLava(state)
     Lava = state
 end
 
-function StuffsModule:SetHopServer(state)
-    Hop()
-end
-
 function StuffsModule:SetRejoinServer(state)
     game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
 end
 
 function StuffsModule:SetFastAttack(state)
     FastAttackEnabled = state
+    if state then
+        startFastAttack()
+    else
+        stopFastAttack()
+    end
 end
 
 function StuffsModule:SetWalkWater(state)
@@ -545,10 +515,12 @@ function StuffsModule:SetWalkWater(state)
 end
 
 function StuffsModule:SetPingsOrFps(state)
-	PingsOrFpsEnabled = state
-	if ScreenGui then
-		ScreenGui.Enabled = state
-	end
+    PingsOrFpsEnabled = state
+    if state then
+        startFPSLoop()
+    else
+        stopFPSLoop()
+    end
 end
 
 return StuffsModule
