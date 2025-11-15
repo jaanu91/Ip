@@ -332,6 +332,9 @@ RunService.RenderStepped:Connect(function()
     if not lpChar then return end
     local lpHRP = lpChar:FindFirstChild("HumanoidRootPart")
     if not lpHRP then return end
+    if not SilentAimPlayersEnabled and not SilentAimNPCsEnabled then
+        return
+    end
 
     local targetModel = nil
     local lookTargetPos = nil
@@ -474,7 +477,11 @@ if not isNotValidCondition() then
             end  
         end  
 
-        RunService.Heartbeat:Connect(function()  
+        RunService.Heartbeat:Connect(function()  	        
+		    if not ZSkillorM1 or (not SilentAimPlayersEnabled and not SilentAimNPCsEnabled) then
+		        return
+		    end
+		
             if Mouse and ZSkillorM1 and (SilentAimPlayersEnabled or SilentAimNPCsEnabled) then  
                 local targetCFrame = nil  
 
@@ -516,7 +523,12 @@ task.spawn(function()
 		local char = player.Character or player.CharacterAdded:Wait();
 		char:WaitForChild("Humanoid");
 		char:WaitForChild("HumanoidRootPart");
-		wait(.1);
+		if not AutoKen then
+		    task.wait(0.5)
+		else
+		    task.wait(0.1)
+		end
+		
 		if AutoKen then
 		    if HasTag("Ken") then
 				local playerGui = player:FindFirstChild("PlayerGui")
