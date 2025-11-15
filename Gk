@@ -21,6 +21,7 @@ local BusoEnabled = false
 local v3LoopRunning = false
 local antiAfkEnabled = false
 
+local NoDodgeCoroutine
 local currentTool = nil
 local yamaLoop = nil
 local ESPs = {}
@@ -116,23 +117,29 @@ local function stopV3Loop()
 end
 
 local function NoDodgeCool()
-	if DodgeEnabled then
-		for i, v in next, getgc() do
-			local character = game.Players.LocalPlayer.Character
-			local dodge = character and character:FindFirstChild("Dodge")
-
-			if dodge and typeof(v) == "function" and getfenv(v).script == dodge then
-				for i2, v2 in next, getupvalues(v) do
-					if tostring(v2) == "0.4" then
-						repeat
-							wait()
-							setupvalue(v, i2, 0)
-						until not DodgeEnabled
-					end
-				end
-			end
-		end
-	end
+    if DodgeEnabled then
+        NoDodgeCoroutine = task.spawn(function()
+            for i, v in next, getgc() do
+                local character = game.Players.LocalPlayer.Character
+                local dodge = character and character:FindFirstChild("Dodge")
+                if dodge and typeof(v) == "function" and getfenv(v).script == dodge then
+                    for i2, v2 in next, getupvalues(v) do
+                        if tostring(v2) == "0.4" then
+                            repeat
+                                task.wait()
+                                setupvalue(v, i2, 0)
+                            until not DodgeEnabled
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if NoDodgeCoroutine then
+            task.cancel(NoDodgeCoroutine)
+            NoDodgeCoroutine = nil
+        end
+    end
 end
 
 -- =========================
