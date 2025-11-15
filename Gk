@@ -91,12 +91,6 @@ local function clickActivateAbility()
     end
 end
 
-local function clickDodge()
-    if CommE then
-        CommE:FireServer("Dodge")
-    end
-end
-
 local function startV3Loop()
     if v3LoopRunning then return end
     v3LoopRunning = true
