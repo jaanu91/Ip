@@ -693,12 +693,19 @@ end
 -- =========================
 function AimlockModule:SetPlayerAimlock(state)
     AimlockPlayerEnabled = state
-    if not state and not AimlockNpcEnabled then
-	    watchDamageActive = false
-        if dmgConn then
-            pcall(function() dmgConn:Disconnect() end)
-            dmgConn = nil
+
+    if not state then
+        if currentTarget and currentTarget:FindFirstChildOfClass("Humanoid") then
+            if currentHighlight then
+                currentHighlight:Destroy()
+                currentHighlight = nil
+            end
         end
+    end
+
+    if not state and not AimlockNpcEnabled then
+        watchDamageActive = false
+        if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
     else
         watchDamageCounter()
         startRenderLoop()
@@ -707,12 +714,19 @@ end
 
 function AimlockModule:SetNpcAimlock(state)
     AimlockNpcEnabled = state
-    if not state and not AimlockPlayerEnabled then
-	    watchDamageActive = false
-        if dmgConn then
-            pcall(function() dmgConn:Disconnect() end)
-            dmgConn = nil
+
+    if not state then
+        if currentTarget and currentTarget:FindFirstChildOfClass("Humanoid") then
+            if currentHighlight then
+                currentHighlight:Destroy()
+                currentHighlight = nil
+            end
         end
+    end
+
+    if not state and not AimlockPlayerEnabled then
+        watchDamageActive = false
+        if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
     else
         watchDamageCounter()
         startRenderLoop()
