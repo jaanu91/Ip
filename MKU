@@ -62,6 +62,7 @@ Section:NewLabel("Status: " .. execStatus)
 local Tab = Window:NewTab("⛓・ChangesLogs")
 local Section = Tab:NewSection("✏・Updated")
 
+Section:NewLabel("• Fixed Dropdown Save Settings ✔")
 Section:NewLabel("• Added Info Of Target (Name/Health) ✔")
 Section:NewLabel("• Optimized Script ✔")
 Section:NewLabel("• Improved Fps Boost ✔")
