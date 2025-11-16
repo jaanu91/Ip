@@ -703,6 +703,16 @@ function AimlockModule:SetPlayerAimlock(state)
         end
     end
 
+    if state then
+        cachedEnemy = nil
+        local nearestHRP = getNearestEnemy(500)
+        if nearestHRP and nearestHRP.Parent then
+            setAimlockTarget(nearestHRP.Parent)
+        else
+            setAimlockTarget(nil)
+        end
+    end
+
     if not state and not AimlockNpcEnabled then
         watchDamageActive = false
         if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
@@ -724,6 +734,16 @@ function AimlockModule:SetNpcAimlock(state)
         end
     end
 
+    if state then
+        cachedBoss = nil
+        local nearestBossHRP = getNearestBoss(500)
+        if nearestBossHRP and nearestBossHRP.Parent then
+            setAimlockTarget(nearestBossHRP.Parent)
+        else
+            setAimlockTarget(nil)
+        end
+    end
+
     if not state and not AimlockPlayerEnabled then
         watchDamageActive = false
         if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
@@ -741,6 +761,7 @@ function AimlockModule:SetMiniTogglePlayerAimlock(state)
         MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
             AimlockPlayerEnabled = val
             if val then
+                cachedEnemy = nil
                 watchDamageCounter()
                 startRenderLoop()
             else
@@ -750,6 +771,7 @@ function AimlockModule:SetMiniTogglePlayerAimlock(state)
         end)
         MiniPlayerCreated = true
         if AimlockPlayerEnabled then
+            cachedEnemy = nil
             watchDamageCounter()
             startRenderLoop()
         end
@@ -765,6 +787,7 @@ function AimlockModule:SetMiniTogglePlayerAimlock(state)
         end
 
         if state then
+            cachedEnemy = nil
             watchDamageCounter()
             startRenderLoop()
         else
@@ -782,6 +805,7 @@ function AimlockModule:SetMiniToggleNpcAimlock(state)
         MiniNpcGui = createMiniToggle("NPC", UDim2.new(0,10,0,50), MiniNpcState, function(val)
             AimlockNpcEnabled = val
             if val then
+                cachedBoss = nil
                 watchDamageCounter()
                 startRenderLoop()
             else
@@ -792,6 +816,7 @@ function AimlockModule:SetMiniToggleNpcAimlock(state)
         MiniNpcCreated = true
 
         if AimlockNpcEnabled then
+            cachedBoss = nil
             watchDamageCounter()
             startRenderLoop()
         end
@@ -807,6 +832,7 @@ function AimlockModule:SetMiniToggleNpcAimlock(state)
         end
 
         if state then
+            cachedBoss = nil
             watchDamageCounter()
             startRenderLoop()
         else
