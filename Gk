@@ -13,7 +13,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local V3Enabled = false
-local BunnyHopEnabled = false
 local DodgeEnabled = false 
 local ESPEnabled = false
 local BusoEnabled = false
@@ -133,33 +132,6 @@ local function NoDodgeCool()
         end
     end
 end
-
--- =========================
--- V Skill Detection
--- =========================
-local old
-old = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-
-    if (method == "InvokeServer" or method == "FireServer") then
-        local a1 = args[1]
-
-        if typeof(a1) == "string" and a1:upper() == "DODGE" then
-            if BunnyHopEnabled then
-                local ok, h = pcall(function() return humanoid end)
-                if ok and h and h.Parent then
-                    task.defer(function()
-                        pcall(function()
-                            h:ChangeState(Enum.HumanoidStateType.Jumping)
-                        end)
-                    end)
-                end
-            end
-        end
-    end
-    return old(self, ...)
-end)
 
 -- =========================
 -- Global Player ESP with Colors
@@ -314,10 +286,6 @@ function ESPModule:SetV3(state)
     else
         stopV3Loop()
     end
-end
-
-function ESPModule:SetBunnyhop(state)
-    BunnyHopEnabled = state
 end
 
 function ESPModule:SetNoDodgeCD(state)
@@ -492,10 +460,6 @@ end
 local function onCharacterAdded(newChar)
     char = newChar
     humanoid = char:WaitForChild("Humanoid")
-
-    if BunnyHopEnabled then
-        -- nothing extra needed, the hookmetamethod will keep working
-    end
     if V3Enabled then
         startV3Loop()
     end
