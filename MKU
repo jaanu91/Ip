@@ -212,11 +212,6 @@ local V3SkillToggle = Section:NewToggle("・V3 Skill", "Auto activate V3 ability
     Settings["V3Skill"] = state
 end)
 
-local BunnyHopToggle = Section:NewToggle("・Bunny hop", "Toggle Bunnyhop", function(state)
-    ESPModule:SetBunnyhop(state)
-    Settings["BunnyHop"] = state
-end)
-
 local AuraSkillToggle = Section:NewToggle("・Aura Skill", "Auto activate Buso", function(state)
     ESPModule:SetBuso(state)
     Settings["AuraSkill"] = state
@@ -300,11 +295,6 @@ end)
 local DodgeToggle = Section:NewToggle("・Dodge no cd", "Dodge no cd", function(state)
     ESPModule:SetNoDodgeCD(state)
     Settings["Dodge"] = state
-end)
-
-local OpponentToggle = Section:NewToggle("・Target Info(Name/Health)", "Info Of Target", function(state)
-    ZSkillModule:SetInfo(state)
-    Settings["Opponent"] = state
 end)
 
 local Tab = Window:NewTab("⚙・Settings Manager")
