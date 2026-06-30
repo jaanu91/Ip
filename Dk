@@ -10,14 +10,7 @@ local Workspace = game:GetService("Workspace")
   
 local humanoid = char:WaitForChild("Humanoid") 
 local AimlockPlayerEnabled, AimlockNpcEnabled, PredictionEnabled = false, false, false
-local currentTarget = nil
-local currentTool = nil
-local vActive, sharkZActive, cursedZActive = false, false, false
-local tiltEnabled = false
-local rightTouches = {}
-local tiltConn, preTiltCFrame, dmgConn = nil, nil, nil
-local currentEnemyTarget, currentBossTarget, currentHighlight = nil, nil, nil
-local healthConn, lastHealth = nil, nil
+local currentTarget, currentHighlight = nil, nil
 local cachedEnemy = nil
 local cachedBoss = nil
 local PredictionAmount = 0.1
@@ -28,7 +21,6 @@ local MiniNpcCreated = false
 local MiniPlayerGui, MiniNpcGui = nil, nil
 local characterConnections = {}
 local renderConnTilt = nil
-local watchDamageActive = false
 
 local function clearConnections()
 	for _, conn in ipairs(characterConnections) do
@@ -95,7 +87,8 @@ end
 -- Enemies Finder
 -- =========================
 local function getNearestEnemy(maxDistance)
-	local hrp = char:WaitForChild("HumanoidRootPart")
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return nil end
 	local nearest, shortest = nil, maxDistance or 100
 
 	for _, p in pairs(Players:GetPlayers()) do
@@ -116,7 +109,8 @@ local function getNearestEnemy(maxDistance)
 end
 
 local function getNearestBoss(maxDistance)
-	local hrp = char:WaitForChild("HumanoidRootPart")
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return nil end
 	local nearest, shortest = nil, maxDistance or 500
 	local bossFolder = Workspace:FindFirstChild("Enemies")
 	if bossFolder then
@@ -135,80 +129,6 @@ local function getNearestBoss(maxDistance)
 	return nearest
 end
 
--- =========================
--- Tilt Camera Function
--- =========================
-local function disconnectTiltConn()
-	if tiltConn then
-		tiltConn:Disconnect()
-		tiltConn = nil
-	end
-end
-
-local function safeDisconnect(conn)
-    if conn then
-        pcall(function() conn:Disconnect() end)
-        conn = nil
-    end
-    return nil
-end
-
-local function stopTiltSmooth()
-	disconnectTiltConn()
-	if not preTiltCFrame then return end
-
-	local startCF = camera.CFrame
-	local endCF = preTiltCFrame
-	preTiltCFrame = nil
-
-	local a = 0
-	local restoreConn
-	restoreConn = RunService.RenderStepped:Connect(function(dt)
-		a = math.min(a + dt * 5, 1)
-		camera.CFrame = startCF:Lerp(endCF, a)
-		if a >= 1 then
-			restoreConn:Disconnect()
-		end
-	end)
-end
-
-local function startTilt()
-	disconnectTiltConn()
-
-	preTiltCFrame = preTiltCFrame or camera.CFrame
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-	local humanoid = char:FindFirstChildOfClass("Humanoid")
-	if not humanoid then return end
-
-	local startCF = camera.CFrame
-	local camPos = startCF.Position
-
-	local tiltOffset
-	if humanoid.FloorMaterial ~= Enum.Material.Air then
-		tiltOffset = Vector3.new(0, 6, 0)
-	else
-		tiltOffset = Vector3.new(0, 40, 0)
-	end
-
-	local downLook = hrp.Position - tiltOffset
-	local targetCF = CFrame.new(camPos, downLook)
-
-	local alpha = 0
-	tiltConn = RunService.RenderStepped:Connect(function(dt)
-		if not (tiltEnabled and next(rightTouches) and hrp.Parent) then
-			stopTiltSmooth()
-			return
-		end
-
-		if alpha < 1 then
-			alpha = math.min(alpha + dt * 2, 1)
-			camera.CFrame = startCF:Lerp(targetCF, alpha)
-		else
-			camera.CFrame = targetCF
-		end
-	end)
-end
 
 -- =========================
 -- Mini UI Buttons
@@ -300,223 +220,17 @@ local function createMiniToggle(name, position, stateVarRef, realVarSetter)
     return screenGui
 end
 
--- =========================
--- Tool equip / unequip 
--- =========================
-local function hookTool(tool)
-    currentTool = tool
-    local ancConn = tool.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            currentTool = nil
-            vActive = false
-            sharkZActive = false
-            cursedZActive = false
-            tiltEnabled = false
-            stopTiltSmooth()
-        end
-    end)
-    table.insert(characterConnections, ancConn)
-end
-
--- =========================
--- Tilt trigger condition
--- =========================
-local function canTilt()
-	return (currentTool and currentTool.Name == "Dough-Dough" and vActive)
-	    or (currentTool and currentTool.Name == "Shark Anchor" and sharkZActive)
-	    or (currentTool and currentTool.Name == "Cursed Dual Katana" and cursedZActive)
-end
-
--- =========================
--- V Skill Detection
--- =========================
-if _G.AimlockHooked then
-    return AimlockModule
-end
-_G.AimlockHooked = true
-local old
-old = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-
-    if (method == "InvokeServer" or method == "FireServer") then
-        local a1 = args[1]
-
-        if typeof(a1) == "string" and a1:upper() == "V" then
-            if currentTool and currentTool.Name == "Dough-Dough" then
-                vActive = true
-                local stamp = os.clock()
-                task.delay(2, function()
-                    if os.clock() - stamp >= 2 then
-                        vActive = false
-                        if tiltEnabled and next(rightTouches) then
-                            tiltEnabled = false
-                            stopTiltSmooth()
-                            rightTouches = {}
-                        end
-                    end
-                end)
-            end
-        end
-
-        if typeof(a1) == "string" and a1:upper() == "Z" then
-            if currentTool and currentTool.Name == "Shark Anchor" then
-                sharkZActive = true
-                local stamp = os.clock()
-                task.delay(2, function()
-                    if os.clock() - stamp >= 2 then
-                        sharkZActive = false
-                        if tiltEnabled and next(rightTouches) then
-                            tiltEnabled = false
-                            stopTiltSmooth()
-                            rightTouches = {}
-                        end
-                    end
-                end)
-            end
-        end
-
-        if typeof(a1) == "string" and a1:upper() == "Z" then
-            if currentTool and currentTool.Name == "Cursed Dual Katana" then
-                cursedZActive = true
-                local stamp = os.clock()
-                task.delay(2, function()
-                    if os.clock() - stamp >= 2 then
-                        cursedZActive = false
-                        if tiltEnabled and next(rightTouches) then
-                            tiltEnabled = false
-                            stopTiltSmooth()
-                            rightTouches = {}
-                        end
-                    end
-                end)
-            end
-        end
-
-        if currentTool and currentTool.Name == "Shark Anchor" and self.Name == "EquipEvent" then
-            local arg1 = args[1]
-            if arg1 == false then
-                currentTool = nil
-                sharkZActive = false
-                tiltEnabled = false
-                stopTiltSmooth()
-            end
-        end
-    end
-    return old(self, ...)
-end)
-
--- =========================
--- Touch tracking
--- =========================
-UserInputService.TouchStarted:Connect(function(touch)
-    camera = workspace.CurrentCamera
-    if not camera then return end
-
-    if touch.Position.X > camera.ViewportSize.X / 2 then
-        rightTouches[touch] = true
-        if tiltEnabled and canTilt() then
-            startTilt()
-        end
-    end
-end)
-
-UserInputService.TouchEnded:Connect(function(touch)
-	if rightTouches[touch] then
-		rightTouches[touch] = nil
-		if not next(rightTouches) then
-			stopTiltSmooth()			
-			tiltEnabled = false
-			vActive = false
-			sharkZActive = false
-			cursedZActive = false
-		end
-	end
-end)
-
-local function watchDamageCounter()
-    if dmgConn then
-        pcall(function() dmgConn:Disconnect() end)
-        dmgConn = nil
-    end
-
-    watchDamageActive = true
-
-    task.spawn(function()
-        while watchDamageActive do
-            local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main")
-            if not gui then
-                task.wait(1)
-                continue
-            end
-
-            local dmgCounter = gui:FindFirstChild("DmgCounter")
-            if not dmgCounter then
-                task.wait(1)
-                continue
-            end
-
-            local dmgTextLabel = dmgCounter:FindFirstChild("Text")
-            if not dmgTextLabel then
-                task.wait(1)
-                continue
-            end
-
-            dmgConn = dmgTextLabel:GetPropertyChangedSignal("Text"):Connect(function()
-                local dmgText = tonumber(dmgTextLabel.Text) or 0
-                if dmgText > 0 and canTilt() and currentHighlight then
-                    tiltEnabled = true
-                    if next(rightTouches) then
-                        startTilt()
-                    end
-                else
-                    tiltEnabled = false
-                    stopTiltSmooth()
-                end
-            end)
-            table.insert(characterConnections, dmgConn)
-            break
-        end
-    end)
-end
-
-local function watchHealth(humanoid)
-    if healthConn then
-        pcall(function() healthConn:Disconnect() end)
-        healthConn = nil
-    end
-
-    lastHealth = humanoid.Health
-
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
-        if tiltEnabled and next(rightTouches) then
-            if newHealth < lastHealth then
-                tiltEnabled = false
-                stopTiltSmooth()
-                rightTouches = {}
-            end
-        end
-        lastHealth = newHealth
-    end)
-
-    table.insert(characterConnections, healthConn)
-end
-
 local function setAimlockTarget(targetModel)
     if currentHighlight then
         currentHighlight:Destroy()
         currentHighlight = nil
     end
-
+    
     if not targetModel then
-        if dmgConn then
-            pcall(function() dmgConn:Disconnect() end)
-            dmgConn = nil
-        end
         currentTarget = nil
         return
     end
-
+    
     local humanoid = targetModel:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then
         currentTarget = nil
@@ -533,34 +247,14 @@ local function setAimlockTarget(targetModel)
         highlight.Parent = targetModel
         currentHighlight = highlight
 
-        if dmgConn then
-            pcall(function() dmgConn:Disconnect() end)
-            dmgConn = nil
-        end
-
         local diedConn = humanoid.Died:Connect(function()
             if currentHighlight then
                 currentHighlight:Destroy()
                 currentHighlight = nil
             end
             currentTarget = nil
-
-            if dmgConn then
-                pcall(function() dmgConn:Disconnect() end)
-                dmgConn = nil
-            end
-
-            if tiltEnabled then
-                tiltEnabled = false
-                stopTiltSmooth()
-                rightTouches = {}
-            end
         end)
         table.insert(characterConnections, diedConn)
-
-        if currentTarget ~= targetModel then
-            watchDamageCounter()
-        end
         currentTarget = targetModel
     end
 end
@@ -604,28 +298,26 @@ local function startRenderLoop()
             cachedBoss = nil
         end
 
-        if not tiltEnabled then
-            local targetHRP = nil
-            if AimlockPlayerEnabled then targetHRP = cachedEnemy end
-            if AimlockNpcEnabled then targetHRP = cachedBoss end
+        local targetHRP = nil
+        if AimlockPlayerEnabled then targetHRP = cachedEnemy end
+        if AimlockNpcEnabled then targetHRP = cachedBoss end
 
-            if targetHRP then
-                local camCFrame = camera.CFrame
-                local camPos = camCFrame.Position
-                local dist = (targetHRP.Position - camPos).Magnitude
-                local predictionTime = PredictionAmount
-                local enemyVelocity = targetHRP.Velocity
-                local predictedPos = targetHRP.Position
+        if targetHRP then
+            local camCFrame = camera.CFrame
+            local camPos = camCFrame.Position
+            local dist = (targetHRP.Position - camPos).Magnitude
+            local predictionTime = PredictionAmount
+            local enemyVelocity = targetHRP.Velocity
+            local predictedPos = targetHRP.Position
 
-                if PredictionEnabled and enemyVelocity.Magnitude > 3 then
-                    predictedPos = predictedPos + enemyVelocity * predictionTime
-                end
-
-                local yOffset = math.clamp(dist / 40, 0, 0.06)
-                local lookVector = (predictedPos - camPos).Unit
-                local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
-                camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
+            if PredictionEnabled and enemyVelocity.Magnitude > 3 then
+                predictedPos = predictedPos + enemyVelocity * predictionTime
             end
+
+            local yOffset = math.clamp(dist / 40, 0, 0.06)
+            local lookVector = (predictedPos - camPos).Unit
+            local tiltedlook = Vector3.new(lookVector.X, lookVector.Y - yOffset, lookVector.Z).Unit
+            camera.CFrame = CFrame.new(camPos, camPos + tiltedlook)
         end
 
         if AimlockPlayerEnabled and cachedEnemy and currentTarget ~= cachedEnemy.Parent then
@@ -653,33 +345,6 @@ local function onCharacterAdded(newChar)
         currentHighlight:Destroy()
         currentHighlight = nil
     end
-
-    local humanoid = char:WaitForChild("Humanoid")
-    local hrp = char:WaitForChild("HumanoidRootPart")
-
-    table.insert(characterConnections, char.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then
-            hookTool(child)
-        end
-    end))
-
-    table.insert(characterConnections, char.ChildRemoved:Connect(function(child)
-        if child == currentTool then
-            currentTool = nil
-            vActive = false
-            sharkZActive = false
-            cursedZActive = false
-            tiltEnabled = false
-            stopTiltSmooth()
-        end
-    end))
-
-    watchHealth(humanoid)
-
-    tiltEnabled = false
-    vActive, sharkZActive, cursedZActive = false, false, false
-    rightTouches = {}
-    stopTiltSmooth()
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
@@ -706,19 +371,12 @@ function AimlockModule:SetPlayerAimlock(state)
     if state then
         cachedEnemy = nil
         local nearestHRP = getNearestEnemy(500)
+        startRenderLoop()
         if nearestHRP and nearestHRP.Parent then
             setAimlockTarget(nearestHRP.Parent)
         else
             setAimlockTarget(nil)
         end
-    end
-
-    if not state and not AimlockNpcEnabled then
-        watchDamageActive = false
-        if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-    else
-        watchDamageCounter()
-        startRenderLoop()
     end
 end
 
@@ -737,19 +395,12 @@ function AimlockModule:SetNpcAimlock(state)
     if state then
         cachedBoss = nil
         local nearestBossHRP = getNearestBoss(500)
+        startRenderLoop()
         if nearestBossHRP and nearestBossHRP.Parent then
             setAimlockTarget(nearestBossHRP.Parent)
         else
             setAimlockTarget(nil)
         end
-    end
-
-    if not state and not AimlockPlayerEnabled then
-        watchDamageActive = false
-        if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-    else
-        watchDamageCounter()
-        startRenderLoop()
     end
 end
 
@@ -760,19 +411,10 @@ function AimlockModule:SetMiniTogglePlayerAimlock(state)
         MiniPlayerState = { value = state }
         MiniPlayerGui = createMiniToggle("Player", UDim2.new(0,10,0,90), MiniPlayerState, function(val)
             AimlockPlayerEnabled = val
-            if val then
-                cachedEnemy = nil
-                watchDamageCounter()
-                startRenderLoop()
-            else
-                watchDamageActive = false
-                if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-            end
         end)
         MiniPlayerCreated = true
         if AimlockPlayerEnabled then
             cachedEnemy = nil
-            watchDamageCounter()
             startRenderLoop()
         end
     elseif MiniPlayerCreated then
@@ -785,15 +427,6 @@ function AimlockModule:SetMiniTogglePlayerAimlock(state)
                 btn.Text = "Player" .. (state and " ON" or " OFF")
             end
         end
-
-        if state then
-            cachedEnemy = nil
-            watchDamageCounter()
-            startRenderLoop()
-        else
-            watchDamageActive = false
-            if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-        end
     end
 end
 
@@ -804,20 +437,11 @@ function AimlockModule:SetMiniToggleNpcAimlock(state)
         MiniNpcState = { value = state }
         MiniNpcGui = createMiniToggle("NPC", UDim2.new(0,10,0,50), MiniNpcState, function(val)
             AimlockNpcEnabled = val
-            if val then
-                cachedBoss = nil
-                watchDamageCounter()
-                startRenderLoop()
-            else
-                watchDamageActive = false
-                if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
-            end
         end)
         MiniNpcCreated = true
 
         if AimlockNpcEnabled then
             cachedBoss = nil
-            watchDamageCounter()
             startRenderLoop()
         end
     elseif MiniNpcCreated then
@@ -829,15 +453,6 @@ function AimlockModule:SetMiniToggleNpcAimlock(state)
             if btn then
                 btn.Text = "NPC" .. (state and " ON" or " OFF")
             end
-        end
-
-        if state then
-            cachedBoss = nil
-            watchDamageCounter()
-            startRenderLoop()
-        else
-            watchDamageActive = false
-            if dmgConn then pcall(function() dmgConn:Disconnect() end) dmgConn = nil end
         end
     end
 end
