@@ -5,6 +5,7 @@ local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local PlayerGui = player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 
 local currentTool = nil
 local godhumanZActive = false
@@ -186,10 +187,6 @@ local function stopAimlock(reason)
 		aimRenderConn = nil
 	end
 	
-	if flyVelocity then
-	    flyVelocity:Destroy()
-	    flyVelocity = nil
-	end
 	game.Players.LocalPlayer:SetAttribute("AAIM", false)
 
 	if aimTimeoutTask then
@@ -208,14 +205,9 @@ local function startAimlock()
 
 	aimlockActive = true
 
-	local flyVelocity
-
-	aimRenderConn = RunService.Heartbeat:Connect(function()
-	    if not ZSkillsEnabled then
-	        stopAimlock()
-	        return
-	    end
+	local tween
 	
+	aimRenderConn = RunService.Heartbeat:Connect(function()
 	    local char = player.Character
 	    local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	
@@ -224,24 +216,27 @@ local function startAimlock()
 	        return
 	    end
 	
-	    if not flyVelocity then
-	        flyVelocity = Instance.new("BodyVelocity")
-	        flyVelocity.MaxForce = Vector3.new(1e9,1e9,1e9)
-	        flyVelocity.Parent = hrp
-	    end
-	
 	    local targetPos = nearestTarget.HumanoidRootPart.Position
-	    local dir = targetPos - hrp.Position
+	    local distance = (targetPos - hrp.Position).Magnitude
 	
-	    if dir.Magnitude > 3 then
+	    if distance > 3 then
+	        if tween then
+	            tween:Cancel()
+	        end
+	
+	        tween = TweenService:Create(
+	            hrp,
+	            TweenInfo.new(0.08, Enum.EasingStyle.Linear),
+	            {
+	                CFrame = CFrame.lookAt(
+	                    targetPos - (targetPos - hrp.Position).Unit * 2,
+	                    targetPos
+	                )
+	            }
+	        )
 			game.Players.LocalPlayer:SetAttribute("AAIM", true)
-	        flyVelocity.Velocity = dir.Unit * 200 -- Fly speed
-	    else
-			game.Players.LocalPlayer:SetAttribute("AAIM", true)
-	        flyVelocity.Velocity = Vector3.zero
+	        tween:Play()
 	    end
-	
-	    hrp.CFrame = CFrame.lookAt(hrp.Position, targetPos)
 	end)
 
 	aimTimeoutTask = task.delay(1, function()
