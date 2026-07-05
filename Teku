@@ -233,10 +233,10 @@ local function startAimlock()
 	    local dir = targetPos - hrp.Position
 	
 	    if dir.Magnitude > 3 then
-			game.Players.LocalPlayer:SetAttribute("AAIM", false)
+			game.Players.LocalPlayer:SetAttribute("AAIM", true)
 	        flyVelocity.Velocity = dir.Unit * 200 -- Fly speed
 	    else
-			game.Players.LocalPlayer:SetAttribute("AAIM", false)
+			game.Players.LocalPlayer:SetAttribute("AAIM", true)
 	        flyVelocity.Velocity = Vector3.zero
 	    end
 	
