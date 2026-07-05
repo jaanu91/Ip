@@ -190,6 +190,7 @@ local function stopAimlock(reason)
 	    flyVelocity:Destroy()
 	    flyVelocity = nil
 	end
+	game.Players.LocalPlayer:SetAttribute("AAIM", false)
 
 	if aimTimeoutTask then
 		pcall(function() task.cancel(aimTimeoutTask) end)
